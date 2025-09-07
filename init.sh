@@ -31,9 +31,9 @@ fi
 source ./set_env.sh
 gcloud config set project $(cat ~/project_id.txt) 
 export PROJECT_ID=$(gcloud config get project)
+export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
 export GOOGLE_CLOUD_PROJECT=$(gcloud config get project)
 export SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
-export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
 echo "Successfully saved project ID."
 
 
