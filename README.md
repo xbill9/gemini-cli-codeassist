@@ -2,6 +2,10 @@
 
 This project is a sample microservices application for an e-commerce store called "Cymbal Superstore". It demonstrates how to build and deploy a modern, cloud-native application using Google Cloud services.
 
+The Sample Cymbal Super Store files are here:
+
+gs://duet-appdev/cymbal-superstore
+
 ## Project Structure
 
 The project is organized into several microservices and components:
