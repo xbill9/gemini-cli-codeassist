@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+env/
+gitea-data/
+venv/
+.git
+.gitignore
+gitea-data.zip
+*.sh
+*.md
+data/
+pipeline/
