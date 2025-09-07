@@ -30,6 +30,10 @@ fi
 
 source ./set_env.sh
 gcloud config set project $(cat ~/project_id.txt) 
+export PROJECT_ID=$(gcloud config get project)
+export GOOGLE_CLOUD_PROJECT=$(gcloud config get project)
+export SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
 echo "Successfully saved project ID."
 
 
@@ -41,9 +45,9 @@ gcloud services enable \
     aiplatform.googleapis.com \
     compute.googleapis.com 
 
-echo "Hardcoding Region to europe-west1" 
+echo "Hardcoding Region to us-central1" 
 
-gcloud config set compute/region europe-west1
+gcloud config set compute/region us-central1
 
 
 echo "Adding IAM Roles"
@@ -54,8 +58,17 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
     --quiet \
     --condition=None
     
+echo "Configuring Docker"
+gcloud auth configure-docker
 
-export GOOGLE_CLOUD_PROJECT=$(gcloud config get project)
+echo "Installing MCP Toolbox"
+export VERSION=0.14.0
+curl -O https://storage.googleapis.com/genai-toolbox/v$VERSION/linux/amd64/toolbox
+chmod +x toolbox
+
+echo "Creating Firestore DB"
+gcloud firestore databases create     --database="(default)"  --location=us-central1 --type=firestore-native
+
 
   if  [[ -z "$CLOUD_SHELL" ]] && curl -s -i metadata.google.internal | grep -q "Metadata-Flavor: Google"; then
      echo "This VM is running on GCP Defaults to Service Account."
@@ -87,16 +100,7 @@ fi
 
 export ID_TOKEN=$(gcloud auth print-identity-token)
 
-export MCP_SERVER_URL=https://zoo-mcp-server-${PROJECT_NUMBER}.europe-west1.run.app/mcp/
-echo -e "\nMCP_SERVER_URL=https://zoo-mcp-server-${PROJECT_NUMBER}.europe-west1.run.app/mcp/" > ./zoo_guide_agent/.env
-echo -e "\nMODEL=gemini-2.5-flash" >> ./zoo_guide_agent/.env
-echo -e "\nSERVICE_ACCOUNT=${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" >> ./zoo_guide_agent/.env
-echo "Setting MCP SERVER URL $MCP_SERVER_URL"
-
-MODEL="gemini-2.5-flash"
-SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
-
-export MODEL="gemini-2.5-flash"
+export MODEL="gemini-2.5-pro"
 echo "Setting MODEL $MODEL"
 
 echo "--- Initial Setup complete ---"

@@ -7,7 +7,7 @@
 # --- Configuration ---
 # Set your base configuration here
 PROJECT_FILE="~/project_id.txt"
-GOOGLE_CLOUD_LOCATION="europe-west1"
+GOOGLE_CLOUD_LOCATION="us-central1"
 # ---------------------
 
 
