@@ -1,0 +1,12 @@
+ {
+    "mcpServers": {
+      "firestore": {
+        "command": "$HOME/gemini-cli-codeassist/toolbox",
+        "args": ["--prebuilt","firestore","--stdio"],
+        "env": {
+          "FIRESTORE_PROJECT": "$PROJECT_ID",
+          "FIRESTORE_DATABASE": "(default)"
+        }
+      }
+    }
+  }
