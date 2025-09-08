@@ -11,6 +11,12 @@ To copy:
 cd gemini-cli-codeassist
 gsutil -m cp -rp gs://duet-appdev/cymbal-superstore .
 
+Refactoring Prompt:
+
+fetch this url https://github.com/modelcontextprotocol/typescript-sdk for instructions on how to        
+   add mcp server support to the typescript file index.ts call the server name inventory-server and
+   export the url paths as mcp tools
+
 ## Project Structure
 
 The project is organized into several microservices and components:
