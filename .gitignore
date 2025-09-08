@@ -212,3 +212,9 @@ cymbal-superstore/
 
 # don't add toolbox binary
 toolbox
+
+# don't add node code
+node_modules
+
+# package lock
+package-lock.json

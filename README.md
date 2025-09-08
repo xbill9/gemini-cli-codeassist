@@ -6,6 +6,11 @@ The Sample Cymbal Super Store files are here:
 
 gs://duet-appdev/cymbal-superstore
 
+To copy:
+
+cd gemini-cli-codeassist
+gsutil -m cp -rp gs://duet-appdev/cymbal-superstore .
+
 ## Project Structure
 
 The project is organized into several microservices and components:
