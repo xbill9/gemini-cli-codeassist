@@ -1,6 +1,9 @@
 #!/bin/bash
 source ~/gemini-cli-codeassist/set_env.sh
 
+echo "Cleaning existing build"
+rm -rf cymbal-superstore
+
 echo "Fetching Standard Cymbal SuperStore"
 gsutil -m cp -rp gs://duet-appdev/cymbal-superstore .
 
