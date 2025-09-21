@@ -1,0 +1,50 @@
+# Google Cloud Build configuration file.
+
+steps:
+  # 1. Build the Docker image.
+  # The image is tagged with the short Git commit SHA for versioning.
+  # The `images` field below will handle pushing this image to GCR.
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$SHORT_SHA'
+      - '.'
+
+  # 2. Push the Docker image to Google Container Registry.
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$SHORT_SHA'
+
+  # 3. Deploy to Cloud Run.
+  # This step deploys the newly built image to a Cloud Run service.
+  # It uses the specific image tag from the build step.
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'Deploy'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$SHORT_SHA'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated' # WARNING: This makes the service publicly accessible.
+
+# The image(s) built by the steps above will be pushed to Google Container Registry.
+images:
+  - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$SHORT_SHA'
+
+# Timeout for the entire build.
+timeout: 800s
+
+# Substitution variables that can be overridden.
+substitutions:
+  _SERVICE_NAME: 'cloudrun-rust'
+  _REGION: 'us-central1'
+
