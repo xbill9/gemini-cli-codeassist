@@ -16,7 +16,7 @@ use std::convert::Infallible;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tokio::signal;
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 /// Handles incoming HTTP requests and returns a "Hello, World!" response.
@@ -34,17 +34,25 @@ async fn hello(_: Request<impl hyper::body::Body>) -> Result<Response<Full<Bytes
 /// On other systems, it only listens for `Ctrl+C`.
 async fn shutdown_signal() {
     let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
+        if let Err(e) = signal::ctrl_c().await {
+            warn!("Failed to listen for Ctrl+C: {}", e);
+            // Pend forever if the handler fails to prevent the server from shutting down.
+            std::future::pending().await
+        }
     };
 
     #[cfg(unix)]
     let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("failed to install signal handler")
-            .recv()
-            .await;
+        match signal::unix::signal(signal::unix::SignalKind::terminate()) {
+            Ok(mut stream) => {
+                stream.recv().await;
+            }
+            Err(e) => {
+                warn!("Failed to listen for SIGTERM: {}", e);
+                // Pend forever if the handler fails.
+                std::future::pending().await
+            }
+        }
     };
 
     #[cfg(not(unix))]
@@ -91,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                     Ok(conn) => conn,
                     Err(e) => {
                         // Log the error and continue to the next iteration.
-                        warn!("error accepting connection: {}", e);
+                        error!("error accepting connection: {}", e);
                         continue;
                     }
                 }
