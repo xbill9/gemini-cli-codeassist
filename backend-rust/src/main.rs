@@ -1,9 +1,8 @@
-
 use axum::{
     extract::{Path, State},
-    routing::get,
     http::StatusCode,
     response::Json,
+    routing::get,
     Router,
 };
 use chrono::{DateTime, Utc};
@@ -47,7 +46,7 @@ async fn add_or_update_firestore(
         .await?;
 
     if let Some(doc) = existing_docs.first() {
-        let doc_id = doc.name.split('/').last().unwrap_or_default();
+        let doc_id = doc.name.split('/').next_back().unwrap_or_default();
         if !doc_id.is_empty() {
             db.fluent()
                 .update()
@@ -75,10 +74,30 @@ async fn seed(State(db): State<Arc<FirestoreDb>>) -> Result<&'static str, Status
     let old_products_to_add: Vec<Product> = {
         let mut rng = rand::thread_rng();
         let old_products = [
-            "Apples", "Bananas", "Milk", "Whole Wheat Bread", "Eggs", "Cheddar Cheese",
-            "Whole Chicken", "Rice", "Black Beans", "Bottled Water", "Apple Juice", "Cola",
-            "Coffee Beans", "Green Tea", "Watermelon", "Broccoli", "Jasmine Rice", "Yogurt",
-            "Beef", "Shrimp", "Walnuts", "Sunflower Seeds", "Fresh Basil", "Cinnamon",
+            "Apples",
+            "Bananas",
+            "Milk",
+            "Whole Wheat Bread",
+            "Eggs",
+            "Cheddar Cheese",
+            "Whole Chicken",
+            "Rice",
+            "Black Beans",
+            "Bottled Water",
+            "Apple Juice",
+            "Cola",
+            "Coffee Beans",
+            "Green Tea",
+            "Watermelon",
+            "Broccoli",
+            "Jasmine Rice",
+            "Yogurt",
+            "Beef",
+            "Shrimp",
+            "Walnuts",
+            "Sunflower Seeds",
+            "Fresh Basil",
+            "Cinnamon",
         ];
         old_products
             .iter()
@@ -87,7 +106,10 @@ async fn seed(State(db): State<Arc<FirestoreDb>>) -> Result<&'static str, Status
                 name: product_name.to_string(),
                 price: rng.gen_range(1.0..11.0),
                 quantity: rng.gen_range(1..501),
-                imgfile: format!("product-images/{}.png", product_name.replace(' ', "").to_lowercase()),
+                imgfile: format!(
+                    "product-images/{}.png",
+                    product_name.replace(' ', "").to_lowercase()
+                ),
                 timestamp: Utc::now() - Duration::days(rng.gen_range(90..365)),
                 actualdateadded: Utc::now(),
             })
@@ -103,9 +125,14 @@ async fn seed(State(db): State<Arc<FirestoreDb>>) -> Result<&'static str, Status
     let recent_products_to_add: Vec<Product> = {
         let mut rng = rand::thread_rng();
         let recent_products = [
-            "Parmesan Crisps", "Pineapple Kombucha", "Maple Almond Butter",
-            "Mint Chocolate Cookies", "White Chocolate Caramel Corn", "Acai Smoothie Packs",
-            "Smores Cereal", "Peanut Butter and Jelly Cups",
+            "Parmesan Crisps",
+            "Pineapple Kombucha",
+            "Maple Almond Butter",
+            "Mint Chocolate Cookies",
+            "White Chocolate Caramel Corn",
+            "Acai Smoothie Packs",
+            "Smores Cereal",
+            "Peanut Butter and Jelly Cups",
         ];
         recent_products
             .iter()
@@ -114,7 +141,10 @@ async fn seed(State(db): State<Arc<FirestoreDb>>) -> Result<&'static str, Status
                 name: product_name.to_string(),
                 price: rng.gen_range(1.0..11.0),
                 quantity: rng.gen_range(1..101),
-                imgfile: format!("product-images/{}.png", product_name.replace(' ', "").to_lowercase()),
+                imgfile: format!(
+                    "product-images/{}.png",
+                    product_name.replace(' ', "").to_lowercase()
+                ),
                 timestamp: Utc::now() - Duration::days(rng.gen_range(0..6)),
                 actualdateadded: Utc::now(),
             })
@@ -137,7 +167,10 @@ async fn seed(State(db): State<Arc<FirestoreDb>>) -> Result<&'static str, Status
                 name: product_name.to_string(),
                 price: rng.gen_range(1.0..11.0),
                 quantity: 0,
-                imgfile: format!("product-images/{}.png", product_name.replace(' ', "").to_lowercase()),
+                imgfile: format!(
+                    "product-images/{}.png",
+                    product_name.replace(' ', "").to_lowercase()
+                ),
                 timestamp: Utc::now() - Duration::days(rng.gen_range(0..6)),
                 actualdateadded: Utc::now(),
             })
@@ -155,7 +188,8 @@ async fn seed(State(db): State<Arc<FirestoreDb>>) -> Result<&'static str, Status
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let _ = rustls::crypto::CryptoProvider::install_default(rustls::crypto::ring::default_provider());
+    let _ =
+        rustls::crypto::CryptoProvider::install_default(rustls::crypto::ring::default_provider());
     dotenv::dotenv().ok();
 
     let gcp_project_id = std::env::var("PROJECT_ID").expect("PROJECT_ID must be set");
@@ -169,9 +203,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .route("/seed", get(seed))
         .with_state(db);
 
-    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await?;
-    println!("🍏 Cymbal Superstore: Inventory API running on port: {}", port);
+    println!(
+        "🍏 Cymbal Superstore: Inventory API running on port: {}",
+        port
+    );
     axum::serve(listener, app).await?;
 
     Ok(())
