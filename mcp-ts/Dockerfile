@@ -14,10 +14,15 @@
 FROM node:20
 
 WORKDIR /usr/app
-COPY ./ /usr/app
 
-# Install dependencies and build the project.
+# Copy package files and install dependencies first to leverage Docker cache
+COPY package*.json ./
 RUN npm install
+
+# Copy the rest of the application source code
+COPY . .
+
+# Build the project
 RUN npm run build
 
 # Run the web service on container startup.

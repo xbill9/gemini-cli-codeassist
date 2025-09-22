@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm install; npx tsc",
+    "build": "npx tsc",
     "start": "npm run build; node dist/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\"",
     "test": "npm run clean; npm run build; NODE_ENV=test jest"

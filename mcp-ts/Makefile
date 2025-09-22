@@ -15,7 +15,7 @@ NPM := npm
 # Phony Targets
 # ==============================================================================
 
-.PHONY: all build start dev clean test deploy help
+.PHONY: all build start dev clean test audit deploy help
 
 # ==============================================================================
 # Core Development Targets
@@ -46,6 +46,10 @@ clean: ## Clean the project.
 test: ## Run tests.
 	@echo "Running tests..."
 	@$(NPM) test
+
+audit: ## Run npm audit to check for vulnerabilities.
+	@echo "Running npm audit..."
+	@$(NPM) audit
 
 # ==============================================================================
 # Deployment

@@ -20,6 +20,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import cors from "cors";
+import { Firestore, DocumentData, DocumentSnapshot } from "@google-cloud/firestore";
 
 const app: Express = express();
 app.use(express.json());
@@ -36,8 +37,8 @@ import dotenv from "dotenv";
 dotenv.config();
 const port = process.env.PORT || 3000;
 
-var firestore;
-var dbRunning;
+let firestore: Firestore;
+let dbRunning: boolean;
 
 // Product object definition
 interface Product {
@@ -48,6 +49,23 @@ interface Product {
   imgfile: string;
   timestamp: Date;
   actualdateadded: Date;
+}
+
+// Helper function to convert a Firestore document to a Product object
+function docToProduct(doc: DocumentSnapshot<DocumentData>): Product {
+  const data = doc.data();
+  if (!data) {
+    throw new Error("Document data is empty");
+  }
+  return {
+    id: doc.id,
+    name: data.name,
+    price: data.price,
+    quantity: data.quantity,
+    imgfile: data.imgfile,
+    timestamp: data.timestamp,
+    actualdateadded: data.actualdateadded,
+  };
 }
 
 // ---------------- MCP SERVER ------------------------------------------------
@@ -68,19 +86,7 @@ mcpServer.registerTool(
       return { content: [{ type: "text", text: "Inventory database is not running." }], isError: true };
     }
     const products = await firestore.collection("inventory").get();
-    const productsArray: any[] = [];
-    products.forEach((product) => {
-      const p: Product = {
-        id: product.id,
-        name: product.data().name,
-        price: product.data().price,
-        quantity: product.data().quantity,
-        imgfile: product.data().imgfile,
-        timestamp: product.data().timestamp,
-        actualdateadded: product.data().actualdateadded,
-      };
-      productsArray.push(p);
-    });
+    const productsArray: Product[] = products.docs.map(docToProduct);
     return { content: [{ type: "text", text: JSON.stringify(productsArray, null, 2) }] };
   }
 );
@@ -98,20 +104,12 @@ mcpServer.registerTool(
     if (!dbRunning) {
       return { content: [{ type: "text", text: "Inventory database is not running." }], isError: true };
     }
-    const product = await firestore.collection("inventory").doc(id).get();
-    if (!product.exists) {
+    const productDoc = await firestore.collection("inventory").doc(id).get();
+    if (!productDoc.exists) {
       return { content: [{ type: "text", text: "Product not found." }], isError: true };
     }
-    const p: Product = {
-      id: product.id,
-      name: product.data().name,
-      price: product.data().price,
-      quantity: product.data().quantity,
-      imgfile: product.data().imgfile,
-      timestamp: product.data().timestamp,
-      actualdateadded: product.data().actualdateadded,
-    };
-    return { content: [{ type: "text", text: JSON.stringify(p, null, 2) }] };
+    const product = docToProduct(productDoc);
+    return { content: [{ type: "text", text: JSON.stringify(product, null, 2) }] };
   }
 );
 
@@ -126,7 +124,7 @@ mcpServer.registerTool(
     if (!dbRunning) {
       return { content: [{ type: "text", text: "Inventory database is not running." }], isError: true };
     }
-    initFirestoreCollection();
+    await initFirestoreCollection();
     return { content: [{ type: "text", text: "Database seeded successfully." }] };
   }
 );
@@ -206,19 +204,7 @@ app.get("/products", async (req: Request, res: Response) => {
   }
 
   const products = await firestore.collection("inventory").get();
-  const productsArray: any[] = [];
-  products.forEach((product) => {
-    const p: Product = {
-      id: product.id,
-      name: product.data().name,
-      price: product.data().price,
-      quantity: product.data().quantity,
-      imgfile: product.data().imgfile,
-      timestamp: product.data().timestamp,
-      actualdateadded: product.data().actualdateadded,
-    };
-    productsArray.push(p);
-  });
+  const productsArray: Product[] = products.docs.map(docToProduct);
   res.send(productsArray);
 });
 
@@ -230,22 +216,14 @@ app.get("/products/:id", async (req: Request, res: Response) => {
   }
 
   const q_id = req.params.id;
-  const product = await firestore.collection("inventory").doc(q_id).get();
-  if (!product.exists) {
+  const productDoc = await firestore.collection("inventory").doc(q_id).get();
+  if (!productDoc.exists) {
     res.status(404).send("Product not found.");
     return;
   }
 
-  const p: Product = {
-    id: product.id,
-    name: product.data().name,
-    price: product.data().price,
-    quantity: product.data().quantity,
-    imgfile: product.data().imgfile,
-    timestamp: product.data().timestamp,
-    actualdateadded: product.data().actualdateadded,
-  };
-  res.send(p);
+  const product = docToProduct(productDoc);
+  res.send(product);
 });
 
 app.get("/seed", async (req: Request, res: Response) => {
@@ -253,32 +231,32 @@ app.get("/seed", async (req: Request, res: Response) => {
     res.status(500).send("Inventory database is not running.");
     return;
   }
-  initFirestoreCollection();
+  await initFirestoreCollection();
   res.send("Database seeded successfully.");
 });
 
 // ------------------- ------------------- ------------------- ------------------- -------------------
 // START EXPRESS SERVER
 // ------------------- ------------------- ------------------- ------------------- -------------------
-  // Init Firestore client with product inventory
-  const { Firestore } = require("@google-cloud/firestore");
-
+async function startServer() {
   try {
     firestore = new Firestore();
-    const collection = firestore.collection("inventory");
-    const exists =  collection.get();
+    // Perform a simple read to check the connection
+    await firestore.collection('inventory').limit(1).get();
+    dbRunning = true;
+  } catch (e) {
+    console.error("Error connecting to Firestore:", e);
+    dbRunning = false;
+  }
 
-    dbRunning = !exists.empty
-    } catch (e) {
-      dbRunning = false;
-    }
-
-  var server;
   if (process.env.NODE_ENV !== "test") {
-    server = app.listen(port, () => {
+    app.listen(port, () => {
       console.log(`🍏 Cymbal Superstore: Inventory API running on port: ${port} DB Running (${dbRunning})`);
     });
   }
+}
+
+startServer();
 
 // ------------------- ------------------- ------------------- ------------------- -------------------
 // HELPERS -- SEED THE INVENTORY DATABASE (PRODUCTS)
@@ -286,124 +264,74 @@ app.get("/seed", async (req: Request, res: Response) => {
 
 // This will overwrite products in the database - this is intentional, to keep the date-added fresh. (always have a list of products added < 1 week ago, so that
 // the new products page always has items to show.
-function initFirestoreCollection() {
+async function initFirestoreCollection() {
   const oldProducts = [
-    "Apples",
-    "Bananas",
-    "Milk",
-    "Whole Wheat Bread",
-    "Eggs",
-    "Cheddar Cheese",
-    "Whole Chicken",
-    "Rice",
-    "Black Beans",
-    "Bottled Water",
-    "Apple Juice",
-    "Cola",
-    "Coffee Beans",
-    "Green Tea",
-    "Watermelon",
-    "Broccoli",
-    "Jasmine Rice",
-    "Yogurt",
-    "Beef",
-    "Shrimp",
-    "Walnuts",
-    "Sunflower Seeds",
-    "Fresh Basil",
-    "Cinnamon",
+    "Apples", "Bananas", "Milk", "Whole Wheat Bread", "Eggs", "Cheddar Cheese",
+    "Whole Chicken", "Rice", "Black Beans", "Bottled Water", "Apple Juice",
+    "Cola", "Coffee Beans", "Green Tea", "Watermelon", "Broccoli",
+    "Jasmine Rice", "Yogurt", "Beef", "Shrimp", "Walnuts",
+    "Sunflower Seeds", "Fresh Basil", "Cinnamon",
   ];
-  // iterate over product names
-  // add "old" products to firestore - all added between 1 month and 12 months ago
-  // (none of these should show up in the new products list.)
-  for (let i = 0; i < oldProducts.length; i++) {
-    const oldProduct = {
-      name: oldProducts[i],
+
+  for (const productName of oldProducts) {
+    const oldProduct: Omit<Product, 'id'> = {
+      name: productName,
       price: Math.floor(Math.random() * 10) + 1,
       quantity: Math.floor(Math.random() * 500) + 1,
-      imgfile:
-        "product-images/" +
-        oldProducts[i].replace(/\s/g, "").toLowerCase() +
-        ".png",
-      // generate a random timestamp at least 3 months ago (but not more than 12 months ago)
-      timestamp: new Date(
-        Date.now() - Math.floor(Math.random() * 31536000000) - 7776000000
-      ),
-
+      imgfile: `product-images/${productName.replace(/\s/g, "").toLowerCase()}.png`,
+      timestamp: new Date(Date.now() - Math.floor(Math.random() * 31536000000) - 7776000000),
       actualdateadded: new Date(Date.now()),
     };
-    console.log(
-      "⬆️ Adding (or updating) product in firestore: " + oldProduct.name
-    );
-    addOrUpdateFirestore(oldProduct);
+    console.log(`⬆️ Adding (or updating) product in firestore: ${oldProduct.name}`);
+    await addOrUpdateFirestore(oldProduct);
   }
-  // Add recent products (force add last 7 days)
+
   const recentProducts = [
-    "Parmesan Crisps",
-    "Pineapple Kombucha",
-    "Maple Almond Butter",
-    "Mint Chocolate Cookies",
-    "White Chocolate Caramel Corn",
-    "Acai Smoothie Packs",
-    "Smores Cereal",
-    "Peanut Butter and Jelly Cups",
+    "Parmesan Crisps", "Pineapple Kombucha", "Maple Almond Butter",
+    "Mint Chocolate Cookies", "White Chocolate Caramel Corn", "Acai Smoothie Packs",
+    "Smores Cereal", "Peanut Butter and Jelly Cups",
   ];
-  for (let j = 0; j < recentProducts.length; j++) {
-    const recent = {
-      name: recentProducts[j],
+
+  for (const productName of recentProducts) {
+    const recent: Omit<Product, 'id'> = {
+      name: productName,
       price: Math.floor(Math.random() * 10) + 1,
       quantity: Math.floor(Math.random() * 100) + 1,
-      imgfile:
-        "product-images/" +
-        recentProducts[j].replace(/\s/g, "").toLowerCase() +
-        ".png",
-      timestamp: new Date(
-        Date.now() - Math.floor(Math.random() * 518400000) + 1
-      ),
+      imgfile: `product-images/${productName.replace(/\s/g, "").toLowerCase()}.png`,
+      timestamp: new Date(Date.now() - Math.floor(Math.random() * 518400000) + 1),
       actualdateadded: new Date(Date.now()),
     };
-    console.log("🆕 Adding (or updating) product in firestore: " + recent.name);
-    addOrUpdateFirestore(recent);
+    console.log(`🆕 Adding (or updating) product in firestore: ${recent.name}`);
+    await addOrUpdateFirestore(recent);
   }
 
-  // add recent products that are out of stock (To test demo query- only want to show in stock items.)
   const recentProductsOutOfStock = ["Wasabi Party Mix", "Jalapeno Seasoning"];
-  for (let k = 0; k < recentProductsOutOfStock.length; k++) {
-    const oosProduct = {
-      name: recentProductsOutOfStock[k],
+  for (const productName of recentProductsOutOfStock) {
+    const oosProduct: Omit<Product, 'id'> = {
+      name: productName,
       price: Math.floor(Math.random() * 10) + 1,
       quantity: 0,
-      imgfile:
-        "product-images/" +
-        recentProductsOutOfStock[k].replace(/\s/g, "").toLowerCase() +
-        ".png",
-      timestamp: new Date(
-        Date.now() - Math.floor(Math.random() * 518400000) + 1
-      ),
+      imgfile: `product-images/${productName.replace(/\s/g, "").toLowerCase()}.png`,
+      timestamp: new Date(Date.now() - Math.floor(Math.random() * 518400000) + 1),
       actualdateadded: new Date(Date.now()),
     };
-    console.log(
-      "😱 Adding (or updating) out of stock product in firestore: " +
-        oosProduct.name
-    );
-    addOrUpdateFirestore(oosProduct);
+    console.log(`😱 Adding (or updating) out of stock product in firestore: ${oosProduct.name}`);
+    await addOrUpdateFirestore(oosProduct);
   }
 }
 
 // Helper - add Firestore doc if not exists, otherwise update
-// pass in a Product as the parameter
-function addOrUpdateFirestore(product: Product) {
-  firestore
+async function addOrUpdateFirestore(product: Omit<Product, 'id'>) {
+  const querySnapshot = await firestore
     .collection("inventory")
     .where("name", "==", product.name)
-    .get()
-    .then((querySnapshot) => {
-      if (querySnapshot.empty) {
-        firestore.collection("inventory").add(product);
-      } else {
-        querySnapshot.forEach((doc) => {
-          firestore.collection("inventory").doc(doc.id).update(product);
-        });
-      }
-    });
+    .get();
+
+  if (querySnapshot.empty) {
+    await firestore.collection("inventory").add(product);
+  } else {
+    for (const doc of querySnapshot.docs) {
+      await firestore.collection("inventory").doc(doc.id).update(product);
+    }
+  }
 }
