@@ -116,6 +116,22 @@ mcpServer.registerTool(
 );
 
 mcpServer.registerTool(
+  "seed_database",
+  {
+    title: "Seed database",
+    description: "Seed the inventory database with products.",
+    inputSchema: {},
+  },
+  async () => {
+    if (!dbRunning) {
+      return { content: [{ type: "text", text: "Inventory database is not running." }], isError: true };
+    }
+    initFirestoreCollection();
+    return { content: [{ type: "text", text: "Database seeded successfully." }] };
+  }
+);
+
+mcpServer.registerTool(
   "get_root",
   {
     title: "Get root",
@@ -232,6 +248,15 @@ app.get("/products/:id", async (req: Request, res: Response) => {
   res.send(p);
 });
 
+app.get("/seed", async (req: Request, res: Response) => {
+  if (!dbRunning) {
+    res.status(500).send("Inventory database is not running.");
+    return;
+  }
+  initFirestoreCollection();
+  res.send("Database seeded successfully.");
+});
+
 // ------------------- ------------------- ------------------- ------------------- -------------------
 // START EXPRESS SERVER
 // ------------------- ------------------- ------------------- ------------------- -------------------
@@ -248,9 +273,6 @@ app.get("/products/:id", async (req: Request, res: Response) => {
       dbRunning = false;
     }
 
-  if (dbRunning){
-    initFirestoreCollection();
-  }
   var server;
   if (process.env.NODE_ENV !== "test") {
     server = app.listen(port, () => {
