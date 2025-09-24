@@ -1,0 +1,26 @@
+steps:
+  # Build the application image using Kaniko for better caching
+  - name: "gcr.io/kaniko-project/executor:latest"
+    args:
+      - "--dockerfile=Dockerfile"
+      - "--context=dir://."
+      - "--destination=gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest"
+      - "--cache=true"
+      - "--cache-ttl=24h"
+
+  # Deploy to Cloud Run
+  - name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        gcloud run deploy ${_SERVICE_NAME} \
+        --image gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest \
+        --region us-central1 --platform managed \
+        --allow-unauthenticated \
+        --set-env-vars PROJECT_ID=comglitn
+
+timeout: 1200s
+
+substitutions:
+  _SERVICE_NAME: mcp-rust

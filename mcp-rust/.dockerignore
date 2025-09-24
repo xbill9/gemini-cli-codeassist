@@ -1,0 +1,18 @@
+
+# Ignore git files
+.git
+.gitignore
+
+# Ignore build artifacts
+target/
+**/target/
+
+# Ignore local environment files
+.env
+
+# Ignore IDE files
+.idea/
+.vscode/
+
+# Ignore other artifacts
+*.log
