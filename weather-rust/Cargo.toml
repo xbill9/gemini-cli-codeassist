@@ -1,0 +1,25 @@
+[package]
+name = "weather-rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.98"
+axum = { version = "0.8.4", features = ["macros"] }
+reqwest = { version = "0.12.22", features = ["json"] }
+rmcp = { version = "0.2.0", features = ["auth", "server", "transport-io", "transport-sse-server", "transport-streamable-http-server"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+tokio = { version = "1.46.0", features = ["macros", "rt-multi-thread", "signal"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+
+[dev-dependencies]
+weather-rust = { path = "." }
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true  # Automatically strip symbols from the binary.
+codegen-units = 1
+panic = "abort"
