@@ -2,6 +2,9 @@
 name = "weather-rust"
 version = "0.1.0"
 edition = "2021"
+description = "A simple weather forecaster"
+license = "MIT"
+repository = "https://github.com/example/weather-rust"
 
 [dependencies]
 anyhow = "1.0.98"
@@ -13,9 +16,6 @@ serde_json = "1.0.140"
 tokio = { version = "1.46.0", features = ["macros", "rt-multi-thread", "signal"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-
-[dev-dependencies]
-weather-rust = { path = "." }
 
 [profile.release]
 opt-level = 3

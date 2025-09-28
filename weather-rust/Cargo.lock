@@ -2166,7 +2166,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "weather-rust",
 ]
 
 [[package]]
