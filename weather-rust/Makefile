@@ -12,8 +12,7 @@ all: build
 # Build the project for development
 build:
 	@echo "Building the Rust project..."
-	@cargo build
-
+	@cargo build --target x86_64-unknown-linux-gnu
 # Run the project
 run:
 	@echo "Running the Rust project..."
@@ -27,7 +26,7 @@ clean:
 # Build the project for release
 release:
 	@echo "Building Release..."
-	@cargo build --release
+	@cargo build --release --target x86_64-unknown-linux-gnu
 
 # Run tests
 test:

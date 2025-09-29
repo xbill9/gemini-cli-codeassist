@@ -39,7 +39,7 @@ This project uses a `Makefile` to simplify common development tasks.
     ```bash
     make run
     ```
-    The server will start on port `8000`.
+    The server will start on port `8080`.
 
 ## Development Workflow
 

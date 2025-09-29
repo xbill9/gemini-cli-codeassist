@@ -19,7 +19,7 @@ steps:
         --image gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest \
         --region us-central1 --platform managed \
         --allow-unauthenticated \
-        --set-env-vars PROJECT_ID=comglitn        
+        --set-env-vars PROJECT_ID=$PROJECT_ID        
 
 timeout: 800s
 

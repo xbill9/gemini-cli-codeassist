@@ -16,7 +16,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 const NWS_API_BASE: &str = "https://api.weather.gov";
 const USER_AGENT: &str = "weather-app/2.0";
-const BIND_ADDRESS: &str = "0.0.0.0:8000";
+const BIND_ADDRESS: &str = "0.0.0.0:8080";
 
 #[derive(Debug, serde::Deserialize)]
 struct AlertResponse {
