@@ -66,5 +66,8 @@ echo "Exported GOOGLE_GENAI_USE_VERTEXAI=$GOOGLE_GENAI_USE_VERTEXAI"
 # short SHA for cloud build
 export SHORT_SHA=$(git rev-parse --short HEAD)
 
+# set rust trace level
+export RUST_LOG=trace
+
 echo ""
 echo "--- Environment setup complete ---"

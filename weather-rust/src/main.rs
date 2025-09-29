@@ -1,20 +1,17 @@
 use anyhow::Result;
 use reqwest::Client;
 use rmcp::{
-    handler::server::{router::tool::ToolRouter, tool::Parameters},
-    model::*,
-    schemars,
+    handler::server::{ServerHandler, tool::ToolRouter},
+    model::{ServerCapabilities, ServerInfo},
+    transport::streamable_http_server::{session::local::LocalSessionManager, StreamableHttpService},
     tool,
-    tool_handler,
     tool_router,
-    transport::streamable_http_server::{
-        session::local::LocalSessionManager,
-        StreamableHttpService,
-    },
-    ServerHandler,
+    tool_handler,
+    schemars,
 };
+use rmcp::handler::server::wrapper::Parameters;
 
-use std::future::Future;
+
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 const NWS_API_BASE: &str = "https://api.weather.gov";
@@ -40,8 +37,6 @@ struct FeatureProps {
     pub status: String,
     pub headline: String,
 }
-
-
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 struct PointsResponse {
@@ -150,9 +145,7 @@ impl Weather {
     fn new() -> anyhow::Result<Self> {
         Ok(Self {
             tool_router: Self::tool_router(),
-            client: reqwest::Client::builder()
-                .user_agent(USER_AGENT)
-                .build()?,
+            client: reqwest::Client::builder().user_agent(USER_AGENT).build()?,
         })
     }
 
@@ -238,8 +231,6 @@ impl Weather {
         }
     }
 }
-
-
 
 #[tool_handler]
 impl ServerHandler for Weather {
