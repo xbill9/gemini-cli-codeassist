@@ -1,10 +1,10 @@
 # Makefile for the Rust project
 
 # Variables
-SERVICE_NAME := mcp-rust
+SERVICE_NAME := weather-rust
 REGION := us-central1
 
-.PHONY: all build run clean release test fmt clippy docker-build deploy help
+.PHONY: all build run clean release test fmt clippy check docker-build deploy help
 
 # The default target
 all: build
@@ -44,6 +44,11 @@ clippy:
 	@echo "Linting code..."
 	@cargo clippy -- -D warnings
 
+# Check the code
+check:
+	@echo "Checking the code..."
+	@cargo check
+
 # Build the Docker image
 docker-build:
 	@echo "Building the Docker image..."
@@ -69,5 +74,6 @@ help:
 	@echo "    test         Run tests"
 	@echo "    fmt          Check formatting"
 	@echo "    clippy       Lint the code"
+	@echo "    check        Check the code"
 	@echo "    docker-build Build the Docker image"
 	@echo "    deploy       Submit the build to Google Cloud Build"
