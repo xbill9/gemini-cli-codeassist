@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "weather-server": {
+      "httpUrl": "https://weather-rust-$PROJECT_NUMBER.us-central1.run.app/mcp/"
+    }
+  },
+  "hasSeenIdeIntegrationNudge": true
+}
