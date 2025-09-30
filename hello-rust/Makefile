@@ -12,7 +12,7 @@ all: build
 # Build the project for development
 build:
 	@echo "Building the Rust project..."
-	@cargo build --target x86_64-unknown-linux-gnu
+	@cargo build
 # Run the project
 run:
 	@echo "Running the Rust project..."
