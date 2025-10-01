@@ -1,0 +1,30 @@
+[package]
+name = "log-rust"
+version = "0.1.0"
+edition = "2024"
+description = "A simple weather forecaster"
+license = "MIT"
+repository = "https://github.com/example/weather-rust"
+
+[dependencies]
+anyhow = "1.0.98"
+axum = { version = "0.8.4", features = ["macros"] }
+reqwest = { version = "0.12.22", features = ["json"] }
+rmcp = { version = "0.7.0", features = ["auth", "server", "transport-io", "transport-sse-server", "transport-streamable-http-server"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+tokio = { version = "1.46.0", features = ["macros", "rt-multi-thread", "signal"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "registry"] }
+opentelemetry = { version = "0.30.0", features = ["trace"] }
+opentelemetry_sdk = { version = "0.30.0", features = ["rt-tokio"] }
+opentelemetry-gcloud-trace = "0.21.0"
+tracing-opentelemetry = "0.31.0"
+cloud_profiler_rust = "1.2.3"
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true  # Automatically strip symbols from the binary.
+codegen-units = 1
+panic = "abort"
