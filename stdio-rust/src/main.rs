@@ -1,17 +1,10 @@
 use anyhow::Result;
 use rmcp::{
-    handler::server::{ServerHandler, tool::ToolRouter},
+    handler::server::{tool::ToolRouter, wrapper::Parameters, ServerHandler},
     model::{ServerCapabilities, ServerInfo},
-    transport::streamable_http_server::{session::local::LocalSessionManager, StreamableHttpService},
-    tool,
-    tool_router,
-    tool_handler,
-    schemars,
+    schemars, tool, tool_handler, tool_router, ServiceExt,
 };
-use rmcp::handler::server::wrapper::Parameters;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-const BIND_ADDRESS: &str = "0.0.0.0:8080";
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 struct GetMsgRequest {
@@ -21,14 +14,14 @@ struct GetMsgRequest {
 
 #[derive(Clone)]
 struct HelloWorld {
-    tool_router: ToolRouter<Self>
+    tool_router: ToolRouter<Self>,
 }
 
 #[tool_router]
 impl HelloWorld {
     fn new() -> Self {
         Self {
-            tool_router: Self::tool_router()
+            tool_router: Self::tool_router(),
         }
     }
 
@@ -37,7 +30,7 @@ impl HelloWorld {
         &self,
         Parameters(GetMsgRequest { message }): Parameters<GetMsgRequest>,
     ) -> String {
-        let msg = format!("Hello World MCP! {}",message);
+        let msg = format!("Hello World MCP! {}", message);
         msg
     }
 }
@@ -53,42 +46,27 @@ impl ServerHandler for HelloWorld {
     }
 }
 
-async fn run() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     // Initialize tracing subscriber for logging
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| "info,min_rust=debug".into()),
         )
-        .with(tracing_subscriber::fmt::layer().pretty())
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_writer(std::io::stderr)
+                .pretty(),
+        )
         .init();
 
-    tracing::info!("MCP Starting server on {}", BIND_ADDRESS);
+    tracing::info!("MCP Starting server on stdio");
 
-    let service = StreamableHttpService::new(
-        || Ok(HelloWorld::new()),
-        LocalSessionManager::default().into(),
-        Default::default(),
-    );
+    let service = HelloWorld::new();
+    let transport = rmcp::transport::stdio();
+    let server = service.serve(transport).await?;
+    server.waiting().await?;
 
-    let router = axum::Router::new().nest_service("/mcp", service);
-    let tcp_listener = tokio::net::TcpListener::bind(BIND_ADDRESS).await?;
-
-    tracing::info!("MCP Server listening on {}", BIND_ADDRESS);
-
-    let _ = axum::serve(tcp_listener, router)
-        .with_graceful_shutdown(async {
-            if let Err(e) = tokio::signal::ctrl_c().await {
-                tracing::error!("Failed to listen for ctrl-c: {}", e)
-            }
-            tracing::info!("Shutting down...");
-        })
-        .await;
     Ok(())
 }
-
-#[tokio::main]
-async fn main() -> Result<()> {
-    run().await
-}
-
