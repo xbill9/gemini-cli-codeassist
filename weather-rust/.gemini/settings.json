@@ -1,7 +1,10 @@
- {
-    "mcpServers": {
-    "weather": {
-      "httpUrl": "http://127.0.0.1:8080/mcp"
+{
+  "ide": {
+    "hasSeenNudge": true
+  },
+  "mcpServers": {
+    "weather-server": {
+      "httpUrl": "https://weather-rust-$PROJECT_NUMBER.us-central1.run.app/mcp/"
     }
   }
-}      
+}
