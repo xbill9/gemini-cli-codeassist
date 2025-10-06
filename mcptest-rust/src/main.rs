@@ -1,38 +1,43 @@
 use anyhow::Result;
 use rmcp::{
-    handler::server::{tool::ToolRouter, ServerHandler},
+    ServiceExt,
+    handler::server::{ServerHandler, tool::ToolRouter},
     model::{ServerCapabilities, ServerInfo},
-    tool, tool_handler, tool_router, ServiceExt,
+    tool, tool_handler, tool_router,
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct HelloWorld {
     tool_router: ToolRouter<Self>,
 }
 
 #[tool_router]
 impl HelloWorld {
+    pub fn new() -> Self {
+        Self {
+            tool_router: Self::tool_router(),
+        }
+    }
+
     #[tool(description = "Hello World via Model Context Protocol")]
-    pub async fn hellomcp(
-        &self,
-    ) -> String {
+    pub async fn hellomcp(&self) -> String {
         "Hello World MCP!".to_string()
     }
 
     #[tool(description = "Hello Rust via Model Context Protocol")]
-    pub async fn rustmcp(
-        &self,
-    ) -> String {
+    pub async fn rustmcp(&self) -> String {
         "Hello World Rust MCP!".to_string()
     }
-}
+    #[tool(description = "Just prints Z via Model Context Protocol")]
+    pub async fn z(&self) -> String {
+        "Z".to_string()
+    }
 
-impl Default for HelloWorld {
-    fn default() -> Self {
-        Self {
-            tool_router: Self::tool_router(),
-        }
+    #[tool(description = "prints version via Model Context Protocol")]
+    pub async fn version(&self) -> String {
+        const VERSION: &str = env!("CARGO_PKG_VERSION");
+        format!("MyProgram v{}", VERSION)
     }
 }
 
@@ -64,11 +69,10 @@ async fn main() -> Result<()> {
 
     tracing::info!("MCP Starting server on stdio");
 
-    let service = HelloWorld::default();
+    let service = HelloWorld::new();
     let transport = rmcp::transport::stdio();
     let server = service.serve(transport).await?;
     server.waiting().await?;
 
     Ok(())
 }
-
