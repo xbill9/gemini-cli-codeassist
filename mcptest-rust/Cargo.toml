@@ -1,0 +1,25 @@
+[package]
+name = "mcptest-rust"
+version = "0.1.0"
+edition = "2024"
+description = "Hello World!"
+license = "MIT"
+repository = "https://github.com/example/test-rust"
+
+[dependencies]
+anyhow = "1.0.98"
+rmcp = { version = "0.8.0", features = ["auth", "server", "transport-io", "transport-sse-server", "transport-streamable-http-server"] }
+rmcp-macros = "0.8.0"
+tokio = { version = "1.46.0", features = ["macros", "rt-multi-thread", "signal"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true  # Automatically strip symbols from the binary.
+codegen-units = 1
+panic = "abort"
