@@ -33,14 +33,16 @@ struct GetMsgRequest {
 
 #[derive(Clone,Debug)]
 struct Inventory  {
-    tool_router: ToolRouter<Self>
+    tool_router: ToolRouter<Self>,
+    db: Arc<FirestoreDb>,
 }
 
 #[tool_router]
 impl Inventory {
-    fn new() -> Self {
+    fn new(db: Arc<FirestoreDb>) -> Self {
         Self {
-            tool_router: Self::tool_router()
+            tool_router: Self::tool_router(),
+            db,
         }
     }
 
@@ -56,6 +58,90 @@ impl Inventory {
     ) -> String {
         let msg = format!("Inventory MCP! {}",message);
         msg
+    }
+
+    #[tool(description = "Seeds the database with initial product data.")]
+    async fn seed(&self) -> Result<String, String> {
+        let old_products_to_add: Vec<Product> = generate_products(
+            &[
+                "Apples",
+                "Bananas",
+                "Milk",
+                "Whole Wheat Bread",
+                "Eggs",
+                "Cheddar Cheese",
+                "Whole Chicken",
+                "Rice",
+                "Black Beans",
+                "Bottled Water",
+                "Apple Juice",
+                "Cola",
+                "Coffee Beans",
+                "Green Tea",
+                "Watermelon",
+                "Broccoli",
+                "Jasmine Rice",
+                "Yogurt",
+                "Beef",
+                "Shrimp",
+                "Walnuts",
+                "Sunflower Seeds",
+                "Fresh Basil",
+                "Cinnamon",
+            ],
+            1,
+            501,
+            90,
+            365,
+        );
+
+        for product in old_products_to_add {
+            if let Err(e) = add_or_update_firestore(&self.db, &product).await {
+                eprintln!("Error adding/updating product: {:?}", e);
+                return Err(format!("Failed to add/update product: {:?}", e));
+            }
+        }
+
+        let recent_products_to_add: Vec<Product> = generate_products(
+            &[
+                "Parmesan Crisps",
+                "Pineapple Kombucha",
+                "Maple Almond Butter",
+                "Mint Chocolate Cookies",
+                "White Chocolate Caramel Corn",
+                "Acai Smoothie Packs",
+                "Smores Cereal",
+                "Peanut Butter and Jelly Cups",
+            ],
+            1,
+            101,
+            0,
+            6,
+        );
+
+        for product in recent_products_to_add {
+            if let Err(e) = add_or_update_firestore(&self.db, &product).await {
+                eprintln!("Error adding/updating product: {:?}", e);
+                return Err(format!("Failed to add/update product: {:?}", e));
+            }
+        }
+
+        let oos_products_to_add: Vec<Product> = generate_products(
+            &["Wasabi Party Mix", "Jalapeno Seasoning"],
+            0,
+            1,
+            0,
+            6,
+        );
+
+        for product in oos_products_to_add {
+            if let Err(e) = add_or_update_firestore(&self.db, &product).await {
+                eprintln!("Error adding/updating product: {:?}", e);
+                return Err(format!("Failed to add/update product: {:?}", e));
+            }
+        }
+
+        Ok("Database seeded successfully.".to_string())
     }
 }
 
@@ -129,134 +215,43 @@ async fn add_or_update_firestore(
     Ok(())
 }
 
-#[axum::debug_handler]
-async fn seed(State(db): State<Arc<FirestoreDb>>) -> Result<&'static str, StatusCode> {
-    let old_products_to_add: Vec<Product> = {
-        let mut rng = rand::thread_rng();
-        let old_products = [
-            "Apples",
-            "Bananas",
-            "Milk",
-            "Whole Wheat Bread",
-            "Eggs",
-            "Cheddar Cheese",
-            "Whole Chicken",
-            "Rice",
-            "Black Beans",
-            "Bottled Water",
-            "Apple Juice",
-            "Cola",
-            "Coffee Beans",
-            "Green Tea",
-            "Watermelon",
-            "Broccoli",
-            "Jasmine Rice",
-            "Yogurt",
-            "Beef",
-            "Shrimp",
-            "Walnuts",
-            "Sunflower Seeds",
-            "Fresh Basil",
-            "Cinnamon",
-        ];
-        old_products
-            .iter()
-            .map(|&product_name| Product {
-                id: None,
-                name: product_name.to_string(),
-                price: rng.gen_range(1.0..11.0),
-                quantity: rng.gen_range(1..501),
-                imgfile: format!(
-                    "product-images/{}.png",
-                    product_name.replace(' ', "").to_lowercase()
-                ),
-                timestamp: Utc::now() - Duration::days(rng.gen_range(90..365)),
-                actualdateadded: Utc::now(),
-            })
-            .collect()
-    };
-
-    for product in old_products_to_add {
-        if add_or_update_firestore(&db, &product).await.is_err() {
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    let recent_products_to_add: Vec<Product> = {
-        let mut rng = rand::thread_rng();
-        let recent_products = [
-            "Parmesan Crisps",
-            "Pineapple Kombucha",
-            "Maple Almond Butter",
-            "Mint Chocolate Cookies",
-            "White Chocolate Caramel Corn",
-            "Acai Smoothie Packs",
-            "Smores Cereal",
-            "Peanut Butter and Jelly Cups",
-        ];
-        recent_products
-            .iter()
-            .map(|&product_name| Product {
-                id: None,
-                name: product_name.to_string(),
-                price: rng.gen_range(1.0..11.0),
-                quantity: rng.gen_range(1..101),
-                imgfile: format!(
-                    "product-images/{}.png",
-                    product_name.replace(' ', "").to_lowercase()
-                ),
-                timestamp: Utc::now() - Duration::days(rng.gen_range(0..6)),
-                actualdateadded: Utc::now(),
-            })
-            .collect()
-    };
-
-    for product in recent_products_to_add {
-        if add_or_update_firestore(&db, &product).await.is_err() {
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    let oos_products_to_add: Vec<Product> = {
-        let mut rng = rand::thread_rng();
-        let recent_products_out_of_stock = ["Wasabi Party Mix", "Jalapeno Seasoning"];
-        recent_products_out_of_stock
-            .iter()
-            .map(|&product_name| Product {
-                id: None,
-                name: product_name.to_string(),
-                price: rng.gen_range(1.0..11.0),
-                quantity: 0,
-                imgfile: format!(
-                    "product-images/{}.png",
-                    product_name.replace(' ', "").to_lowercase()
-                ),
-                timestamp: Utc::now() - Duration::days(rng.gen_range(0..6)),
-                actualdateadded: Utc::now(),
-            })
-            .collect()
-    };
-
-    for product in oos_products_to_add {
-        if add_or_update_firestore(&db, &product).await.is_err() {
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    Ok("Database seeded successfully.")
+fn generate_products(
+    product_names: &[&str],
+    min_quantity: i64,
+    max_quantity: i64,
+    min_days_ago: i64,
+    max_days_ago: i64,
+) -> Vec<Product> {
+    let mut rng = rand::thread_rng();
+    product_names
+        .iter()
+        .map(|&product_name| Product {
+            id: None,
+            name: product_name.to_string(),
+            price: rng.gen_range(1.0..11.0),
+            quantity: rng.gen_range(min_quantity..max_quantity),
+            imgfile: format!(
+                "product-images/{}.png",
+                product_name.replace(' ', "").to_lowercase()
+            ),
+            timestamp: Utc::now() - Duration::days(rng.gen_range(min_days_ago..max_days_ago)),
+            actualdateadded: Utc::now(),
+        })
+        .collect()
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn main() -> anyhow::Result<()> {
     let _ =
         rustls::crypto::CryptoProvider::install_default(rustls::crypto::ring::default_provider());
     dotenv::dotenv().ok();
 
     let gcp_project_id = std::env::var("PROJECT_ID").expect("PROJECT_ID must be set");
     let db = Arc::new(FirestoreDb::new(&gcp_project_id).await?);
+    let db_for_service = db.clone(); // Clone db for the service closure
 
     let service = StreamableHttpService::new(
-        || Ok(Inventory::new()),
+        move || Ok(Inventory::new(db_for_service.clone())),
         LocalSessionManager::default().into(),
         Default::default(),
     );
@@ -266,9 +261,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .route("/health", get(health))
         .route("/products", get(get_products))
         .route("/products/{id}", get(get_product_by_id))
-        .route("/seed", get(seed))
         .nest_service("/mcp", service)
-        .with_state(db);
+        .with_state(db.clone());
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await?;
@@ -323,6 +317,3 @@ async fn get_product_by_id(
         Err(StatusCode::NOT_FOUND)
     }
 }
-
-
-
