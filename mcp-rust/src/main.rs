@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
 use anyhow::Result;
+use serde_json;
 use rmcp::{
     handler::server::{ServerHandler, tool::ToolRouter},
     model::{ServerCapabilities, ServerInfo},
@@ -46,9 +47,14 @@ impl Inventory {
         }
     }
 
+    #[tool(description = "Inventory API via Model Context Protocol")]
+    async fn root(&self) -> Result<String, String> {
+        Ok("🍎 Hello! This is the Cymbal Superstore Inventory API.".to_string())
+    }
+
     #[tool(description = "Health Status of Inventory API")]
-    async fn health(&self) -> String {
-        "✅ ok".to_string()
+    async fn health(&self) -> Result<String, String> {
+        Ok("✅ ok".to_string())
     }
 
     #[tool(description = "Inventory API via Model Context Protocol")]
@@ -143,6 +149,22 @@ impl Inventory {
 
         Ok("Database seeded successfully.".to_string())
     }
+
+    #[tool(description = "Retrieves a list of all products.")]
+    async fn get_products(&self) -> Result<String, String> {
+        let products: Vec<Product> = self.db
+            .fluent()
+            .select()
+            .from("inventory")
+            .obj()
+            .query()
+            .await
+            .map_err(|e| format!("Failed to retrieve products: {:?}", e))?;
+
+        let product_list = ProductList { products };
+        serde_json::to_string(&product_list)
+            .map_err(|e| format!("Failed to serialize product list: {:?}", e))
+    }
 }
 
 #[tool_handler]
@@ -157,7 +179,7 @@ impl ServerHandler for Inventory {
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 struct Product {
     #[serde(skip_serializing_if = "Option::is_none")]
     id: Option<String>,
@@ -172,6 +194,11 @@ struct Product {
 #[derive(Debug, Deserialize)]
 struct DocName {
     name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+struct ProductList {
+    products: Vec<Product>,
 }
 
 use chrono::Duration;
@@ -257,8 +284,6 @@ async fn main() -> anyhow::Result<()> {
     );
 
     let app = Router::new()
-        .route("/", get(root))
-        .route("/health", get(health))
         .route("/products", get(get_products))
         .route("/products/{id}", get(get_product_by_id))
         .nest_service("/mcp", service)
@@ -275,13 +300,6 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn root() -> &'static str {
-    "🍎 Hello! This is the Cymbal Superstore Inventory API."
-}
-
-async fn health() -> &'static str {
-    "✅ ok"
-}
 
 async fn get_products(
     State(db): State<Arc<FirestoreDb>>,
