@@ -21,9 +21,9 @@ use rmcp::{
     schemars,
 };
 use rmcp::handler::server::wrapper::Parameters;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-const BIND_ADDRESS: &str = "0.0.0.0:8080";
+
+
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 struct GetMsgRequest {
@@ -31,34 +31,39 @@ struct GetMsgRequest {
     pub message: String,
 }
 
-#[derive(Clone)]
-struct HelloWorld {
+#[derive(Clone,Debug)]
+struct Inventory  {
     tool_router: ToolRouter<Self>
 }
 
 #[tool_router]
-impl HelloWorld {
+impl Inventory {
     fn new() -> Self {
         Self {
             tool_router: Self::tool_router()
         }
     }
 
-    #[tool(description = "Hello World via Model Context Protocol")]
-    async fn greeting(
+    #[tool(description = "Health Status of Inventory API")]
+    async fn health(&self) -> String {
+        "✅ ok".to_string()
+    }
+
+    #[tool(description = "Inventory API via Model Context Protocol")]
+    async fn echo(
         &self,
         Parameters(GetMsgRequest { message }): Parameters<GetMsgRequest>,
     ) -> String {
-        let msg = format!("Hello World MCP! {}",message);
+        let msg = format!("Inventory MCP! {}",message);
         msg
     }
 }
 
 #[tool_handler]
-impl ServerHandler for HelloWorld {
+impl ServerHandler for Inventory {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
-            instructions: Some("A simple Hello World MCP".into()),
+            instructions: Some("Inventory Management API via MCP".into()),
             capabilities: ServerCapabilities::builder().enable_tools().build(),
             ..Default::default()
         }
@@ -250,12 +255,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let gcp_project_id = std::env::var("PROJECT_ID").expect("PROJECT_ID must be set");
     let db = Arc::new(FirestoreDb::new(&gcp_project_id).await?);
 
+    let service = StreamableHttpService::new(
+        || Ok(Inventory::new()),
+        LocalSessionManager::default().into(),
+        Default::default(),
+    );
+
     let app = Router::new()
         .route("/", get(root))
         .route("/health", get(health))
         .route("/products", get(get_products))
         .route("/products/{id}", get(get_product_by_id))
         .route("/seed", get(seed))
+        .nest_service("/mcp", service)
         .with_state(db);
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
@@ -313,37 +325,4 @@ async fn get_product_by_id(
 }
 
 
-async fn xxrun() -> anyhow::Result<()> {
-    // Initialize tracing subscriber for logging
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info,min_rust=debug".into()),
-        )
-        .with(tracing_subscriber::fmt::layer().pretty())
-        .init();
-
-    tracing::info!("MCP Starting server on {}", BIND_ADDRESS);
-
-    let service = StreamableHttpService::new(
-        || Ok(HelloWorld::new()),
-        LocalSessionManager::default().into(),
-        Default::default(),
-    );
-
-    let router = axum::Router::new().nest_service("/mcp", service);
-    let tcp_listener = tokio::net::TcpListener::bind(BIND_ADDRESS).await?;
-
-    tracing::info!("MCP Server listening on {}", BIND_ADDRESS);
-
-    let _ = axum::serve(tcp_listener, router)
-        .with_graceful_shutdown(async {
-            if let Err(e) = tokio::signal::ctrl_c().await {
-                tracing::error!("Failed to listen for ctrl-c: {}", e)
-            }
-            tracing::info!("Shutting down...");
-        })
-        .await;
-    Ok(())
-}
 
