@@ -32,6 +32,12 @@ struct GetMsgRequest {
     pub message: String,
 }
 
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct GetProductByIdRequest {
+    #[schemars(description = "The ID of the product to retrieve")]
+    pub id: String,
+}
+
 #[derive(Clone,Debug)]
 struct Inventory  {
     tool_router: ToolRouter<Self>,
@@ -164,6 +170,28 @@ impl Inventory {
         let product_list = ProductList { products };
         serde_json::to_string(&product_list)
             .map_err(|e| format!("Failed to serialize product list: {:?}", e))
+    }
+
+    #[tool(description = "Retrieves a product by its ID.")]
+    async fn get_product_by_id(
+        &self,
+        Parameters(GetProductByIdRequest { id }): Parameters<GetProductByIdRequest>,
+    ) -> Result<String, String> {
+        let product: Option<Product> = self.db
+            .fluent()
+            .select()
+            .by_id_in("inventory")
+            .obj()
+            .one(&id)
+            .await
+            .map_err(|e| format!("Failed to retrieve product: {:?}", e))?;
+
+        if let Some(product) = product {
+            serde_json::to_string(&product)
+                .map_err(|e| format!("Failed to serialize product: {:?}", e))
+        } else {
+            Err(format!("Product with ID {} not found", id))
+        }
     }
 }
 
