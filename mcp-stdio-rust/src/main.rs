@@ -34,12 +34,13 @@ impl MinRust {
     pub async fn hellorust(&self) -> String {
         "Hello World Rust MCP!".to_string()
     }
+
     #[tool(description = "Just prints Z via Model Context Protocol")]
     pub async fn z(&self) -> String {
         "Z".to_string()
     }
 
-    #[tool(description = "prints version via Model Context Protocol")]
+    #[tool(description = "Print version environment variable via Model Context Protocol")]
     pub async fn version(&self) -> String {
         const VERSION: &str = env!("CARGO_PKG_VERSION");
         format!("MyProgram v{}", VERSION)
@@ -61,7 +62,7 @@ impl ServerHandler for MinRust {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let service = MinRust::new();
+    let service = MinRust::default();
     let transport = rmcp::transport::stdio();
     let server = service.serve(transport).await?;
     server.waiting().await?;
