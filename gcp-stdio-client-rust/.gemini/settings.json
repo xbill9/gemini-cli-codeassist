@@ -1,0 +1,11 @@
+ {
+    "mcpServers": {
+      "stdio": {
+        "command": "$HOME/gemini-cli-codeassist/gcp-stdio-client-rust/target/release/gcp-stdio-client-rust",
+        "args": ["--prebuilt","--stdio"],
+        "env": {
+          "RUST_LOG": "trace"
+        }
+      }
+    }
+  }
