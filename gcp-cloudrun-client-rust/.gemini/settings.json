@@ -1,0 +1,12 @@
+{
+  "ide": {
+    "hasSeenNudge": true
+  },
+  "mcpServers": {
+    "cloudrun": {
+      "httpUrl": "https://gcp-cloudrun-client-rust-$PROJECT_NUMBER.us-central1.run.app/mcp/"
+    }
+  }
+}
+
+
