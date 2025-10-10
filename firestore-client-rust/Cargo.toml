@@ -1,6 +1,6 @@
 [package]
 name = "firestore-client-rust"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "Basic Rust local Connection to Firestore"
 license = "MIT OR Apache-2.0"
