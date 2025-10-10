@@ -1,13 +1,12 @@
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    Json,
-};
+use anyhow::{Context, Result};
 use chrono::{DateTime, Duration, Utc};
+use clap::Parser;
 use firestore::FirestoreDb;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use tracing::info;
+use tracing_subscriber::{fmt, prelude::*, filter::EnvFilter};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -63,10 +62,9 @@ async fn add_or_update_firestore(
     Ok(())
 }
 
-#[axum::debug_handler]
-async fn seed(State(db): State<Arc<FirestoreDb>>) -> Result<&'static str, StatusCode> {
+async fn seed(db: &Arc<FirestoreDb>) -> anyhow::Result<&'static str> {
     let old_products_to_add: Vec<Product> = {
-        let mut rng = rand::rng();
+        let mut rng = rand::thread_rng();
         let old_products = [
             "Apples",
             "Bananas",
@@ -98,26 +96,24 @@ async fn seed(State(db): State<Arc<FirestoreDb>>) -> Result<&'static str, Status
             .map(|&product_name| Product {
                 id: None,
                 name: product_name.to_string(),
-                price: rng.random_range(1.0..11.0),
-                quantity: rng.random_range(1..501),
+                price: rng.gen_range(1.0..11.0),
+                quantity: rng.gen_range(1..501),
                 imgfile: format!(
                     "product-images/{}.png",
                     product_name.replace(' ', "").to_lowercase()
                 ),
-                timestamp: Utc::now() - Duration::days(rng.random_range(90..365)),
+                timestamp: Utc::now() - Duration::days(rng.gen_range(90..365)),
                 actualdateadded: Utc::now(),
             })
             .collect()
     };
 
     for product in old_products_to_add {
-        if add_or_update_firestore(&db, &product).await.is_err() {
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
-        }
+        add_or_update_firestore(db, &product).await?;
     }
 
     let recent_products_to_add: Vec<Product> = {
-        let mut rng = rand::rng();
+        let mut rng = rand::thread_rng();
         let recent_products = [
             "Parmesan Crisps",
             "Pineapple Kombucha",
@@ -133,135 +129,115 @@ async fn seed(State(db): State<Arc<FirestoreDb>>) -> Result<&'static str, Status
             .map(|&product_name| Product {
                 id: None,
                 name: product_name.to_string(),
-                price: rng.random_range(1.0..11.0),
-                quantity: rng.random_range(1..101),
+                price: rng.gen_range(1.0..11.0),
+                quantity: rng.gen_range(1..101),
                 imgfile: format!(
                     "product-images/{}.png",
                     product_name.replace(' ', "").to_lowercase()
                 ),
-                timestamp: Utc::now() - Duration::days(rng.random_range(0..6)),
+                timestamp: Utc::now() - Duration::days(rng.gen_range(0..6)),
                 actualdateadded: Utc::now(),
             })
             .collect()
     };
 
     for product in recent_products_to_add {
-        if add_or_update_firestore(&db, &product).await.is_err() {
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
-        }
+        add_or_update_firestore(db, &product).await?;
     }
 
     let oos_products_to_add: Vec<Product> = {
-        let mut rng = rand::rng();
+        let mut rng = rand::thread_rng();
         let recent_products_out_of_stock = ["Wasabi Party Mix", "Jalapeno Seasoning"];
         recent_products_out_of_stock
             .iter()
             .map(|&product_name| Product {
                 id: None,
                 name: product_name.to_string(),
-                price: rng.random_range(1.0..11.0),
+                price: rng.gen_range(1.0..11.0),
                 quantity: 0,
                 imgfile: format!(
                     "product-images/{}.png",
                     product_name.replace(' ', "").to_lowercase()
                 ),
-                timestamp: Utc::now() - Duration::days(rng.random_range(0..6)),
+                timestamp: Utc::now() - Duration::days(rng.gen_range(0..6)),
                 actualdateadded: Utc::now(),
             })
             .collect()
     };
 
     for product in oos_products_to_add {
-        if add_or_update_firestore(&db, &product).await.is_err() {
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
-        }
+        add_or_update_firestore(db, &product).await?;
     }
 
     Ok("Database seeded successfully.")
 }
 
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Parser, Debug)]
+enum Commands {
+    /// Seeds the Firestore database with initial product data
+    Seed,
+    /// Lists all products in the Firestore database
+    List,
+    /// Gets a product by its ID from the Firestore database
+    Get {
+        /// The ID of the product to retrieve
+        id: String,
+    },
+}
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn main() -> anyhow::Result<()> {
+    dotenv::dotenv().ok();
+
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(EnvFilter::from_default_env())
+        .init();
+
     let _ =
         rustls::crypto::CryptoProvider::install_default(rustls::crypto::ring::default_provider());
-    let gcp_project_id = std::env::var("PROJECT_ID").expect("PROJECT_ID must be set");
+
+    let cli = Cli::parse();
+
+    let gcp_project_id = std::env::var("PROJECT_ID")
+        .context("PROJECT_ID environment variable not set")?;
     let db = Arc::new(FirestoreDb::new(&gcp_project_id).await?);
 
-    println!("Seeding database...");
-    if let Err(e) = seed(State(db.clone())).await {
-        let err_msg = format!("Error seeding database: {}", e);
-        eprintln!("{}", err_msg);
-        return Err(err_msg.into());
-    }
-
-    println!(
-        "
-Calling health check..."
-    );
-    let health_status = health().await;
-    println!("Health status: {}", health_status);
-
-    println!(
-        "
-Calling root..."
-    );
-    let root_status = root().await;
-    println!("Root status: {}", root_status);
-
-    println!(
-        "
-Listing all products..."
-    );
-    let products = match get_products(State(db.clone())).await {
-        Ok(Json(products)) => {
-            println!("Found {} products.", products.len());
-            products
+    match cli.command {
+        Commands::Seed => {
+            info!("Seeding database...");
+            seed(&db).await?;
+            info!("Database seeded successfully.");
         }
-        Err(e) => {
-            let err_msg = format!("Error listing products: {}", e);
-            eprintln!("{}", err_msg);
-            return Err(err_msg.into());
-        }
-    };
-
-    println!(
-        "
-Finding product 'Coffee Beans'..."
-    );
-    if let Some(coffee_product) = products.iter().find(|p| p.name == "Coffee Beans") {
-        if let Some(id) = &coffee_product.id {
-            println!("Found 'Coffee Beans' with id: {}", id);
-            println!("Fetching product by id...");
-            match get_product_by_id(State(db.clone()), Path(id.clone())).await {
-                Ok(Json(product)) => println!("Found product: {:?}", product),
-                Err(StatusCode::NOT_FOUND) => println!("Product with id {} not found.", id),
-                Err(e) => {
-                    let err_msg = format!("Error getting product by id: {}", e);
-                    eprintln!("{}", err_msg);
-                    return Err(err_msg.into());
-                }
+        Commands::List => {
+            info!("Listing all products...");
+            let products = get_products(&db).await?;
+            for product in products {
+                info!("{:?}", product);
             }
-        } else {
-            println!("'Coffee Beans' product found, but it has no ID.");
         }
-    } else {
-        println!("Product 'Coffee Beans' not found in the list of products.");
+        Commands::Get { id } => {
+            info!("Fetching product by id: {}", id);
+            match get_product_by_id(&db, id.clone()).await? {
+                Some(product) => info!("Found product: {:?}", product),
+                None => info!("Product with id {} not found.", id),
+            }
+        }
     }
 
     Ok(())
 }
 
-async fn root() -> &'static str {
-    "🍎 Hello! This is the Cymbal Superstore Inventory API."
-}
-
-async fn health() -> &'static str {
-    "✅ ok"
-}
-
 async fn get_products(
-    State(db): State<Arc<FirestoreDb>>,
-) -> Result<Json<Vec<Product>>, StatusCode> {
+    db: &Arc<FirestoreDb>,
+) -> anyhow::Result<Vec<Product>> {
     let products: Vec<Product> = db
         .fluent()
         .select()
@@ -269,15 +245,15 @@ async fn get_products(
         .obj()
         .query()
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .context("Failed to query products from Firestore")?;
 
-    Ok(Json(products))
+    Ok(products)
 }
 
 async fn get_product_by_id(
-    State(db): State<Arc<FirestoreDb>>,
-    Path(id): Path<String>,
-) -> Result<Json<Product>, StatusCode> {
+    db: &Arc<FirestoreDb>,
+    id: String,
+) -> anyhow::Result<Option<Product>> {
     let product: Option<Product> = db
         .fluent()
         .select()
@@ -285,11 +261,7 @@ async fn get_product_by_id(
         .obj()
         .one(&id)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .context("Failed to query product by ID from Firestore")?;
 
-    if let Some(product) = product {
-        Ok(Json(product))
-    } else {
-        Err(StatusCode::NOT_FOUND)
-    }
+    Ok(product)
 }
