@@ -18,6 +18,8 @@ firestore = "0.47.0"
 uuid = { version = "1.18.1", features = ["v4", "serde"] }
 rand = "0.8.5"
 chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [profile.release]
 opt-level = 3

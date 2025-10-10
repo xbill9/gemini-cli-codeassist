@@ -1,22 +1,23 @@
 
-use firestore::FirestoreDb;
-use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc, Duration};
-use std::sync::Arc;
-use uuid::Uuid;
 use anyhow::Result;
-
+use chrono::{DateTime, Duration, Utc};
+use firestore::FirestoreDb;
 use rand::Rng;
 use rmcp::{
-    handler::server::{ServerHandler, tool::ToolRouter},
+    handler::server::{tool::ToolRouter, ServerHandler},
     model::{ServerCapabilities, ServerInfo},
-    tool,
-    tool_router,
-    tool_handler,
     schemars,
+    tool,
+    tool_handler,
+    tool_router,
     ServiceExt,
 };
 use rmcp::handler::server::wrapper::Parameters;
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use tracing::{error, info};
+use tracing_subscriber::EnvFilter;
+use uuid::Uuid;
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 struct GetMsgRequest {
@@ -131,7 +132,7 @@ impl Inventory {
 
         for product in old_products_to_add {
             if let Err(e) = add_or_update_firestore(&self.db, &product).await {
-                eprintln!("Error adding/updating product: {:?}", e);
+                error!("Error adding/updating product: {:?}", e);
                 return Err(format!("Failed to add/update product: {:?}", e));
             }
         }
@@ -155,7 +156,7 @@ impl Inventory {
 
         for product in recent_products_to_add {
             if let Err(e) = add_or_update_firestore(&self.db, &product).await {
-                eprintln!("Error adding/updating product: {:?}", e);
+                error!("Error adding/updating product: {:?}", e);
                 return Err(format!("Failed to add/update product: {:?}", e));
             }
         }
@@ -170,7 +171,7 @@ impl Inventory {
 
         for product in oos_products_to_add {
             if let Err(e) = add_or_update_firestore(&self.db, &product).await {
-                eprintln!("Error adding/updating product: {:?}", e);
+                error!("Error adding/updating product: {:?}", e);
                 return Err(format!("Failed to add/update product: {:?}", e));
             }
         }
@@ -320,8 +321,11 @@ fn generate_products(
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
 
-    println!( "🍏 Cymbal Superstore: Inventory API Starting"); 
+    info!("🍏 Cymbal Superstore: Inventory API Starting");
     let gcp_project_id = std::env::var("PROJECT_ID").expect("PROJECT_ID must be set");
     let db = Arc::new(FirestoreDb::new(&gcp_project_id).await?);
 
@@ -330,7 +334,7 @@ async fn main() -> anyhow::Result<()> {
     let server = service.serve(transport).await?;
     server.waiting().await?;
 
-    println!( "🍏 Cymbal Superstore: Inventory API completed"); 
+    info!("🍏 Cymbal Superstore: Inventory API completed");
     Ok(())
 }
 
