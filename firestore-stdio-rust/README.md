@@ -1,4 +1,4 @@
-# mcp-stdio-rust
+# firebase-stdio-rust
 
 A simple, containerized Rust server implementing the Model Context Protocol (MCP), designed for deployment on Google Cloud Run.
 
