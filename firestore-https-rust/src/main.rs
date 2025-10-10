@@ -1,31 +1,27 @@
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    response::Json,
-    routing::get,
-    Router,
-};
-use chrono::{DateTime, Utc};
+use anyhow::{Context, Result};
+use axum::Router;
+use chrono::{DateTime, Duration, Utc};
 use firestore::FirestoreDb;
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use uuid::Uuid;
-use anyhow::Result;
-use serde_json;
+use rand::Rng;
+use rmcp::handler::server::wrapper::Parameters;
 use rmcp::{
     handler::server::{ServerHandler, tool::ToolRouter},
     model::{ServerCapabilities, ServerInfo},
-    transport::streamable_http_server::{session::local::LocalSessionManager, StreamableHttpService},
-    tool,
-    tool_router,
-    tool_handler,
     schemars,
+    tool,
+    tool_handler,
+    tool_router,
+    transport::streamable_http_server::{
+        session::local::LocalSessionManager, StreamableHttpService,
+    },
 };
-use rmcp::handler::server::wrapper::Parameters;
-use chrono::Duration;
-use rand::Rng;
-use tracing::{info, error};
+use serde::{Deserialize, Serialize};
+use serde_json;
+use std::sync::Arc;
+use tracing::{error, info};
+use uuid::Uuid;
 
+const INVENTORY_COLLECTION: &str = "inventory";
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 struct Product {
@@ -49,8 +45,6 @@ struct ProductList {
     products: Vec<Product>,
 }
 
-
-
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 struct GetMsgRequest {
     #[schemars(description = "hello world")]
@@ -63,8 +57,8 @@ struct GetProductByIdRequest {
     pub id: String,
 }
 
-#[derive(Clone,Debug)]
-struct Inventory  {
+#[derive(Clone, Debug)]
+struct Inventory {
     tool_router: ToolRouter<Self>,
     db: Arc<FirestoreDb>,
 }
@@ -89,92 +83,78 @@ impl Inventory {
     }
 
     #[tool(description = "Inventory API via Model Context Protocol")]
-    async fn echo(
-        &self,
-        Parameters(GetMsgRequest { message }): Parameters<GetMsgRequest>,
-    ) -> String {
-        let msg = format!("Inventory MCP! {}",message);
+    async fn echo(&self, Parameters(GetMsgRequest { message }): Parameters<GetMsgRequest>) -> String {
+        let msg = format!("Inventory MCP! {}", message);
         msg
     }
 
     #[tool(description = "Seeds the database with initial product data.")]
     async fn seed(&self) -> Result<String, String> {
-        let old_products_to_add: Vec<Product> = generate_products(
-            &[
-                "Apples",
-                "Bananas",
-                "Milk",
-                "Whole Wheat Bread",
-                "Eggs",
-                "Cheddar Cheese",
-                "Whole Chicken",
-                "Rice",
-                "Black Beans",
-                "Bottled Water",
-                "Apple Juice",
-                "Cola",
-                "Coffee Beans",
-                "Green Tea",
-                "Watermelon",
-                "Broccoli",
-                "Jasmine Rice",
-                "Yogurt",
-                "Beef",
-                "Shrimp",
-                "Walnuts",
-                "Sunflower Seeds",
-                "Fresh Basil",
-                "Cinnamon",
-            ],
-            1,
-            501,
-            90,
-            365,
-        );
+        let product_batches = vec![
+            (
+                vec![
+                    "Apples",
+                    "Bananas",
+                    "Milk",
+                    "Whole Wheat Bread",
+                    "Eggs",
+                    "Cheddar Cheese",
+                    "Whole Chicken",
+                    "Rice",
+                    "Black Beans",
+                    "Bottled Water",
+                    "Apple Juice",
+                    "Cola",
+                    "Coffee Beans",
+                    "Green Tea",
+                    "Watermelon",
+                    "Broccoli",
+                    "Jasmine Rice",
+                    "Yogurt",
+                    "Beef",
+                    "Shrimp",
+                    "Walnuts",
+                    "Sunflower Seeds",
+                    "Fresh Basil",
+                    "Cinnamon",
+                ],
+                1,
+                501,
+                90,
+                365,
+            ),
+            (
+                vec![
+                    "Parmesan Crisps",
+                    "Pineapple Kombucha",
+                    "Maple Almond Butter",
+                    "Mint Chocolate Cookies",
+                    "White Chocolate Caramel Corn",
+                    "Acai Smoothie Packs",
+                    "Smores Cereal",
+                    "Peanut Butter and Jelly Cups",
+                ],
+                1,
+                101,
+                0,
+                6,
+            ),
+            (
+                vec!["Wasabi Party Mix", "Jalapeno Seasoning"],
+                0,
+                1,
+                0,
+                6,
+            ),
+        ];
 
-        for product in old_products_to_add {
-            if let Err(e) = add_or_update_firestore(&self.db, &product).await {
-                error!("Error adding/updating product: {:?}", e);
-                return Err(format!("Failed to add/update product: {:?}", e));
-            }
-        }
-
-        let recent_products_to_add: Vec<Product> = generate_products(
-            &[
-                "Parmesan Crisps",
-                "Pineapple Kombucha",
-                "Maple Almond Butter",
-                "Mint Chocolate Cookies",
-                "White Chocolate Caramel Corn",
-                "Acai Smoothie Packs",
-                "Smores Cereal",
-                "Peanut Butter and Jelly Cups",
-            ],
-            1,
-            101,
-            0,
-            6,
-        );
-
-        for product in recent_products_to_add {
-            if let Err(e) = add_or_update_firestore(&self.db, &product).await {
-                error!("Error adding/updating product: {:?}", e);
-                return Err(format!("Failed to add/update product: {:?}", e));
-            }
-        }
-
-        let oos_products_to_add: Vec<Product> = generate_products(
-            &["Wasabi Party Mix", "Jalapeno Seasoning"],
-            0,
-            1,
-            0,
-            6,
-        );
-
-        for product in oos_products_to_add {
-            if let Err(e) = add_or_update_firestore(&self.db, &product).await {
-                error!("Error adding/updating product: {:?}", e);
-                return Err(format!("Failed to add/update product: {:?}", e));
+        for (names, min_q, max_q, min_d, max_d) in product_batches {
+            let products = generate_products(&names, min_q, max_q, min_d, max_d);
+            for product in products {
+                if let Err(e) = add_or_update_firestore(&self.db, &product).await {
+                    error!("Error adding/updating product: {}", e);
+                    return Err(format!("Failed to add/update product: {}", e));
+                }
             }
         }
 
@@ -183,24 +163,24 @@ impl Inventory {
 
     #[tool(description = "Retrieves a list of all products.")]
     async fn get_products(&self) -> Result<String, String> {
-        let products: Vec<Product> = self.db
+        let products: Vec<Product> = self
+            .db
             .fluent()
             .select()
-            .from("inventory")
+            .from(INVENTORY_COLLECTION)
             .obj()
             .query()
             .await
             .map_err(|e| {
-                error!("Failed to retrieve products: {:?}", e);
-                format!("Failed to retrieve products: {:?}", e)
+                error!("Failed to retrieve products: {}", e);
+                e.to_string()
             })?;
 
         let product_list = ProductList { products };
-        serde_json::to_string(&product_list)
-            .map_err(|e| {
-                error!("Failed to serialize product list: {:?}", e);
-                format!("Failed to serialize product list: {:?}", e)
-            })
+        serde_json::to_string(&product_list).map_err(|e| {
+            error!("Failed to serialize product list: {}", e);
+            e.to_string()
+        })
     }
 
     #[tool(description = "Retrieves a product by its ID.")]
@@ -208,27 +188,28 @@ impl Inventory {
         &self,
         Parameters(GetProductByIdRequest { id }): Parameters<GetProductByIdRequest>,
     ) -> Result<String, String> {
-        let product: Option<Product> = self.db
+        let product: Option<Product> = self
+            .db
             .fluent()
             .select()
-            .by_id_in("inventory")
+            .by_id_in(INVENTORY_COLLECTION)
             .obj()
             .one(&id)
             .await
             .map_err(|e| {
-                error!("Failed to retrieve product: {:?}", e);
-                format!("Failed to retrieve product: {:?}", e)
+                error!("Failed to retrieve product: {}", e);
+                e.to_string()
             })?;
 
         if let Some(product) = product {
-            serde_json::to_string(&product)
-                .map_err(|e| {
-                    error!("Failed to serialize product: {:?}", e);
-                    format!("Failed to serialize product: {:?}", e)
-                })
+            serde_json::to_string(&product).map_err(|e| {
+                error!("Failed to serialize product: {}", e);
+                e.to_string()
+            })
         } else {
-            error!("Product with ID {} not found", id);
-            Err(format!("Product with ID {} not found", id))
+            let msg = format!("Product with ID {} not found", id);
+            error!("{}", msg);
+            Err(msg)
         }
     }
 }
@@ -244,44 +225,44 @@ impl ServerHandler for Inventory {
     }
 }
 
-
 // helper functions
-async fn add_or_update_firestore(
-    db: &Arc<FirestoreDb>,
-    product: &Product,
-) -> Result<(), firestore::errors::FirestoreError> {
+async fn add_or_update_firestore(db: &Arc<FirestoreDb>, product: &Product) -> Result<()> {
     let existing_docs: Vec<DocName> = db
         .fluent()
         .select()
-        .from("inventory")
+        .from(INVENTORY_COLLECTION)
         .filter(|q| q.field("name").eq(&product.name))
         .limit(1)
         .obj()
         .query()
-        .await?;
+        .await
+        .context("Failed to query for existing product by name")?;
 
     if let Some(doc) = existing_docs.first() {
-        let doc_id = doc.name.split('/').next_back().unwrap_or_default();
-        if !doc_id.is_empty() {
-            info!("Updating product: {}", product.name);
-            db.fluent()
-                .update()
-                .in_col("inventory")
-                .document_id(doc_id)
-                .object(product)
-                .execute::<()>()
-                .await?;
+        if let Some(doc_id) = doc.name.split('/').last() {
+            if !doc_id.is_empty() {
+                info!("Updating product: {}", product.name);
+                db.fluent()
+                    .update()
+                    .in_col(INVENTORY_COLLECTION)
+                    .document_id(doc_id)
+                    .object(product)
+                    .execute::<()>()
+                    .await
+                    .context("Failed to update product in Firestore")?;
+            }
         }
     } else {
         let product_id = Uuid::new_v4().to_string();
         info!("Adding new product: {}", product.name);
         db.fluent()
             .insert()
-            .into("inventory")
+            .into(INVENTORY_COLLECTION)
             .document_id(&product_id)
             .object(product)
             .execute::<()>()
-            .await?;
+            .await
+            .context("Failed to insert new product into Firestore")?;
     }
     Ok(())
 }
@@ -335,8 +316,6 @@ async fn main() -> anyhow::Result<()> {
     );
 
     let app = Router::new()
-        .route("/products", get(get_products))
-        .route("/products/{id}", get(get_product_by_id))
         .nest_service("/mcp", service)
         .with_state(db.clone());
 
@@ -349,50 +328,4 @@ async fn main() -> anyhow::Result<()> {
     axum::serve(listener, app).await?;
 
     Ok(())
-}
-
-// tradiitonal URL routes
-//
-async fn get_products(
-    State(db): State<Arc<FirestoreDb>>,
-) -> Result<Json<Vec<Product>>, StatusCode> {
-    info!("Received request for all products");
-    let products: Vec<Product> = db
-        .fluent()
-        .select()
-        .from("inventory")
-        .obj()
-        .query()
-        .await
-        .map_err(|e| {
-            error!("Failed to retrieve products: {:?}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-    Ok(Json(products))
-}
-
-async fn get_product_by_id(
-    State(db): State<Arc<FirestoreDb>>,
-    Path(id): Path<String>,
-) -> Result<Json<Product>, StatusCode> {
-    info!("Received request for product with ID: {}", id);
-    let product: Option<Product> = db
-        .fluent()
-        .select()
-        .by_id_in("inventory")
-        .obj()
-        .one(&id)
-        .await
-        .map_err(|e| {
-            error!("Failed to retrieve product by ID: {:?}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-    if let Some(product) = product {
-        Ok(Json(product))
-    } else {
-        error!("Product with ID {} not found", id);
-        Err(StatusCode::NOT_FOUND)
-    }
 }
