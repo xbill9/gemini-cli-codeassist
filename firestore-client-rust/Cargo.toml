@@ -1,9 +1,10 @@
 [package]
 name = "firestore-client-rust"
 version = "0.3.0"
-edition = "2021"
-description = "Basic Rust local Connection to Firestore"
+edition = "2024"
+description = "Basic Rust local Connection CLI tool to Firestore"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/xbill9/gemini-cli-codeassist"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
