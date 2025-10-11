@@ -1,14 +1,15 @@
-# hello-rust
+# Google Cloud Logging Rust Client Example
 
-A simple, containerized Rust web server for Hello World test server designed for deployment on Google Cloud Run.
+This project is an example of how to use the Google Cloud Logging SDK in a Rust application.
 
 ## Project Overview
 
-`hello-rust` is a basic "Hello, World!" web server prints Hello World written in Rust, designed to be deployed as a containerized application on Google Cloud Run.
+`logging-client-rust` is a sample application that demonstrates how to send logs to the Google Cloud Logging API from a Rust application. It is designed to be deployed as a containerized application on Google Cloud Run.
 
 ### Key Technologies
 
 *   **Language:** [Rust](https://www.rust-lang.org/)
+*   **Google Cloud SDK:** [google-cloud-logging](https://crates.io/crates/google-cloud-logging)
 *   **Web Framework:** [Hyper](https://hyper.rs/)
 *   **Containerization:** [Docker](https://www.docker.com/)
 *   **Deployment:** [Google Cloud Run](https://cloud.google.com/run)
