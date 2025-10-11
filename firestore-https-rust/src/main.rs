@@ -7,16 +7,12 @@ use rmcp::handler::server::wrapper::Parameters;
 use rmcp::{
     handler::server::{ServerHandler, tool::ToolRouter},
     model::{ServerCapabilities, ServerInfo},
-    schemars,
-    tool,
-    tool_handler,
-    tool_router,
+    schemars, tool, tool_handler, tool_router,
     transport::streamable_http_server::{
-        session::local::LocalSessionManager, StreamableHttpService,
+        StreamableHttpService, session::local::LocalSessionManager,
     },
 };
 use serde::{Deserialize, Serialize};
-use serde_json;
 use std::sync::Arc;
 use tracing::{error, info};
 use uuid::Uuid;
@@ -83,7 +79,10 @@ impl Inventory {
     }
 
     #[tool(description = "Inventory API via Model Context Protocol")]
-    async fn echo(&self, Parameters(GetMsgRequest { message }): Parameters<GetMsgRequest>) -> String {
+    async fn echo(
+        &self,
+        Parameters(GetMsgRequest { message }): Parameters<GetMsgRequest>,
+    ) -> String {
         let msg = format!("Inventory MCP! {}", message);
         msg
     }
@@ -139,13 +138,7 @@ impl Inventory {
                 0,
                 6,
             ),
-            (
-                vec!["Wasabi Party Mix", "Jalapeno Seasoning"],
-                0,
-                1,
-                0,
-                6,
-            ),
+            (vec!["Wasabi Party Mix", "Jalapeno Seasoning"], 0, 1, 0, 6),
         ];
 
         for (names, min_q, max_q, min_d, max_d) in product_batches {
@@ -239,18 +232,18 @@ async fn add_or_update_firestore(db: &Arc<FirestoreDb>, product: &Product) -> Re
         .context("Failed to query for existing product by name")?;
 
     if let Some(doc) = existing_docs.first() {
-        if let Some(doc_id) = doc.name.split('/').last() {
-            if !doc_id.is_empty() {
-                info!("Updating product: {}", product.name);
-                db.fluent()
-                    .update()
-                    .in_col(INVENTORY_COLLECTION)
-                    .document_id(doc_id)
-                    .object(product)
-                    .execute::<()>()
-                    .await
-                    .context("Failed to update product in Firestore")?;
-            }
+        if let Some(doc_id) = doc.name.split('/').next_back()
+            && !doc_id.is_empty()
+        {
+            info!("Updating product: {}", product.name);
+            db.fluent()
+                .update()
+                .in_col(INVENTORY_COLLECTION)
+                .document_id(doc_id)
+                .object(product)
+                .execute::<()>()
+                .await
+                .context("Failed to update product in Firestore")?;
         }
     } else {
         let product_id = Uuid::new_v4().to_string();
