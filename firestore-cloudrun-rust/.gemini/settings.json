@@ -1,0 +1,12 @@
+{
+  "ide": {
+    "hasSeenNudge": true
+  },
+  "mcpServers": {
+    "firestore-cloudrun": {
+      "httpUrl": "https://firestore-cloudrun-rust-$PROJECT_NUMBER.us-central1.run.app/mcp/"
+    }
+  }
+}
+
+

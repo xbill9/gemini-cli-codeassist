@@ -1,0 +1,33 @@
+[package]
+name = "firestore-cloudrun-rust"
+version = "0.1.0"
+edition = "2024"
+description = "Firestore Inventory API cloudrun MCP server"
+license = "MIT OR Apache-2.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.98"
+axum = { version = "0.8.4", features = ["macros"] }
+chrono = { version = "0.4.34", features = ["serde"] }
+dotenv = "0.15.0"
+firestore = "0.47.0"
+futures = "0.3.30"
+rand = "0.8.5"
+reqwest = { version = "0.12.22", features = ["json"] }
+rmcp = { version = "0.8.0", features = ["auth", "server", "macros", "transport-streamable-http-server"] }
+rustls = { version = "0.23.32", features = ["ring"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.140"
+tokio = { version = "1.46.0", features = ["macros", "rt-multi-thread", "signal"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+uuid = { version = "1.7.0", features = ["v4"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true  # Automatically strip symbols from the binary.
+codegen-units = 1
+panic = "abort"
