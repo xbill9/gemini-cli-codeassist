@@ -1,15 +1,15 @@
 [package]
 name = "mcptest-rust"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
-description = "Hello World!"
+description = "Hello World Rust MCP Test program!"
 license = "MIT"
 repository = "https://github.com/example/test-rust"
 
 [dependencies]
 anyhow = "1.0.98"
-rmcp = { version = "0.8.0", features = ["auth", "server", "transport-io", "transport-sse-server", "transport-streamable-http-server"] }
-rmcp-macros = "0.8.0"
+rmcp = { version = "0.8.1", features = ["auth", "server", "transport-io", "transport-sse-server", "transport-streamable-http-server"] }
+rmcp-macros = "0.8.1"
 tokio = { version = "1.46.0", features = ["macros", "rt-multi-thread", "signal"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
