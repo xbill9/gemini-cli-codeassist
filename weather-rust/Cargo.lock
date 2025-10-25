@@ -2091,8 +2091,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "weather-rust"
-version = "0.1.0"
+name = "weather-mcp-rust"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "axum",
