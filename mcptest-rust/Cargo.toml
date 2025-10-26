@@ -1,10 +1,10 @@
 [package]
 name = "mcptest-rust"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 description = "Hello World Rust MCP Test program!"
 license = "MIT"
-repository = "https://github.com/example/test-rust"
+repository = "https://github.com/xbill9/gemini-cli-codeassist"
 
 [dependencies]
 anyhow = "1.0.98"
