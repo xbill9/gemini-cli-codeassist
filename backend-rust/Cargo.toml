@@ -1,9 +1,11 @@
 [package]
 name = "backend-rust"
 version = "0.1.0"
-edition = "2021"
 description = "Cymbal Rust Backend"
 license = "MIT OR Apache-2.0"
+edition = "2024"
+repository = "https://github.com/xbill9/gemini-cli-codeassist"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
