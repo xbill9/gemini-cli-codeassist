@@ -1,6 +1,6 @@
 [package]
 name = "firestore-cloudrun-rust"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Firestore Inventory API cloudrun MCP server"
 license = "MIT OR Apache-2.0"
@@ -16,7 +16,7 @@ firestore = "0.47.0"
 futures = "0.3.30"
 rand = "0.8.5"
 reqwest = { version = "0.12.22", features = ["json"] }
-rmcp = { version = "0.8.0", features = ["auth", "server", "macros", "transport-streamable-http-server"] }
+rmcp = { version = "0.8.3", features = ["auth", "server", "macros", "transport-streamable-http-server"] }
 rustls = { version = "0.23.32", features = ["ring"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.140"
