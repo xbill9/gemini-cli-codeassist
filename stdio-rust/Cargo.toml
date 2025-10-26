@@ -1,16 +1,16 @@
 [package]
 name = "hello-rust"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
-description = "Hello World!"
+description = "Hello World! stdio MCP"
 license = "MIT"
-repository = "https://github.com/example/hello-rust"
+repository = "https://github.com/xbill9/gemini-cli-codeassist"
 
 [dependencies]
 anyhow = "1.0.98"
 axum = { version = "0.8.4", features = ["macros"] }
 reqwest = { version = "0.12.22", features = ["json"] }
-rmcp = { version = "0.7.0", features = ["auth", "server","macros", "transport-io", "transport-sse-server", "transport-streamable-http-server"] }
+rmcp = { version = "0.8.3", features = ["auth", "server","macros", "transport-io", "transport-sse-server", "transport-streamable-http-server"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 tokio = { version = "1.46.0", features = ["macros", "rt-multi-thread", "signal"] }
