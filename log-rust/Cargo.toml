@@ -1,10 +1,10 @@
 [package]
-name = "log-rust"
+name = "weather-gcp-test-rust"
 version = "0.1.0"
 edition = "2024"
 description = "A simple weather forecaster"
 license = "MIT"
-repository = "https://github.com/example/weather-rust"
+repository = "https://github.com/xbill9/gemini-cli-codeassist"
 
 [dependencies]
 anyhow = "1.0.98"
