@@ -1,8 +1,8 @@
 [package]
-name = "hello-rust"
+name = "mcp-stdio-rust"
 version = "0.2.0"
 edition = "2024"
-description = "Hello World! stdio MCP"
+description = "Hello World stdio MCP"
 license = "MIT"
 repository = "https://github.com/xbill9/gemini-cli-codeassist"
 
