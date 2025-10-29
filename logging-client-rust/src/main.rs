@@ -2,7 +2,6 @@ use google_cloud_api::model::MonitoredResource;
 use google_cloud_logging_type::model::LogSeverity;
 use google_cloud_logging_v2::client::LoggingServiceV2;
 use google_cloud_logging_v2::model::LogEntry;
-use google_cloud_secretmanager_v1::client::SecretManagerService;
 use log::{debug, info, warn};
 use std::collections::HashMap;
 
@@ -10,14 +9,11 @@ use std::collections::HashMap;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::init();
     info!("(main) Starting up!");
-    // Google Cloud Client API to secret manager
-    let _sclient = SecretManagerService::builder().build().await?;
 
     // Initialize the logging client.
     let client = LoggingServiceV2::builder().build().await?;
 
-    let project_id =
-        std::env::var("PROJECT_ID").expect("PROJECT_ID environment variable must be set"); // IMPORTANT: Set your actual GCP Project ID as an environment variable
+    let project_id = std::env::var("PROJECT_ID")?; // IMPORTANT: Set your actual GCP Project ID as an environment variable
     debug!("(main) Project ID: {}", project_id);
     let log_name = std::env::var("LOG_NAME").unwrap_or_else(|_| "my-rust-app".to_string()); // A specific log name for your application, defaults to 'my-rust-app'
 
