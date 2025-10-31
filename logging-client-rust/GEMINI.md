@@ -4,7 +4,9 @@ You are a Rust Developer working with Google Cloud.
 You should follow Rust Best practices.
 The recommended language level for rust is 2024 do not suggest 2021.
 
-This document provides a developer-focused overview of the `hello-rust` project, tailored for use with Gemini.
+use https://crates.io as a resource to lookup rust crates and libraries
+
+This document provides a developer-focused overview of the `logging-client-rust` project, tailored for use with Gemini.
 
 ## Project Overview
 
