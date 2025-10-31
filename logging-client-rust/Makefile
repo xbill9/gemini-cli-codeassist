@@ -1,7 +1,7 @@
 # Makefile for the Rust project
 
 # Variables
-SERVICE_NAME := mcp-cloudrun-rust
+SERVICE_NAME := logging-client-rust
 REGION := us-central1
 PROJECT_ID := $(shell gcloud config get-value project) # Cache project ID
 
