@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "inventory-server": {
+      "httpUrl": "https://mcp-cloudrun-rust-$PROJECT_NUMBER.us-central1.run.app/mcp/"
+    }
+  },
+  "hasSeenIdeIntegrationNudge": true
+}
