@@ -7,6 +7,7 @@ use rmcp::{
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+/// HelloWorld is a simple implementation of the Model Context Protocol (MCP) server.
 #[derive(Clone, Debug)]
 pub struct HelloWorld {
     tool_router: ToolRouter<Self>,
@@ -21,23 +22,29 @@ impl HelloWorld {
     }
 
     #[tool(description = "Hello World via Model Context Protocol")]
-    pub async fn hellomcp(&self) -> String {
+    async fn hello_mcp(&self) -> String {
         "Hello World MCP!".to_string()
     }
 
     #[tool(description = "Hello Rust via Model Context Protocol")]
-    pub async fn rustmcp(&self) -> String {
+    async fn rust_mcp(&self) -> String {
         "Hello World Rust MCP!".to_string()
     }
     #[tool(description = "Just prints Z via Model Context Protocol")]
-    pub async fn z(&self) -> String {
+    async fn z(&self) -> String {
         "Z".to_string()
     }
 
     #[tool(description = "prints version via Model Context Protocol")]
-    pub async fn version(&self) -> String {
+    async fn version(&self) -> String {
         const VERSION: &str = env!("CARGO_PKG_VERSION");
         format!("MyProgram v{}", VERSION)
+    }
+}
+
+impl Default for HelloWorld {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
