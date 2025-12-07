@@ -43,6 +43,10 @@ clean: ## Clean the project.
 # Code Quality & Testing
 # ==============================================================================
 
+lint: ## Run linting.
+	@echo "Running linting..."
+	@$(NPM) run lint
+
 test: ## Run tests.
 	@echo "Running tests..."
 	@$(NPM) test
