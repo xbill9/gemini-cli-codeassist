@@ -1,11 +1,24 @@
 use anyhow::Result;
+use clap::Parser;
 use rmcp::{
-    model::{CallToolRequestParam, CallToolResult},
+    model::{CallToolRequestParam, CallToolResult, RawContent},
     transport::TokioChildProcess,
     ServiceExt,
 };
-use std::io::{self, Write};
+use rustyline::error::ReadlineError;
+use rustyline::DefaultEditor;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Command to start the MCP server
+    server_cmd: String,
+
+    /// Arguments for the MCP server
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+    server_args: Vec<String>,
+}
 
 fn init_tracing() {
     tracing_subscriber::registry()
@@ -26,24 +39,35 @@ fn extract_text_from_result(result: CallToolResult) -> String {
         .content
         .first()
         .and_then(|annotated| match &annotated.raw {
-            rmcp::model::RawContent::Text(raw_text_content) => Some(raw_text_content.text.clone()),
+            RawContent::Text(raw_text_content) => Some(raw_text_content.text.clone()),
             _ => None,
         })
         .unwrap_or_else(|| "(No text content found)".to_string())
 }
 
+fn parse_json_args(json_str: &str) -> Result<serde_json::Map<String, serde_json::Value>, serde_json::Error> {
+    match serde_json::from_str(json_str) {
+        Ok(serde_json::Value::Object(map)) => Ok(map),
+        Ok(_) => {
+             // Return an error that indicates it wasn't an object
+             // Using a trick to create a synthetic error or just mapping to a custom error would be better
+             // but for now, we rely on serde's error handling.
+             // We can't easily construct a serde_json::Error from scratch.
+             // So we'll try to deserialize as an object specifically to trigger the error.
+             serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(json_str).map_err(|e| e)
+        },
+        Err(e) => Err(e),
+    }
+}
+
+
 #[tokio::main]
 async fn main() -> Result<()> {
     init_tracing();
+    let args = Args::parse();
 
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() < 2 {
-        eprintln!("Usage: {} <server_command> [server_args...]", args[0]);
-        return Ok(());
-    }
-
-    let server_cmd = &args[1];
-    let server_args = &args[2..];
+    let server_cmd = &args.server_cmd;
+    let server_args = &args.server_args;
 
     tracing::info!("Starting MCP Client connecting to: {} {:?}", server_cmd, server_args);
 
@@ -59,85 +83,169 @@ async fn main() -> Result<()> {
     let client = ().serve(TokioChildProcess::new(cmd)?).await?;
 
     println!("Connected to MCP Server.");
-    println!("Type 'list' to see tools, 'call <tool> <args_json>' to call a tool, or 'quit' to exit.");
+    println!("Type 'get_tools' to see tools, 'exec <tool> <args_json>' to call a tool, or 'quit' to exit.");
+
+    let mut rl = DefaultEditor::new()?;
 
     loop {
-        print!("> ");
-        io::stdout().flush()?;
-
-        let mut input = String::new();
-        if io::stdin().read_line(&mut input).is_err() {
-            break;
-        }
-
-        let input = input.trim();
-        if input.is_empty() {
-            continue;
-        }
-
-        let parts: Vec<&str> = input.split_whitespace().collect();
-        match parts[0] {
-            "quit" | "exit" => break,
-            "list" => {
-                match client.list_tools(None).await {
-                    Ok(result) => {
-                        println!("Tools:");
-                        for tool in result.tools {
-                            println!("- {}: {}", tool.name, tool.description.unwrap_or_default());
-                            println!("  Input Schema: {}", serde_json::to_string_pretty(&tool.input_schema).unwrap_or_default());
-                        }
-                    }
-                    Err(e) => eprintln!("Error listing tools: {:?}", e),
-                }
-            }
-            "call" => {
-                if parts.len() < 2 {
-                    eprintln!("Usage: call <tool_name> [json_args]");
+        let readline = rl.readline("> ");
+        match readline {
+            Ok(line) => {
+                let line = line.trim();
+                if line.is_empty() {
                     continue;
                 }
-                let tool_name = parts[1];
-                
-                // Reconstruct the rest of the string as JSON args
-                let json_args_str = if parts.len() > 2 {
-                    // Find where the second argument starts in the original input
-                    // This is a bit rough but works for simple cases. 
-                    // Better would be to join the rest of the parts, but that loses spacing inside JSON.
-                    // We'll look for the first occurrence of parts[2] after parts[1].
-                    let remainder_start = input.find(parts[1]).unwrap() + parts[1].len();
-                    input[remainder_start..].trim()
-                } else {
-                    "{}"
-                };
+                let _ = rl.add_history_entry(line);
 
-                let args_map: serde_json::Map<String, serde_json::Value> = match serde_json::from_str(json_args_str) {
-                    Ok(serde_json::Value::Object(map)) => map,
-                    Ok(_) => {
-                        eprintln!("Arguments must be a JSON object (e.g., {{ \"arg\": \"value\" }})");
-                        continue;
-                    },
+                let parts = match shell_words::split(line) {
+                    Ok(p) => p,
                     Err(e) => {
-                        eprintln!("Invalid JSON args: {}", e);
+                        eprintln!("Parse error: {}", e);
                         continue;
                     }
                 };
+                
+                if parts.is_empty() { continue; }
 
-                let req = CallToolRequestParam {
-                    name: tool_name.to_string().into(),
-                    arguments: Some(args_map),
-                };
-
-                tracing::info!("Calling tool '{}'...", tool_name);
-                match client.call_tool(req).await {
-                    Ok(res) => {
-                        let text = extract_text_from_result(res);
-                        println!("Result: {}", text);
+                match parts[0].as_str() {
+                    "quit" | "exit" => break,
+                    "get_tools" => {
+                        match client.list_tools(None).await {
+                            Ok(result) => {
+                                println!("Tools:");
+                                for tool in result.tools {
+                                    println!("- {}: {}", tool.name, tool.description.unwrap_or_default());
+                                    println!("  Input Schema: {}", serde_json::to_string_pretty(&tool.input_schema).unwrap_or_default());
+                                }
+                            }
+                            Err(e) => eprintln!("Error listing tools: {:?}", e),
+                        }
                     }
-                    Err(e) => eprintln!("Error calling tool: {:?}", e),
+                    "exec" => {
+                        if parts.len() < 2 {
+                            eprintln!("Usage: call <tool_name> [json_args]");
+                            continue;
+                        }
+                        let tool_name = &parts[1];
+                        let json_args_str = if parts.len() > 2 {
+                             &parts[2]
+                        } else {
+                            "{}"
+                        };
+
+                        let args_map = match parse_json_args(json_args_str) {
+                            Ok(map) => map,
+                            Err(e) => {
+                                eprintln!("Invalid JSON args (must be an object): {}", e);
+                                continue;
+                            }
+                        };
+
+                        let req = CallToolRequestParam {
+                            name: tool_name.to_string().into(),
+                            arguments: Some(args_map),
+                        };
+
+                        tracing::info!("Calling tool '{}'...", tool_name);
+                        match client.call_tool(req).await {
+                            Ok(res) => {
+                                let text = extract_text_from_result(res);
+                                println!("Result: {}", text);
+                            }
+                            Err(e) => eprintln!("Error calling tool: {:?}", e),
+                        }
+                    }
+                    _ => println!("Unknown command. Available: get_tools, exec, quit"),
                 }
+            },
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break
+            },
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break
+            },
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break
             }
-            _ => println!("Unknown command. Available: list, call, quit"),
         }
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rmcp::model::{Annotated, RawContent, RawTextContent};
+
+    #[test]
+    fn test_extract_text_from_result_success() {
+        let text_content = RawTextContent {
+            text: "Hello World".to_string(),
+            meta: None,
+        };
+        let annotated = Annotated {
+            raw: RawContent::Text(text_content),
+            annotations: None,
+        };
+        let result = CallToolResult {
+            content: vec![annotated],
+            is_error: None,
+            meta: None,
+            structured_content: None,
+        };
+
+        assert_eq!(extract_text_from_result(result), "Hello World");
+    }
+
+    #[test]
+    fn test_extract_text_from_result_empty() {
+        let result = CallToolResult {
+            content: vec![],
+            is_error: None,
+            meta: None,
+            structured_content: None,
+        };
+
+        assert_eq!(extract_text_from_result(result), "(No text content found)");
+    }
+
+    #[test]
+    fn test_parse_json_args_valid() {
+        let json = "{\"arg1\": \"value1\", \"arg2\": 2}";
+        let result = parse_json_args(json);
+        assert!(result.is_ok());
+        let map = result.unwrap();
+        assert_eq!(map["arg1"], "value1");
+        assert_eq!(map["arg2"], 2);
+    }
+
+    #[test]
+    fn test_parse_json_args_empty_object() {
+        let json = "{}";
+        let result = parse_json_args(json);
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_parse_json_args_invalid_json() {
+        let json = "{invalid";
+        let result = parse_json_args(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_json_args_not_object() {
+        let json = "[]";
+        let result = parse_json_args(json);
+        assert!(result.is_err());
+        
+        let json = "\"string\"";
+        let result = parse_json_args(json);
+        assert!(result.is_err());
+    }
 }
