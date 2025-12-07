@@ -1,0 +1,25 @@
+[package]
+name = "mcp-client-rust"
+version = "0.1.0"
+edition = "2024"
+description = "Hello World Rust MCP Test program!"
+license = "MIT"
+repository = "https://github.com/xbill9/gemini-cli-codeassist"
+
+[dependencies]
+anyhow = "1.0.98"
+rmcp = { version = "0.10.0", features = ["auth", "server", "transport-io", "transport-sse-server", "transport-streamable-http-server", "client", "transport-child-process"] }
+rmcp-macros = "0.10.0"
+tokio = { version = "1.46.0", features = ["macros", "rt-multi-thread", "signal", "process"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true  # Automatically strip symbols from the binary.
+codegen-units = 1
+panic = "abort"

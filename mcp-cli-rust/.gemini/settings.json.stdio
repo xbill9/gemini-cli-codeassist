@@ -1,0 +1,11 @@
+ {
+    "mcpServers": {
+      "HelloStdio": {
+        "command": "$HOME/gemini-cli-codeassist/stdio-rust/target/release/hello-rust",
+        "args": ["--prebuilt","--stdio"],
+        "env": {
+          "RUST_LOG": "trace"
+        }
+      }
+    }
+  }
