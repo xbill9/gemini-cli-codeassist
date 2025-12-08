@@ -2,19 +2,20 @@
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
 use std::process::Command;
+use assert_cmd::cargo::cargo_bin;
 
 // This test requires the PROJECT_ID environment variable to be set.
 // For example: `PROJECT_ID=your-gcp-project-id cargo test --test cli_integration_test`
 
 #[tokio::test]
 async fn test_seed_and_list() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd.arg("seed");
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Database seeded successfully."));
 
-    let mut cmd = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd.arg("list");
     cmd.assert()
         .success()
@@ -28,7 +29,7 @@ async fn test_seed_and_list() -> Result<(), Box<dyn std::error::Error>> {
 #[tokio::test]
 async fn test_get_product() -> Result<(), Box<dyn std::error::Error>> {
     // First, seed the database to ensure data exists
-    let mut cmd = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd.arg("seed");
     cmd.assert().success();
 
@@ -39,7 +40,7 @@ async fn test_get_product() -> Result<(), Box<dyn std::error::Error>> {
     // For simplicity, let's assume "Apples" is seeded and its ID might be findable.
     // This is a simplification; in a robust test, you'd insert a product
     // specifically for the test and capture its ID.
-    let mut cmd_list = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd_list = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd_list.arg("list");
     let output = cmd_list.output()?;
     let stdout = String::from_utf8(output.stdout)?;
@@ -51,7 +52,7 @@ async fn test_get_product() -> Result<(), Box<dyn std::error::Error>> {
         .and_then(|id_part| id_part.split("\")").next());
 
     if let Some(id) = apple_id_line {
-        let mut cmd_get = Command::cargo_bin("firestore-cli-rust")?;
+        let mut cmd_get = Command::new(cargo_bin!("firestore-cli-rust"));
         cmd_get.arg("get").arg(id);
         cmd_get
             .assert()
@@ -71,23 +72,23 @@ async fn test_get_product() -> Result<(), Box<dyn std::error::Error>> {
 
 #[tokio::test]
 async fn test_find_product() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd.arg("seed");
     cmd.assert().success();
 
-    let mut cmd = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd.arg("find").arg("milk"); // Case-insensitive, partial match
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("name: \"Milk\""));
 
-    let mut cmd = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd.arg("find").arg("choco"); // Partial match
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("name: \"Mint Chocolate Cookies\""));
 
-    let mut cmd = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd.arg("find").arg("nonexistentproduct");
     cmd.assert().success().stdout(predicate::str::contains(
         "No products found matching 'nonexistentproduct'.",
@@ -99,12 +100,12 @@ async fn test_find_product() -> Result<(), Box<dyn std::error::Error>> {
 #[tokio::test]
 async fn test_delete_product() -> Result<(), Box<dyn std::error::Error>> {
     // First, seed the database to ensure data exists
-    let mut cmd = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd.arg("seed");
     cmd.assert().success();
 
     // Find an ID to delete
-    let mut cmd_list = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd_list = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd_list.arg("list");
     let output = cmd_list.output()?;
     let stdout = String::from_utf8(output.stdout)?;
@@ -118,7 +119,7 @@ async fn test_delete_product() -> Result<(), Box<dyn std::error::Error>> {
 
     if let Some(id_to_delete) = delete_id_line {
         // Delete the product
-        let mut cmd_delete = Command::cargo_bin("firestore-cli-rust")?;
+        let mut cmd_delete = Command::new(cargo_bin!("firestore-cli-rust"));
         cmd_delete.arg("delete").arg(id_to_delete);
         cmd_delete
             .assert()
@@ -129,7 +130,7 @@ async fn test_delete_product() -> Result<(), Box<dyn std::error::Error>> {
             )));
 
         // Verify it's gone
-        let mut cmd_get = Command::cargo_bin("firestore-cli-rust")?;
+        let mut cmd_get = Command::new(cargo_bin!("firestore-cli-rust"));
         cmd_get.arg("get").arg(id_to_delete);
         cmd_get
             .assert()
@@ -155,7 +156,7 @@ async fn test_add_product() -> Result<(), Box<dyn std::error::Error>> {
     let product_quantity = "10";
     let product_img = "test_image.png";
 
-    let mut cmd = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd.arg("add")
         .arg("--name")
         .arg(product_name)
@@ -174,7 +175,7 @@ async fn test_add_product() -> Result<(), Box<dyn std::error::Error>> {
         )));
 
     // Verify it exists via find
-    let mut cmd_find = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd_find = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd_find.arg("find").arg(product_name);
     cmd_find
         .assert()
@@ -204,7 +205,7 @@ async fn test_increase_decrease_stock() -> Result<(), Box<dyn std::error::Error>
     let decrease_amount = "30";
 
     // 1. Add product
-    let mut cmd_add = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd_add = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd_add
         .arg("add")
         .arg("--name")
@@ -218,7 +219,7 @@ async fn test_increase_decrease_stock() -> Result<(), Box<dyn std::error::Error>
     cmd_add.assert().success();
 
     // 2. Find ID
-    let mut cmd_list = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd_list = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd_list.arg("list");
     let output = cmd_list.output()?;
     let stdout = String::from_utf8(output.stdout)?;
@@ -231,7 +232,7 @@ async fn test_increase_decrease_stock() -> Result<(), Box<dyn std::error::Error>
         .ok_or("Could not find ID for Stock Test Product")?;
 
     // 3. Increase Stock
-    let mut cmd_increase = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd_increase = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd_increase
         .arg("increase-stock")
         .arg("--id")
@@ -247,7 +248,7 @@ async fn test_increase_decrease_stock() -> Result<(), Box<dyn std::error::Error>
         )));
 
     // Verify increase (100 + 20 = 120)
-    let mut cmd_get_inc = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd_get_inc = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd_get_inc.arg("get").arg(product_id);
     cmd_get_inc
         .assert()
@@ -255,7 +256,7 @@ async fn test_increase_decrease_stock() -> Result<(), Box<dyn std::error::Error>
         .stdout(predicate::str::contains("quantity: 120"));
 
     // 4. Decrease Stock
-    let mut cmd_decrease = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd_decrease = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd_decrease
         .arg("decrease-stock")
         .arg("--id")
@@ -271,7 +272,7 @@ async fn test_increase_decrease_stock() -> Result<(), Box<dyn std::error::Error>
         )));
 
     // Verify decrease (120 - 30 = 90)
-    let mut cmd_get_dec = Command::cargo_bin("firestore-cli-rust")?;
+    let mut cmd_get_dec = Command::new(cargo_bin!("firestore-cli-rust"));
     cmd_get_dec.arg("get").arg(product_id);
     cmd_get_dec
         .assert()

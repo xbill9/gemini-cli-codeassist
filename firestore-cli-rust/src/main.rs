@@ -22,7 +22,7 @@ struct Product {
 }
 
 async fn add_or_update_firestore(
-    db: &Arc<FirestoreDb>,
+    db: &FirestoreDb,
     product: &Product,
 ) -> Result<(), firestore::errors::FirestoreError> {
     let existing_docs = db
@@ -89,7 +89,7 @@ fn generate_products(
         .collect()
 }
 
-async fn seed(db: &Arc<FirestoreDb>) -> anyhow::Result<&'static str> {
+async fn seed(db: &FirestoreDb) -> anyhow::Result<&'static str> {
     let old_products = [
         "Apples",
         "Bananas",
@@ -217,6 +217,10 @@ enum Commands {
         #[arg(long)]
         amount: i64,
     },
+    /// Interactive shell mode
+    Shell,
+    /// Resets the database by deleting all products
+    Reset,
 }
 
 #[tokio::main]
@@ -242,33 +246,95 @@ async fn main() -> anyhow::Result<()> {
     let db = Arc::new(FirestoreDb::new(&gcp_project_id).await?);
 
     match cli.command {
+        Commands::Shell => interactive_shell(&db).await?,
+        cmd => process_command(&db, cmd).await?,
+    }
+
+    Ok(())
+}
+
+async fn interactive_shell(db: &FirestoreDb) -> anyhow::Result<()> {
+    use std::io::{self, Write};
+
+    println!("Welcome to the Firestore CLI interactive shell.");
+    println!("Type 'exit' or 'quit' to leave.");
+
+    let stdin = io::stdin();
+    let mut stdout = io::stdout();
+    let mut input = String::new();
+
+    loop {
+        print!("firestore-cli> ");
+        stdout.flush()?;
+
+        input.clear();
+        if stdin.read_line(&mut input)? == 0 {
+            break;
+        }
+
+        let trimmed = input.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        if trimmed.eq_ignore_ascii_case("exit") || trimmed.eq_ignore_ascii_case("quit") {
+            break;
+        }
+
+        let args = match shlex::split(trimmed) {
+            Some(a) => a,
+            None => {
+                println!("Error: Invalid quoting.");
+                continue;
+            }
+        };
+
+        let mut cli_args = vec!["firestore-cli".to_string()];
+        cli_args.extend(args);
+
+        match Cli::try_parse_from(cli_args) {
+            Ok(cli) => {
+                if let Err(e) = process_command(db, cli.command).await {
+                    println!("Error: {:#}", e);
+                }
+            }
+            Err(e) => {
+                e.print().ok();
+            }
+        }
+    }
+    Ok(())
+}
+
+async fn process_command(db: &FirestoreDb, command: Commands) -> anyhow::Result<()> {
+    match command {
         Commands::Seed => {
             info!("Seeding database...");
-            seed(&db).await?;
+            seed(db).await?;
             info!("Database seeded successfully.");
         }
         Commands::List => {
             info!("Listing all products...");
-            let products = get_products(&db).await?;
+            let products = get_products(db).await?;
             for product in products {
                 info!("{:?}", product);
             }
         }
         Commands::Get { id } => {
             info!("Fetching product by id: {}", id);
-            match get_product_by_id(&db, id.clone()).await? {
+            match get_product_by_id(db, &id).await? {
                 Some(product) => info!("Found product: {:?}", product),
                 None => info!("Product with id {} not found.", id),
             }
         }
         Commands::Delete { id } => {
             info!("Deleting product by id: {}", id);
-            delete_product_by_id(&db, id.clone()).await?;
+            delete_product_by_id(db, &id).await?;
             info!("Product with id {} deleted successfully.", id);
         }
         Commands::Find { name } => {
             info!("Searching for products with name containing: {}", name);
-            let products = find_products_by_name(&db, name.clone()).await?;
+            let products = find_products_by_name(db, &name).await?;
             if products.is_empty() {
                 info!("No products found matching '{}'.", name);
             } else {
@@ -284,25 +350,42 @@ async fn main() -> anyhow::Result<()> {
             imgfile,
         } => {
             info!("Adding new product: {}", name);
-            add_product(&db, name.clone(), price, quantity, imgfile.clone()).await?;
+            add_product(db, name.clone(), price, quantity, imgfile.clone()).await?;
             info!("Product '{}' added successfully.", name);
         }
         Commands::IncreaseStock { id, amount } => {
             info!("Increasing stock for product id: {} by {}", id, amount);
-            increase_product_inventory(&db, id.clone(), amount).await?;
+            increase_product_inventory(db, &id, amount).await?;
             info!("Stock increased successfully for product id: {}", id);
         }
         Commands::DecreaseStock { id, amount } => {
             info!("Decreasing stock for product id: {} by {}", id, amount);
-            decrease_product_inventory(&db, id.clone(), amount).await?;
+            decrease_product_inventory(db, &id, amount).await?;
             info!("Stock decreased successfully for product id: {}", id);
         }
+        Commands::Shell => {
+            println!("Already in shell mode.");
+        }
+        Commands::Reset => {
+            info!("Resetting database...");
+            reset_database(db).await?;
+            info!("Database reset successfully.");
+        }
     }
-
     Ok(())
 }
 
-async fn get_products(db: &Arc<FirestoreDb>) -> anyhow::Result<Vec<Product>> {
+async fn reset_database(db: &FirestoreDb) -> anyhow::Result<()> {
+    let products = get_products(db).await?;
+    for product in products {
+        if let Some(id) = product.id {
+            delete_product_by_id(db, &id).await?;
+        }
+    }
+    Ok(())
+}
+
+async fn get_products(db: &FirestoreDb) -> anyhow::Result<Vec<Product>> {
     let products: Vec<Product> = db
         .fluent()
         .select()
@@ -315,24 +398,24 @@ async fn get_products(db: &Arc<FirestoreDb>) -> anyhow::Result<Vec<Product>> {
     Ok(products)
 }
 
-async fn get_product_by_id(db: &Arc<FirestoreDb>, id: String) -> anyhow::Result<Option<Product>> {
+async fn get_product_by_id(db: &FirestoreDb, id: &str) -> anyhow::Result<Option<Product>> {
     let product: Option<Product> = db
         .fluent()
         .select()
         .by_id_in("inventory")
         .obj()
-        .one(&id)
+        .one(id)
         .await
         .context("Failed to query product by ID from Firestore")?;
 
     Ok(product)
 }
 
-async fn delete_product_by_id(db: &Arc<FirestoreDb>, id: String) -> anyhow::Result<()> {
+async fn delete_product_by_id(db: &FirestoreDb, id: &str) -> anyhow::Result<()> {
     db.fluent()
         .delete()
         .from("inventory")
-        .document_id(&id)
+        .document_id(id)
         .execute()
         .await
         .context(format!(
@@ -344,10 +427,14 @@ async fn delete_product_by_id(db: &Arc<FirestoreDb>, id: String) -> anyhow::Resu
 }
 
 async fn find_products_by_name(
-    db: &Arc<FirestoreDb>,
-    name: String,
+    db: &FirestoreDb,
+    name: &str,
 ) -> anyhow::Result<Vec<Product>> {
     let search_name_lower = name.to_lowercase();
+    // WARN: This performs a full collection scan and filters in memory.
+    // For large datasets, this will be slow and expensive.
+    // Consider using a dedicated search service or Firestore's native query capabilities
+    // if exact match or prefix match is sufficient.
     let all_products: Vec<Product> = db
         .fluent()
         .select()
@@ -366,7 +453,7 @@ async fn find_products_by_name(
 }
 
 async fn add_product(
-    db: &Arc<FirestoreDb>,
+    db: &FirestoreDb,
     name: String,
     price: f64,
     quantity: i64,
@@ -388,11 +475,11 @@ async fn add_product(
 }
 
 async fn increase_product_inventory(
-    db: &Arc<FirestoreDb>,
-    id: String,
+    db: &FirestoreDb,
+    id: &str,
     amount: i64,
 ) -> anyhow::Result<()> {
-    if let Some(mut product) = get_product_by_id(db, id.clone()).await? {
+    if let Some(mut product) = get_product_by_id(db, id).await? {
         product.quantity += amount;
         add_or_update_firestore(db, &product).await?;
         Ok(())
@@ -402,11 +489,11 @@ async fn increase_product_inventory(
 }
 
 async fn decrease_product_inventory(
-    db: &Arc<FirestoreDb>,
-    id: String,
+    db: &FirestoreDb,
+    id: &str,
     amount: i64,
 ) -> anyhow::Result<()> {
-    if let Some(mut product) = get_product_by_id(db, id.clone()).await? {
+    if let Some(mut product) = get_product_by_id(db, id).await? {
         if product.quantity >= amount {
             product.quantity -= amount;
             add_or_update_firestore(db, &product).await?;
