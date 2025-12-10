@@ -1,0 +1,11 @@
+ {
+    "mcpServers": {
+      "FireStdio": {
+        "command": "$HOME/gemini-cli-codeassist/firestore-stdio-go/firestore-stdio-go",
+        "args": ["--prebuilt","--stdio"],
+        "env": {
+          "LOG": "trace"
+        }
+      }
+    }
+  }

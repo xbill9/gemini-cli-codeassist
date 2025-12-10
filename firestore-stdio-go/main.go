@@ -1,0 +1,247 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+	"math/rand"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"time"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+)
+
+// Global Inventory Store
+var store InventoryStore
+
+type Product struct {
+	ID              string    `json:"id,omitempty" firestore:"id,omitempty" jsonschema:"The ID of the product, leave empty when adding new product"`
+	Name            string    `json:"name" firestore:"name" jsonschema:"The name of the product"`
+	Price           float64   `json:"price" firestore:"price" jsonschema:"The price of the product"`
+	Quantity        int64     `json:"quantity" firestore:"quantity" jsonschema:"The quantity available"`
+	ImgFile         string    `json:"imgfile" firestore:"imgfile" jsonschema:"Image file path"`
+	Timestamp       time.Time `json:"timestamp" firestore:"timestamp" jsonschema:"Record timestamp"`
+	ActualDateAdded time.Time `json:"actualdateadded" firestore:"actualdateadded" jsonschema:"Actual date added"`
+}
+
+type ProductList struct {
+	Products []Product `json:"products"`
+}
+
+// -- Inputs --
+
+type EmptyInput struct{}
+
+type EchoInput struct {
+	Message string `json:"message" jsonschema:"hello world"`
+}
+
+type GetProductByIDInput struct {
+	ID string `json:"id" jsonschema:"The ID of the product to retrieve"`
+}
+
+type AddProductInput struct {
+	Product Product `json:"product" jsonschema:"The product to add"`
+}
+
+// -- Helper to return text result --
+func textResult(msg string) *mcp.CallToolResult {
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{
+				Text: msg,
+			},
+		},
+	}
+}
+
+// -- Tool Implementations --
+
+func Root(ctx context.Context, req *mcp.CallToolRequest, input EmptyInput) (*mcp.CallToolResult, EmptyInput, error) {
+	return textResult("🍎 Hello! This is the Cymbal Superstore Inventory API."), EmptyInput{}, nil
+}
+
+func Health(ctx context.Context, req *mcp.CallToolRequest, input EmptyInput) (*mcp.CallToolResult, EmptyInput, error) {
+	return textResult("✅ ok"), EmptyInput{}, nil
+}
+
+func Echo(ctx context.Context, req *mcp.CallToolRequest, input EchoInput) (*mcp.CallToolResult, EmptyInput, error) {
+	msg := fmt.Sprintf("Inventory MCP! %s", input.Message)
+	return textResult(msg), EmptyInput{}, nil
+}
+
+func Seed(ctx context.Context, req *mcp.CallToolRequest, input EmptyInput) (*mcp.CallToolResult, EmptyInput, error) {
+	slog.Info("Seeding database...")
+
+	oldProducts := generateProducts([]string{
+		"Apples", "Bananas", "Milk", "Whole Wheat Bread", "Eggs", "Cheddar Cheese",
+		"Whole Chicken", "Rice", "Black Beans", "Bottled Water", "Apple Juice",
+		"Cola", "Coffee Beans", "Green Tea", "Watermelon", "Broccoli", "Jasmine Rice",
+		"Yogurt", "Beef", "Shrimp", "Walnuts", "Sunflower Seeds", "Fresh Basil", "Cinnamon",
+	}, 1, 501, 90, 365)
+
+	for _, p := range oldProducts {
+		if err := store.UpsertProductByName(ctx, p); err != nil {
+			slog.Error("Error adding/updating product", "error", err)
+			return nil, EmptyInput{}, fmt.Errorf("failed to add/update product: %w", err)
+		}
+	}
+
+	recentProducts := generateProducts([]string{
+		"Parmesan Crisps", "Pineapple Kombucha", "Maple Almond Butter", "Mint Chocolate Cookies",
+		"White Chocolate Caramel Corn", "Acai Smoothie Packs", "Smores Cereal",
+		"Peanut Butter and Jelly Cups",
+	}, 1, 101, 0, 6)
+
+	for _, p := range recentProducts {
+		if err := store.UpsertProductByName(ctx, p); err != nil {
+			slog.Error("Error adding/updating product", "error", err)
+			return nil, EmptyInput{}, fmt.Errorf("failed to add/update product: %w", err)
+		}
+	}
+
+	oosProducts := generateProducts([]string{
+		"Wasabi Party Mix", "Jalapeno Seasoning",
+	}, 0, 1, 0, 6)
+
+	for _, p := range oosProducts {
+		if err := store.UpsertProductByName(ctx, p); err != nil {
+			slog.Error("Error adding/updating product", "error", err)
+			return nil, EmptyInput{}, fmt.Errorf("failed to add/update product: %w", err)
+		}
+	}
+
+	return textResult("Database seeded successfully."), EmptyInput{}, nil
+}
+
+func GetProducts(ctx context.Context, req *mcp.CallToolRequest, input EmptyInput) (*mcp.CallToolResult, EmptyInput, error) {
+	products, err := store.GetProducts(ctx)
+	if err != nil {
+		return nil, EmptyInput{}, fmt.Errorf("failed to retrieve products: %w", err)
+	}
+
+	productList := ProductList{Products: products}
+	jsonBytes, err := json.Marshal(productList)
+	if err != nil {
+		return nil, EmptyInput{}, fmt.Errorf("failed to serialize product list: %w", err)
+	}
+
+	return textResult(string(jsonBytes)), EmptyInput{}, nil
+}
+
+func GetProductByID(ctx context.Context, req *mcp.CallToolRequest, input GetProductByIDInput) (*mcp.CallToolResult, EmptyInput, error) {
+	p, err := store.GetProductByID(ctx, input.ID)
+	if err != nil {
+		return nil, EmptyInput{}, err
+	}
+
+	jsonBytes, err := json.Marshal(p)
+	if err != nil {
+		return nil, EmptyInput{}, fmt.Errorf("failed to serialize product: %w", err)
+	}
+
+	return textResult(string(jsonBytes)), EmptyInput{}, nil
+}
+
+func AddProduct(ctx context.Context, req *mcp.CallToolRequest, input AddProductInput) (*mcp.CallToolResult, EmptyInput, error) {
+	p := input.Product
+	newID, err := store.AddProduct(ctx, p)
+	if err != nil {
+		return nil, EmptyInput{}, fmt.Errorf("failed to add product: %w", err)
+	}
+
+	return textResult(fmt.Sprintf("Product added with ID: %s", newID)), EmptyInput{}, nil
+}
+
+// -- Helpers --
+
+func generateProducts(names []string, minQ, maxQ int64, minDays, maxDays int) []Product {
+	var products []Product
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	for _, name := range names {
+		daysAgo := rnd.Intn(maxDays-minDays) + minDays
+		timestamp := time.Now().AddDate(0, 0, -daysAgo)
+
+		p := Product{
+			Name:            name,
+			Price:           float64(rnd.Intn(10)) + 1.0 + rnd.Float64(), // 1.0 to 11.0 roughly
+			Quantity:        int64(rnd.Intn(int(maxQ-minQ))) + minQ,
+			ImgFile:         fmt.Sprintf("product-images/%s.png", strings.ToLower(strings.ReplaceAll(name, " ", ""))),
+			Timestamp:       timestamp,
+			ActualDateAdded: time.Now(),
+		}
+		products = append(products, p)
+	}
+	return products
+}
+
+func getLogLevel() slog.Level {
+	switch strings.ToLower(os.Getenv("LOG_LEVEL")) {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}
+
+func main() {
+// Setup Logging
+	logLevel := getLogLevel()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		Level: logLevel,
+	})))
+
+	// Setup Firestore
+	projectID := os.Getenv("PROJECT_ID")
+	if projectID == "" {
+		slog.Error("PROJECT_ID must be set")
+		os.Exit(1)
+	}
+
+	ctx := context.Background()
+	var err error
+	store, err = NewFirestoreStore(ctx, projectID)
+	if err != nil {
+		slog.Error("Failed to create Firestore client", "error", err)
+		os.Exit(1)
+	}
+	defer store.Close()
+	slog.Info("🍏 Cymbal Superstore: Inventory API Starting")
+
+	// Create MCP Server
+	server := mcp.NewServer(&mcp.Implementation{
+		Name:    "inventory",
+		Version: "v1.0.0",
+	}, nil)
+
+	// Register Tools
+	mcp.AddTool(server, &mcp.Tool{Name: "root", Description: "Inventory API via Model Context Protocol"}, Root)
+	mcp.AddTool(server, &mcp.Tool{Name: "health", Description: "Inventory API Health Status of Inventory API"}, Health)
+	mcp.AddTool(server, &mcp.Tool{Name: "echo", Description: "Inventory API via Model Context Protocol"}, Echo)
+	mcp.AddTool(server, &mcp.Tool{Name: "seed", Description: "Seeds the database with initial product data."}, Seed)
+	mcp.AddTool(server, &mcp.Tool{Name: "get_products", Description: "Retrieves a list of all products."}, GetProducts)
+	mcp.AddTool(server, &mcp.Tool{Name: "get_product_by_id", Description: "Retrieves a product by its ID."}, GetProductByID)
+	mcp.AddTool(server, &mcp.Tool{Name: "add_product", Description: "Adds a product to the database."}, AddProduct)
+
+	// Handle graceful shutdown
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
+	// Run the server
+	if err := server.Run(ctx, &mcp.StdioTransport{}); err != nil {
+		slog.Error("Server exit", "error", err)
+		os.Exit(1)
+	}
+	slog.Info("🍏 Cymbal Superstore: Inventory API completed")
+}
