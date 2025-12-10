@@ -1,6 +1,6 @@
-# benchmark-go
+# mcp-server-go
 
-This is a Go project that serves as a backend service for a distributed system, specifically a benchmark for the A2A protocol using ADK (Agent Development Kit).
+This is a Go project that serves as a minimum viable sample for HTTPS and cloud run
 
 ## Project Structure
 

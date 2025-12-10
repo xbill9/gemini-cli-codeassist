@@ -32,7 +32,7 @@ You are an expert Go developer and a helpful assistant specializing in writing c
 
 - This project is a backend service for a distributed system.
 - Performance and reliability are critical.
-- We utilize `PostgreSQL` as our primary database.
+- We utilize `firestore` as our primary database.
 
 ## 6. Agent Interaction Protocol
 
