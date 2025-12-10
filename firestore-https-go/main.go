@@ -474,6 +474,10 @@ func main() {
 		IdleTimeout:       60 * time.Second,
 	}
 
+	// Create a context that listens for the interrupt signal from the OS.
+	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	// Run the server in a goroutine so that it doesn't block.
 	go func() {
 		slog.Info("Starting HTTP server", "port", port)
@@ -483,18 +487,13 @@ func main() {
 		}
 	}()
 
-	// Handle graceful shutdown
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	// Block until we receive our signal.
+	<-signalCtx.Done()
+	slog.Info("Received shutdown signal, shutting down HTTP server...")
+
+	// Create a deadline to wait for.
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	// Run the server
-	if err := server.Run(ctx, &mcp.StdioTransport{}); err != nil {
-		slog.Error("Server exit", "error", err)
-		os.Exit(1)
-	}
-
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer shutdownCancel()
 
 	if err := httpServer.Shutdown(shutdownCtx); err != nil {
 		slog.Error("HTTP Server forced to shutdown", "error", err)
