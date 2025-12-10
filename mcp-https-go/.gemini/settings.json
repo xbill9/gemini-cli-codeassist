@@ -1,7 +1,7 @@
  {
     "mcpServers": {
-    "hello-cloudrun-https": {
-	       "httpUrl": "https://mcp-https-go-$PROJECT_NUMBER.us-central1.run.app/mcp/"
+    "hello-local-https": {
+      "httpUrl": "http://127.0.0.1:8080/mcp"
     }
   }
 }
