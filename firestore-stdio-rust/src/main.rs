@@ -15,7 +15,7 @@ use rmcp::{
 use rmcp::handler::server::wrapper::Parameters;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
 use uuid::Uuid;
 
@@ -77,26 +77,34 @@ impl Inventory {
     }
 
     #[tool(description = "Inventory API via Model Context Protocol")]
+    #[tracing::instrument(skip(self))]
     async fn root(&self) -> Result<String, String> {
+        info!("Handling root request");
         Ok("🍎 Hello! This is the Cymbal Superstore Inventory API.".to_string())
     }
 
     #[tool(description = "Inventory API Health Status of Inventory API")]
+    #[tracing::instrument(skip(self))]
     async fn health(&self) -> Result<String, String> {
+        info!("Handling health check");
         Ok("✅ ok".to_string())
     }
 
     #[tool(description = "Inventory API via Model Context Protocol")]
+    #[tracing::instrument(skip(self))]
     async fn echo(
         &self,
         Parameters(GetMsgRequest { message }): Parameters<GetMsgRequest>,
     ) -> String {
+        info!("Handling echo request with message: {}", message);
         let msg = format!("Inventory MCP! {}",message);
         msg
     }
 
     #[tool(description = "Seeds the database with initial product data.")]
+    #[tracing::instrument(skip(self))]
     async fn seed(&self) -> Result<String, String> {
+        info!("Starting database seed");
         let old_products_to_add: Vec<Product> = generate_products(
             &[
                 "Apples",
@@ -175,12 +183,15 @@ impl Inventory {
                 return Err(format!("Failed to add/update product: {:?}", e));
             }
         }
-
+        
+        info!("Database seed completed successfully");
         Ok("Database seeded successfully.".to_string())
     }
 
     #[tool(description = "Retrieves a list of all products.")]
+    #[tracing::instrument(skip(self))]
     async fn get_products(&self) -> Result<String, String> {
+        info!("Retrieving all products");
         let products: Vec<Product> = self.db
             .fluent()
             .select()
@@ -196,10 +207,12 @@ impl Inventory {
     }
 
     #[tool(description = "Retrieves a product by its ID.")]
+    #[tracing::instrument(skip(self))]
     async fn get_product_by_id(
         &self,
         Parameters(GetProductByIdRequest { id }): Parameters<GetProductByIdRequest>,
     ) -> Result<String, String> {
+        info!("Retrieving product by ID: {}", id);
         let product: Option<Product> = self.db
             .fluent()
             .select()
@@ -213,15 +226,18 @@ impl Inventory {
             serde_json::to_string(&product)
                 .map_err(|e| format!("Failed to serialize product: {:?}", e))
         } else {
+            warn!("Product with ID {} not found", id);
             Err(format!("Product with ID {} not found", id))
         }
     }
 
     #[tool(description = "Adds a product to the database.")]
+    #[tracing::instrument(skip(self))]
     async fn add_product(
         &self,
         Parameters(AddProductRequest { product }): Parameters<AddProductRequest>,
     ) -> Result<String, String> {
+        info!("Adding new product: {}", product.name);
         let mut product_to_insert = product.clone();
         product_to_insert.id = None;
         let product_id = Uuid::new_v4().to_string();
@@ -234,6 +250,7 @@ impl Inventory {
             .execute::<()>()
             .await
             .map_err(|e| format!("Failed to add product: {:?}", e))?;
+        info!("Product added successfully with ID: {}", product_id);
         Ok(format!("Product added with ID: {}", product_id))
     }
 }
@@ -323,6 +340,7 @@ fn generate_products(
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
+        .json()
         .init();
 
     info!("🍏 Cymbal Superstore: Inventory API Starting");
