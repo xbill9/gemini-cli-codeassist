@@ -1,0 +1,11 @@
+ {
+    "mcpServers": {
+      "HelloStdio": {
+        "command": "$HOME/gemini-cli-codeassist/mcp-stdio-go/mcp-stdio-go",
+        "args": ["--prebuilt","--stdio"],
+        "env": {
+          "LOG": "trace"
+        }
+      }
+    }
+  }
