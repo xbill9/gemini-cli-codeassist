@@ -27,6 +27,7 @@ This project uses a `Makefile` to simplify common development tasks.
 *   [Rust Toolchain](https://www.rust-lang.org/tools/install)
 *   [Docker](https://docs.docker.com/get-docker/)
 *   [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+https://crates.io/crates/google-cloud-api
 
 ### Initial Setup
 

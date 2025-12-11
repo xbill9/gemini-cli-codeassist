@@ -1,11 +1,16 @@
 use anyhow::Context;
 use google_cloud_gax::paginator::Paginator as _;
 use google_cloud_secretmanager_v1::client::SecretManagerService;
-
-pub type Result = std::result::Result<(), Box<dyn std::error::Error>>;
+use tracing::info;
 
 #[tokio::main]
-async fn main() -> Result {
+async fn main() -> anyhow::Result<()> {
+    // Initialize structured logging (JSON format for Cloud Logging)
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .json()
+        .init();
+
     // validate PROJECT_ID
     let project_id =
         std::env::var("PROJECT_ID").context("PROJECT_ID environment variable must be set")?;
@@ -13,7 +18,7 @@ async fn main() -> Result {
     // Google Cloud Client API to secret manager
     let client = SecretManagerService::builder().build().await?;
 
-    println!("Starting client API call Project {}", project_id);
+    info!(project_id, "Starting client API call");
     // make client call
     let mut items = client
         .list_locations()
@@ -22,11 +27,11 @@ async fn main() -> Result {
     while let Some(page) = items.next().await {
         let page = page?;
         for location in page.locations {
-            println!("{}", location.name);
+            info!(location_name = location.name, "Found location");
         }
     }
 
-    println!("Completed client API call Project {}", project_id);
+    info!(project_id, "Completed client API call");
 
     // return OK
     Ok(())
