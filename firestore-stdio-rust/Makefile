@@ -50,6 +50,11 @@ clippy:
 	@echo "Linting code..."
 	@cargo clippy -- -D warnings
 
+# Lint the code
+lint:
+	@echo "Linting code..."
+	@cargo clippy -- -D warnings
+
 # Check the code
 check:
 	@echo "Checking the code..."
