@@ -1,5 +1,6 @@
 use google_cloud_gax::paginator::Paginator as _;
 use google_cloud_secretmanager_v1::client::SecretManagerService;
+use tracing::info;
 
 use rmcp::{
     ServiceExt,
@@ -31,19 +32,26 @@ impl GCPClient {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     #[tool(description = "GCP SDK client call with Model Context Protocol")]
     pub async fn list_locations(&self) -> String {
         let project_id = match std::env::var("PROJECT_ID") {
             Ok(id) => id,
-            Err(e) => return format!("Error: PROJECT_ID environment variable not set: {}", e),
+            Err(e) => {
+                tracing::error!("PROJECT_ID environment variable not set: {}", e);
+                return format!("Error: PROJECT_ID environment variable not set: {}", e);
+            }
         };
 
         let client = match SecretManagerService::builder().build().await {
             Ok(c) => c,
-            Err(e) => return format!("Error building SecretManagerService client: {}", e),
+            Err(e) => {
+                tracing::error!("Error building SecretManagerService client: {}", e);
+                return format!("Error building SecretManagerService client: {}", e);
+            }
         };
 
-        println!("Starting client API call Project {}", project_id);
+        info!("Starting client API call Project {}", project_id);
 
         let mut items = client
             .list_locations()
@@ -58,11 +66,14 @@ impl GCPClient {
                         output.push_str(&format!("{}\n", location.name));
                     }
                 }
-                Err(e) => return format!("Error listing locations: {}", e),
+                Err(e) => {
+                    tracing::error!("Error listing locations: {}", e);
+                    return format!("Error listing locations: {}", e);
+                }
             }
         }
 
-        println!("Completed client API call Project {}", project_id);
+        info!("Completed client API call Project {}", project_id);
         if output.is_empty() {
             format!("No locations found for project {}.", project_id)
         } else {
@@ -89,6 +100,11 @@ impl ServerHandler for GCPClient {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    tracing_subscriber::fmt()
+        .json()
+        .with_writer(std::io::stderr)
+        .init();
+
     let service = GCPClient::default();
     let transport = rmcp::transport::stdio();
     let server = service.serve(transport).await?;
