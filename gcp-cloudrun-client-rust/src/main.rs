@@ -13,42 +13,33 @@ use rmcp::{
 use anyhow::Result;
 use std::env;
 use std::net::SocketAddr;
-
-
-impl Default for GCPClient {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+use tracing::{info, error};
+use tracing_subscriber::EnvFilter;
 
 #[derive(Clone)]
 pub struct GCPClient {
     tool_router: ToolRouter<Self>,
+    project_id: String,
+    client: SecretManagerService,
 }
 
 #[tool_router]
 impl GCPClient {
-    pub fn new() -> Self {
+    pub fn new(project_id: String, client: SecretManagerService) -> Self {
         Self {
             tool_router: Self::tool_router(),
+            project_id,
+            client,
         }
     }
 
     #[tool(description = "GCP SDK client call with Model Context Protocol")]
     pub async fn list_locations(&self) -> String {
-        let project_id = match std::env::var("PROJECT_ID") {
-            Ok(id) => id,
-            Err(e) => return format!("Error: PROJECT_ID environment variable not set: {}", e),
-        };
+        let project_id = &self.project_id;
+        
+        info!(%project_id, "Starting client API call");
 
-        let client = match SecretManagerService::builder().build().await {
-            Ok(c) => c,
-            Err(e) => return format!("Error building SecretManagerService client: {}", e),
-        };
-
-        println!("Starting client API call Project {}", project_id);
-
-        let mut items = client
+        let mut items = self.client
             .list_locations()
             .set_name(format!("projects/{}", project_id))
             .by_page();
@@ -65,7 +56,7 @@ impl GCPClient {
             }
         }
 
-        println!("Completed client API call Project {}", project_id);
+        info!(%project_id, "Completed client API call");
         if output.is_empty() {
             format!("No locations found for project {}.", project_id)
         } else {
@@ -92,8 +83,22 @@ impl ServerHandler for GCPClient {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    tracing_subscriber::fmt()
+        .json()
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+        )
+        .init();
+
+    // Fail fast if PROJECT_ID is not set
+    let project_id = env::var("PROJECT_ID")
+        .map_err(|_| anyhow::anyhow!("PROJECT_ID environment variable must be set"))?;
+
+    // Initialize the client once
+    let client = SecretManagerService::builder().build().await?;
+
     let service = StreamableHttpService::new(
-        || Ok(GCPClient::default()),
+        move || Ok(GCPClient::new(project_id.clone(), client.clone())),
         LocalSessionManager::default().into(),
         Default::default(),
     );
@@ -104,14 +109,13 @@ async fn main() -> Result<()> {
     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let addr: SocketAddr = format!("0.0.0.0:{}", port).parse()?;
 
-    println!("listening on {}", addr);
+    info!(%addr, "listening");
 
     let tcp_listener = tokio::net::TcpListener::bind(addr).await?;
 
     if let Err(e) = axum::serve(tcp_listener, router).await {
-        eprintln!("server error: {}", e);
+        error!(error = %e, "server error");
     }
 
     Ok(())
 }
-

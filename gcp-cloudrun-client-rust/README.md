@@ -1,15 +1,11 @@
-# mcp-stdio-rust
+# gcp-client-rust
 
-A simple, containerized Rust server implementing the Model Context Protocol (MCP), designed for deployment on Google Cloud Run.
-
-## Overview
-
-This project provides a basic server that exposes several tools via the Model Context Protocol. It serves as a template and example for building and deploying a minimal, secure, and efficient Rust application on Google Cloud Run using Docker and Google Cloud Build.
+A basic client program that performs a google cloud client api call in Rust.
 
 ## Technologies Used
 
 *   **Language:** [Rust](https://www.rust-lang.org/)
-*   **Protocol/Framework:** [rmcp](https://docs.rs/rmcp/) (Model Context Protocol)
+*   **Web Framework:** [Hyper](https://hyper.rs/)
 *   **Containerization:** [Docker](https://www.docker.com/)
 *   **Deployment:** [Google Cloud Run](https://cloud.google.com/run)
 *   **CI/CD:** [Google Cloud Build](https://cloud.google.com/build)
@@ -57,14 +53,7 @@ To start the server:
 make run
 ```
 
-### Available Tools
 
-This server exposes the following tools via the Model Context Protocol:
-
-*   **`hellomcp`**: Returns "Hello World MCP!".
-*   **`rustmcp`**: Returns "Hello World Rust MCP!".
-*   **`z`**: Returns "Z".
-*   **`version`**: Returns the program's version (e.g., "MyProgram v1.0.0").
 
 ### Code Quality
 
@@ -98,4 +87,4 @@ make deploy
 This command will:
 1.  Submit a build to Google Cloud Build.
 2.  Build and push the Docker image to Google Container Registry (GCR).
-3.  Deploy the new image to the `mcp-stdio-rust` service in the `us-central1` region.
+3.  Deploy the new image to the `cloudrun-rust` service in the `us-central1` region.
