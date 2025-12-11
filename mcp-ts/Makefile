@@ -15,7 +15,7 @@ NPM := npm
 # Phony Targets
 # ==============================================================================
 
-.PHONY: all build start dev clean test audit deploy help
+.PHONY: all build start dev clean test audit deploy help run
 
 # ==============================================================================
 # Core Development Targets
@@ -28,6 +28,10 @@ build: ## Build the project for development.
 	@$(NPM) run build
 
 start: ## Run the project.
+	@echo "Running the TypeScript project..."
+	@$(NPM) start
+
+run: ## Run the project.
 	@echo "Running the TypeScript project..."
 	@$(NPM) start
 
