@@ -26,7 +26,7 @@ SUBDIRS := backend-rust \
 	stdio-rust \
 	weather-rust
 
-.PHONY: list clean $(addprefix clean-,$(SUBDIRS))
+.PHONY: list clean release $(addprefix clean-,$(SUBDIRS)) $(addprefix release-,$(SUBDIRS))
 
 list:
 	@echo "Subdirectories:"
@@ -35,6 +35,8 @@ list:
 	done
 
 clean: $(addprefix clean-,$(SUBDIRS))
+
+release: $(addprefix release-,$(SUBDIRS))
 
 define clean_task
 clean-$(1):
@@ -56,4 +58,25 @@ clean-$(1):
 	fi
 endef
 
+define release_task
+release-$(1):
+	@echo "----------------------------------------------------------------"
+	@echo "Releasing $(1)..."
+	@if [ -f "$(1)/Makefile" ]; then \
+		$(MAKE) -C $(1) release || echo "Make release failed or not defined in $(1), continuing..."; \
+	elif [ -f "$(1)/Cargo.toml" ]; then \
+		echo "Detected Rust project. Running cargo build --release..."; \
+		(cd $(1) && cargo build --release); \
+	elif [ -f "$(1)/go.mod" ]; then \
+		echo "Detected Go project. Running go build..."; \
+		(cd $(1) && go build -v ./...); \
+	elif [ -f "$(1)/package.json" ]; then \
+		echo "Detected Node.js project. Running npm install && npm run build..."; \
+		(cd $(1) && npm install && npm run build); \
+	else \
+		echo "No build system detected for $(1). Skipping."; \
+	fi
+endef
+
 $(foreach dir,$(SUBDIRS),$(eval $(call clean_task,$(dir))))
+$(foreach dir,$(SUBDIRS),$(eval $(call release_task,$(dir))))
