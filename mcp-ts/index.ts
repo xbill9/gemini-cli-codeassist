@@ -21,6 +21,7 @@ import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import cors from "cors";
 import { Firestore, DocumentData, DocumentSnapshot } from "@google-cloud/firestore";
+import logger from "./logger";
 
 const app: Express = express();
 app.use(express.json());
@@ -249,13 +250,13 @@ async function startServer() {
     await firestore.collection('inventory').limit(1).get();
     dbRunning = true;
   } catch (e) {
-    console.error("Error connecting to Firestore:", e);
+    logger.error("Error connecting to Firestore:", e);
     dbRunning = false;
   }
 
   if (process.env.NODE_ENV !== "test") {
     app.listen(port, () => {
-      console.log(`🍏 Cymbal Superstore: Inventory API running on port: ${port} DB Running (${dbRunning})`);
+      logger.info(`🍏 Cymbal Superstore: Inventory API running on port: ${port} DB Running (${dbRunning})`);
     });
   }
 }
@@ -286,7 +287,7 @@ async function initFirestoreCollection() {
       timestamp: new Date(Date.now() - Math.floor(Math.random() * 31536000000) - 7776000000),
       actualdateadded: new Date(Date.now()),
     };
-    console.log(`⬆️ Adding (or updating) product in firestore: ${oldProduct.name}`);
+    logger.info(`⬆️ Adding (or updating) product in firestore: ${oldProduct.name}`);
     await addOrUpdateFirestore(oldProduct);
   }
 
@@ -305,7 +306,7 @@ async function initFirestoreCollection() {
       timestamp: new Date(Date.now() - Math.floor(Math.random() * 518400000) + 1),
       actualdateadded: new Date(Date.now()),
     };
-    console.log(`🆕 Adding (or updating) product in firestore: ${recent.name}`);
+    logger.info(`🆕 Adding (or updating) product in firestore: ${recent.name}`);
     await addOrUpdateFirestore(recent);
   }
 
@@ -319,7 +320,7 @@ async function initFirestoreCollection() {
       timestamp: new Date(Date.now() - Math.floor(Math.random() * 518400000) + 1),
       actualdateadded: new Date(Date.now()),
     };
-    console.log(`😱 Adding (or updating) out of stock product in firestore: ${oosProduct.name}`);
+    logger.info(`😱 Adding (or updating) out of stock product in firestore: ${oosProduct.name}`);
     await addOrUpdateFirestore(oosProduct);
   }
 }
