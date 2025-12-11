@@ -15,7 +15,7 @@
 // Init Express.js
 import express, { Express, Request, Response } from "express";
 import { randomUUID } from "node:crypto";
-import { McpServer, ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
@@ -96,16 +96,14 @@ const GetProductByIdInputSchema = z.object({
   id: z.string().describe("The ID of the product to get"),
 });
 
-mcpServer.registerTool<any, any>(
+mcpServer.registerTool(
   "get_product_by_id",
   {
     title: "Get product by ID",
     description: "Get a single product from the inventory database by its ID",
-    inputSchema: {
-      id: z.string().describe("The ID of the product to get"),
-    },
-  } as any,
-  (async (args: { id: string }, extra) => {
+    inputSchema: GetProductByIdInputSchema,
+  },
+  async (args: { id: string }) => {
     const { id } = args;
     if (!dbRunning) {
       return { content: [{ type: "text", text: "Inventory database is not running." }], isError: true };
@@ -116,7 +114,7 @@ mcpServer.registerTool<any, any>(
     }
     const product = docToProduct(productDoc);
     return { content: [{ type: "text", text: JSON.stringify(product, null, 2) }] };
-  }) as any
+  }
 );
 mcpServer.registerTool(
   "seed_database",

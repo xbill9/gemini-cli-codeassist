@@ -1,8 +1,7 @@
 
 import request from "supertest";
 import app from "./index";
-import {describe, expect, it, test} from '@jest/globals';
-import express, { Express, Request, Response } from "express";
+import {describe, expect, it} from '@jest/globals';
 
 describe('GET /health', () => {
 	it('should return a 200 status code', async () => {
