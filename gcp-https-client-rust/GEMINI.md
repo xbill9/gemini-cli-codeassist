@@ -1,4 +1,4 @@
-# Gemini Workspace for `cloudrun-rust`
+# Gemini Workspace for `gcp-client-rust`
 
 You are a Rust Developer working with Google Cloud.
 You should follow Rust Best practices.
@@ -8,7 +8,7 @@ This document provides a developer-focused overview of the `hello-rust` project,
 
 ## Project Overview
 
-`hello-rust` is a basic "Hello, World!" web server prints Hello World written in Rust, designed to be deployed as a containerized application on Google Cloud Run.
+`gcp-client-rust` is a basic client program that performs a google cloud client api call in Rust.
 
 ### Key Technologies
 
@@ -27,6 +27,7 @@ This project uses a `Makefile` to simplify common development tasks.
 *   [Rust Toolchain](https://www.rust-lang.org/tools/install)
 *   [Docker](https://docs.docker.com/get-docker/)
 *   [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+https://crates.io/crates/google-cloud-api
 
 ### Initial Setup
 

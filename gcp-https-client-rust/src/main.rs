@@ -13,23 +13,19 @@ use rmcp::{
 use anyhow::Result;
 use std::env;
 use std::net::SocketAddr;
-
-
-impl Default for GCPClient {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+use tracing::{error, info};
 
 #[derive(Clone)]
 pub struct GCPClient {
+    client: SecretManagerService,
     tool_router: ToolRouter<Self>,
 }
 
 #[tool_router]
 impl GCPClient {
-    pub fn new() -> Self {
+    pub fn new(client: SecretManagerService) -> Self {
         Self {
+            client,
             tool_router: Self::tool_router(),
         }
     }
@@ -38,17 +34,16 @@ impl GCPClient {
     pub async fn list_locations(&self) -> String {
         let project_id = match std::env::var("PROJECT_ID") {
             Ok(id) => id,
-            Err(e) => return format!("Error: PROJECT_ID environment variable not set: {}", e),
+            Err(e) => {
+                error!("PROJECT_ID not set: {}", e);
+                return format!("Error: PROJECT_ID environment variable not set: {}", e);
+            }
         };
 
-        let client = match SecretManagerService::builder().build().await {
-            Ok(c) => c,
-            Err(e) => return format!("Error building SecretManagerService client: {}", e),
-        };
+        info!("Starting client API call Project {}", project_id);
 
-        println!("Starting client API call Project {}", project_id);
-
-        let mut items = client
+        let mut items = self
+            .client
             .list_locations()
             .set_name(format!("projects/{}", project_id))
             .by_page();
@@ -61,11 +56,14 @@ impl GCPClient {
                         output.push_str(&format!("{}\n", location.name));
                     }
                 }
-                Err(e) => return format!("Error listing locations: {}", e),
+                Err(e) => {
+                    error!("Error listing locations: {}", e);
+                    return format!("Error listing locations: {}", e);
+                }
             }
         }
 
-        println!("Completed client API call Project {}", project_id);
+        info!("Completed client API call Project {}", project_id);
         if output.is_empty() {
             format!("No locations found for project {}.", project_id)
         } else {
@@ -92,8 +90,15 @@ impl ServerHandler for GCPClient {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Initialize tracing with JSON format
+    tracing_subscriber::fmt().json().init();
+
+    // Initialize GCP Client once
+    let client = SecretManagerService::builder().build().await?;
+
+    // Create the service with a factory that reuses the client
     let service = StreamableHttpService::new(
-        || Ok(GCPClient::default()),
+        move || Ok(GCPClient::new(client.clone())),
         LocalSessionManager::default().into(),
         Default::default(),
     );
@@ -104,14 +109,13 @@ async fn main() -> Result<()> {
     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let addr: SocketAddr = format!("0.0.0.0:{}", port).parse()?;
 
-    println!("listening on {}", addr);
+    info!("listening on {}", addr);
 
     let tcp_listener = tokio::net::TcpListener::bind(addr).await?;
 
     if let Err(e) = axum::serve(tcp_listener, router).await {
-        eprintln!("server error: {}", e);
+        error!("server error: {}", e);
     }
 
     Ok(())
 }
-
