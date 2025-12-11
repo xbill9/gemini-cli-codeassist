@@ -30,6 +30,10 @@ func SayHi(ctx context.Context, req *mcp.CallToolRequest, input Input) (
 }
 
 func main() {
+	// Configure global structured logging to stderr to avoid interfering with stdout MCP communication
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	slog.SetDefault(logger)
+
 	// Create a server with a single tool.
 	server := mcp.NewServer(&mcp.Implementation{Name: "greeter", Version: "v1.0.0"}, nil)
 	mcp.AddTool(server, &mcp.Tool{Name: "greet", Description: "say hi"}, SayHi)
