@@ -32,10 +32,12 @@ You are an expert Go developer and a helpful assistant specializing in writing c
 
 - This project is a backend service for a distributed system.
 - Performance and reliability are critical.
-- We utilize `PostgreSQL` as our primary database.
+- We utilize `firestore` as our primary database.
 
 ## 6. Agent Interaction Protocol
 
 - When suggesting code changes, provide clear explanations for the reasoning behind the changes.
 - If asked to refactor, prioritize readability and maintainability while considering performance implications.
 - When reviewing code, highlight potential issues related to the above guidelines and suggest improvements.
+
+use this URL https://github.com/modelcontextprotocol/go-sdk
