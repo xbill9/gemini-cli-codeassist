@@ -1,0 +1,40 @@
+{
+  "name": "mcp-https-ts",
+  "version": "0.1.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "NODE_OPTIONS=--max_old_space_size=4096 tsc",
+    "build:release": "tsc -p tsconfig.release.json",
+    "start": "npm run build && node dist/index.js",
+    "dev": "concurrently \"tsc --watch\" \"nodemon -q dist/index.js\"",
+    "lint": "eslint . --ext .ts",
+    "test": "NODE_OPTIONS=--max-old-space-size=4096 jest --detectOpenHandles"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.5",
+    "dotenv": "^16.3.1",
+    "express": "^5.2.1",
+    "winston": "^3.11.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.4.5",
+    "@types/supertest": "^6.0.3",
+    "@typescript-eslint/eslint-plugin": "^7.1.1",
+    "@typescript-eslint/parser": "^7.1.1",
+    "concurrently": "^8.2.0",
+    "eslint": "^8.57.0",
+    "jest": "^30.2.0",
+    "nodemon": "^3.0.1",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3"
+  }
+}
