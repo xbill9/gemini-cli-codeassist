@@ -26,7 +26,7 @@ clean:
 # Build the project for release
 release:
 	@echo "Building Release..."
-	@cargo build --release --target x86_64-unknown-linux-gnu
+	@cargo build --release 
 
 # Run tests
 test:
