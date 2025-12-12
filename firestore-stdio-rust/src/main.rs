@@ -341,6 +341,7 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .json()
+        .with_writer(std::io::stderr)
         .init();
 
     info!("🍏 Cymbal Superstore: Inventory API Starting");

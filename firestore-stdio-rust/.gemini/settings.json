@@ -1,10 +1,10 @@
  {
     "mcpServers": {
-      "firestore-stdio": {
+      "firestore-stdio-rust": {
         "command": "$HOME/gemini-cli-codeassist/firestore-stdio-rust/target/release/firestore-stdio-rust",
         "args": ["--prebuilt","--stdio"],
         "env": {
-          "RUST_LOG": "trace"
+          "RUST_LOG": "info"
         }
       }
     }
