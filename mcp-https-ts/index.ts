@@ -14,7 +14,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import express, { Request, Response } from "express";
+import { Request, Response } from "express";
 import dotenv from "dotenv";
 import * as z from 'zod/v3';
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -71,17 +71,11 @@ const getServer = () => {
 };
 
 // Create and configure the Express app
-const MCP_PORT = process.env.MCP_PORT ? parseInt(process.env.MCP_PORT, 10) : 8000;
+
 
 const app = createMcpExpressApp();
 
-const transport = new StreamableHTTPServerTransport({
-  sessionIdGenerator: undefined, // Stateless
-  enableJsonResponse: true,
-});
 
-// Connect MCP server to the transport
-// mcpServer.connect(transport); // This should be done inside the post handler per reference
 
 app.post('/mcp', async (req: Request, res: Response) => {
     const mcpServer = getServer(); // Use the newly defined getServer function
