@@ -1,3 +1,4 @@
+use std::io::stderr;
 use anyhow::Result;
 use rmcp::{
     handler::server::{ServerHandler, tool::ToolRouter},
@@ -60,7 +61,7 @@ async fn run() -> anyhow::Result<()> {
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| "info,min_rust=debug".into()),
         )
-        .with(tracing_subscriber::fmt::layer().pretty())
+        .with(tracing_subscriber::fmt::layer().json().with_writer(stderr))
         .init();
 
     tracing::info!("MCP Starting server on {}", BIND_ADDRESS);
