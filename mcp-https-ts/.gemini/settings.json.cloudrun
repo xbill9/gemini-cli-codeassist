@@ -1,0 +1,8 @@
+ {
+    "mcpServers": {
+    "hello-cloudrun-node": {
+      "httpUrl": "https://mcp-https-ts-$PROJECT_NUMBER.us-central1.run.app/mcp/"
+    }
+  }
+}
+

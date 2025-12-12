@@ -1,59 +1,27 @@
-# Google Cloud Build configuration file.
-
 steps:
-  # 1. Install dependencies.
-  # This step uses the node builder to run npm ci for a clean install.
-  - name: 'gcr.io/cloud-builders/npm'
-    id: 'Install Dependencies'
-    args: ['ci']
-
-  # 2. Build the TypeScript code.
-  # This step uses the node builder to compile the TypeScript to JavaScript.
-  - name: 'gcr.io/cloud-builders/npm'
-    id: 'Build'
-    args: ['run', 'build']
-
-  # 3. Build the Docker image.
-  # The image is tagged with the short Git commit SHA for versioning.
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'Build Docker Image'
+  # Build the application image
+  - name: "gcr.io/cloud-builders/docker"
+    entrypoint: "bash"
     args:
-      - 'build'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$SHORT_SHA'
-      - '.'
+      - "-c"
+      - |
+        docker build \
+        -t gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest . && \
+        docker push gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest
 
-  # 4. Push the Docker image to Google Container Registry.
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'Push Docker Image'
+  # Deploy to cloud run US
+  - name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: "bash"
     args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$SHORT_SHA'
+      - "-c"
+      - |
+        gcloud run deploy ${_SERVICE_NAME} \
+        --image gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest \
+        --region us-central1 --platform managed \
+        --allow-unauthenticated \
+        --set-env-vars GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=us-central1
 
-  # 5. Deploy to Cloud Run.
-  # This step deploys the newly built image to a Cloud Run service.
-  - name: 'gcr.io/cloud-builders/gcloud'
-    id: 'Deploy'
-    args:
-      - 'run'
-      - 'deploy'
-      - '${_SERVICE_NAME}'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$SHORT_SHA'
-      - '--region'
-      - '${_REGION}'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated' # WARNING: This makes the service publicly accessible.
-
-# The image(s) built by the steps above will be pushed to Google Container Registry.
-images:
-  - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$SHORT_SHA'
-
-# Timeout for the entire build.
 timeout: 800s
 
-# Substitution variables that can be overridden.
 substitutions:
-  _SERVICE_NAME: 'mcp-ts'
-  _REGION: 'us-central1'
+  _SERVICE_NAME: mcp-https-ts

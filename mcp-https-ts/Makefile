@@ -5,7 +5,7 @@
 # ==============================================================================
 
 # Service name for Cloud Run
-SERVICE_NAME := mcp-ts
+SERVICE_NAME := mcp-https-ts
 # Google Cloud Region
 REGION := us-central1
 # NPM command
@@ -71,7 +71,7 @@ audit: ## Run npm audit to check for vulnerabilities.
 
 deploy: ## Submit the build to Google Cloud Build.
 	@echo "Submitting build to Google Cloud Build..."
-	gcloud builds submit . --config cloudbuild.yaml --substitutions=_SERVICE_NAME=$(SERVICE_NAME),_REGION=$(REGION),SHORT_SHA=$$(git rev-parse --short HEAD)
+	gcloud builds submit . --config cloudbuild.yaml --substitutions=_SERVICE_NAME=$(SERVICE_NAME)
 
 # ==============================================================================
 # Help
