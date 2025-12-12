@@ -15,6 +15,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import dotenv from "dotenv";
+import * as z from 'zod';
 
 import logger from "./logger.js";
 
@@ -31,14 +32,17 @@ mcpServer.registerTool(
   {
     title: "Minimal MCP over Node/TypeScript/Javascript",
     description: "Get a greeting from a local stdio server.",
-    inputSchema: {},
+    inputSchema: {
+      param: z.string(),
+    } as any,
   },
-  greetHandler
+  (args: { param: string }) => greetHandler(args)
 );
 
-export async function greetHandler() {
+export async function greetHandler(args: { param: string }) {
+  const { param } = args;
   logger.info("Executed greet tool");
-  return { content: [{ type: "text" as const, text: "🍎 Hello! (MCP Enabled)." }] };
+  return { content: [{ type: "text" as const, text: param }] };
 }
 
 async function main() {

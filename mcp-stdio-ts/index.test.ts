@@ -1,19 +1,18 @@
-import { greetHandler } from './index';
-import logger from './logger';
-
-// Mock the logger
 jest.mock('./logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
 }));
 
+import logger from './logger';
+import { greetHandler } from './index';
+
 describe('greetHandler', () => {
-  it('should return a greeting message', async () => {
-    const response = await greetHandler();
+  it('should return the provided parameter', async () => {
+    const response = await greetHandler({ param: 'test param' });
     
     expect(response).toEqual({
-      content: [{ type: 'text', text: '🍎 Hello! (MCP Enabled).' }],
+      content: [{ type: 'text', text: 'test param' }],
     });
     
     expect(logger.info).toHaveBeenCalledWith('Executed greet tool');

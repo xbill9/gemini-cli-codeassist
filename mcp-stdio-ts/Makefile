@@ -27,6 +27,11 @@ build: ## Build the project for development.
 	@echo "Building the TypeScript project..."
 	@$(NPM) run build
 
+release: ## Build the project for release (optimized).
+	@echo "Building the TypeScript project for release..."
+	@$(NPM) run clean
+	@$(NPM) run build:release
+
 start: ## Run the project.
 	@echo "Running the TypeScript project..."
 	@$(NPM) start
@@ -50,6 +55,7 @@ clean: ## Clean the project.
 lint: ## Run linting.
 	@echo "Running linting..."
 	@$(NPM) run lint
+	@$(NPM) audit
 
 test: ## Run tests.
 	@echo "Running tests..."

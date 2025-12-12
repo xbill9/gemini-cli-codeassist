@@ -12,6 +12,11 @@ This is a TypeScript-based backend service for the Cymbal Superstore application
 *   **Framework:** Express.js
 *   **Deployment:** Google Cloud Run (via Docker)
 *   **Package Manager:** npm
+The typescript language spec is here:
+https://github.com/microsoft/TypeScript
+
+The MCP Typescript spec is here:
+https://github.com/modelcontextprotocol/typescript-sdk/tree/main
 
 ## Development Setup
 
