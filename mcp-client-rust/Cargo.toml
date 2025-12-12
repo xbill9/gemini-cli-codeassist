@@ -8,8 +8,7 @@ repository = "https://github.com/xbill9/gemini-cli-codeassist"
 
 [dependencies]
 anyhow = "1.0.98"
-rmcp = { version = "0.10.0", features = ["auth", "server", "transport-io", "transport-sse-server", "transport-streamable-http-server", "client", "transport-child-process"] }
-rmcp-macros = "0.10.0"
+rmcp = { version = "0.8.5", features = ["auth", "server", "transport-io",  "transport-streamable-http-server", "client", "transport-child-process", "macros"] }
 tokio = { version = "1.46.0", features = ["macros", "rt-multi-thread", "signal", "process"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
