@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "hello-stdio-node": {
+      "command": "node",
+      "args": [
+        "$HOME/gemini-cli-codeassist/mcp-stdio-ts/dist/index.js"
+      ]
+    }
+  }
+}
