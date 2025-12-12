@@ -12,11 +12,11 @@ anyhow = "1.0.98"
 axum = { version = "0.8.4", features = ["macros"] }
 chrono = { version = "0.4.34", features = ["serde"] }
 dotenv = "0.15.0"
-firestore = "0.47.0"
+firestore = "^0.47.0"
 futures = "0.3.30"
 rand = "0.8.5"
 reqwest = { version = "0.12.22", features = ["json"] }
-rmcp = { version = "0.10.0", features = ["auth", "server", "macros", "transport-streamable-http-server"] }
+rmcp = { version = "0.8.5", features = ["auth", "server", "macros", "transport-streamable-http-server"] }
 rustls = { version = "0.23.32", features = ["ring"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.140"
