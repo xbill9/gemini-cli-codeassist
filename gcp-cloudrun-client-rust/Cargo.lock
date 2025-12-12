@@ -420,7 +420,6 @@ dependencies = [
  "google-cloud-gax",
  "google-cloud-secretmanager-v1",
  "rmcp",
- "rmcp-macros",
  "serde",
  "serde_json",
  "tokio",
@@ -1073,10 +1072,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e62e29dfe041afb8ed2a6c9737ab57db4907285d999ef8ad3a59092a36bdc846"
 
 [[package]]
-name = "pastey"
-version = "0.2.0"
+name = "paste"
+version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57d6c094ee800037dff99e02cab0eaf3142826586742a270ab3d7a62656bd27a"
+checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "percent-encoding"
@@ -1382,11 +1381,10 @@ dependencies = [
 
 [[package]]
 name = "rmcp"
-version = "0.11.0"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5df440eaa43f8573491ed4a5899719b6d29099500774abba12214a095a4083ed"
+checksum = "e5947688160b56fb6c827e3c20a72c90392a1d7e9dec74749197aa1780ac42ca"
 dependencies = [
- "async-trait",
  "base64",
  "bytes",
  "chrono",
@@ -1395,7 +1393,7 @@ dependencies = [
  "http-body",
  "http-body-util",
  "oauth2",
- "pastey",
+ "paste",
  "pin-project-lite",
  "rand 0.9.2",
  "reqwest",
@@ -1416,9 +1414,9 @@ dependencies = [
 
 [[package]]
 name = "rmcp-macros"
-version = "0.11.0"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ef03779cccab8337dd8617c53fce5c98ec21794febc397531555472ca28f8c3"
+checksum = "01263441d3f8635c628e33856c468b96ebbce1af2d3699ea712ca71432d4ee7a"
 dependencies = [
  "darling",
  "proc-macro2",
