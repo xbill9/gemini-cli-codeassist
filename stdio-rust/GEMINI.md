@@ -1,4 +1,4 @@
-# Gemini Workspace for `cloudrun-rust`
+# Gemini Workspace for `stdio-rust`
 
 You are a Rust Developer working with Google Cloud.
 You should follow Rust Best practices.
@@ -27,6 +27,9 @@ This project uses a `Makefile` to simplify common development tasks.
 *   [Rust Toolchain](https://www.rust-lang.org/tools/install)
 *   [Docker](https://docs.docker.com/get-docker/)
 *   [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+https://github.com/modelcontextprotocol/rust-sdk
+https://docs.rs/rmcp/latest/rmcp/
+https://crates.io/crates/rmcp
 
 ### Initial Setup
 

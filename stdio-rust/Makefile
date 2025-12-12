@@ -1,7 +1,7 @@
 # Makefile for the Rust project
 
 # Variables
-SERVICE_NAME := hello-rust
+SERVICE_NAME := mcp-stdio-rust
 REGION := us-central1
 
 .PHONY: all build run clean release test fmt clippy check docker-build deploy help
@@ -40,6 +40,11 @@ fmt:
 
 # Lint the code
 clippy:
+	@echo "Linting code..."
+	@cargo clippy -- -D warnings
+
+# Lint the code
+lint:
 	@echo "Linting code..."
 	@cargo clippy -- -D warnings
 
