@@ -26,7 +26,7 @@ dotenv.config();
 
 // Validate essential environment variables
 function validateEnvVars() {
-  const requiredEnvVars = ["PROJECT_ID"]; // Add other critical env vars if identified later
+  const requiredEnvVars = ["GOOGLE_CLOUD_PROJECT"];
 
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
@@ -71,7 +71,9 @@ const getServer = () => {
 // Create and configure the Express app
 
 
-const app = createMcpExpressApp();
+const app = createMcpExpressApp({
+    host: '0.0.0.0'
+});
 
 
 
@@ -136,10 +138,10 @@ app.get("/health", (req: Request, res: Response) => {
 });
 
 // Start the server
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 8080;
 
 const startServer = () => {
-  validateEnvVars(); // Validate env vars before starting the server
+  // validateEnvVars(); // Validate env vars before starting the server
 
   const serverInstance = app.listen(PORT, (error?: Error) => {
     if (error) {
@@ -154,7 +156,7 @@ const startServer = () => {
 // Start the server if this file is run directly
 if (require.main === module) {
   try {
-    validateEnvVars(); // Validate env vars before starting the server
+    // validateEnvVars(); // Validate env vars before starting the server
     startServer();
   } catch (error) {
     logger.error(`Failed to start server: ${(error as Error).message}`);
