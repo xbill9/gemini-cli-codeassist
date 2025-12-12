@@ -30,15 +30,13 @@ function validateEnvVars() {
 
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
-      logger.error(`Missing required environment variable: ${envVar}`);
-      process.exit(1);
+      throw new Error(`Missing required environment variable: ${envVar}`);
     }
   }
   logger.info("All essential environment variables are set.");
 }
 
-validateEnvVars();
-
+// validateEnvVars();
 // ---------------- MCP SERVER ------------------------------------------------
 const getServer = () => {
   const mcpServer = new McpServer({
@@ -138,9 +136,11 @@ app.get("/health", (req: Request, res: Response) => {
 });
 
 // Start the server
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 
 const startServer = () => {
+  validateEnvVars(); // Validate env vars before starting the server
+
   const serverInstance = app.listen(PORT, (error?: Error) => {
     if (error) {
       logger.error('Failed to start server:', error);
@@ -153,7 +153,13 @@ const startServer = () => {
 
 // Start the server if this file is run directly
 if (require.main === module) {
-  startServer();
+  try {
+    validateEnvVars(); // Validate env vars before starting the server
+    startServer();
+  } catch (error) {
+    logger.error(`Failed to start server: ${(error as Error).message}`);
+    process.exit(1);
+  }
 }
 
 // Handle server shutdown

@@ -10,7 +10,7 @@
     "start": "npm run build && node dist/index.js",
     "dev": "concurrently \"tsc --watch\" \"nodemon -q dist/index.js\"",
     "lint": "eslint . --ext .ts",
-    "test": "NODE_OPTIONS=--max-old-space-size=4096 jest --detectOpenHandles"
+    "test": "NODE_ENV=test NODE_OPTIONS=--max-old-space-size=4096 jest --detectOpenHandles"
   },
   "keywords": [],
   "author": "",

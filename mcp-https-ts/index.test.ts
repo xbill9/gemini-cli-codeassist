@@ -1,4 +1,4 @@
-process.env.PORT = '3000'; // Set a default port for tests
+process.env.PORT = '0'; // Set a dynamic port for tests
 
 jest.mock('./logger', () => ({
   info: jest.fn(),
@@ -15,6 +15,7 @@ let server: Server;
 let exitSpy: jest.SpyInstance;
 
 beforeAll(() => {
+  process.env.PROJECT_ID = 'test-project'; // Set PROJECT_ID for tests
   exitSpy = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null | undefined) => {
     throw new Error(`process.exit called with code: ${code}`);
   });
