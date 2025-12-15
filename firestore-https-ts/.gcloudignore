@@ -1,0 +1,47 @@
+# This file specifies files that are ignored by gcloud when uploading to Cloud Build.
+# It uses the same syntax as .gitignore.
+
+# Node.js dependencies:
+node_modules/
+
+# Build artifacts:
+dist/
+
+# Editor/IDE files:
+.vscode/
+.idea/
+
+# macOS system files:
+.DS_Store
+
+# Logs:
+*.log
+
+# Temp files
+*.tmp
+
+# Gemini CLI specific files
+.gemini/
+
+# Cloud Build specific files - already handled by gcloudignore
+# cloudbuild.yaml
+
+# Dockerfile - already handled by gcloudignore
+# Dockerfile
+
+# Test files - include
+# index.test.ts
+# jest.config.js
+
+# Source files - include
+# index.ts
+# logger.ts
+
+# Configuration files - include
+# .eslintrc.js
+# .gitignore
+# Makefile
+# package-lock.json
+# package.json
+# tsconfig.json
+# tsconfig.release.json
