@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "firestore-stdio-node": {
+      "command": "node",
+      "args": [
+        "$HOME/gemini-cli-codeassist/firestore-stdio-ts/dist/index.js"
+      ]
+    }
+  }
+}
