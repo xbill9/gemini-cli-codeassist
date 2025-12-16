@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "hello-stdio-node": {
+      "command": "python",
+      "args": [
+        "$HOME/gemini-cli-codeassist/mcp-stdio-python/main.py"
+      ]
+    }
+  }
+}
