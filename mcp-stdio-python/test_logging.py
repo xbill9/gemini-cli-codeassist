@@ -2,7 +2,7 @@ import pytest
 import logging
 from io import StringIO
 from main import logger, greet
-import pythonjsonlogger.json as json
+from pythonjsonlogger.json import JsonFormatter
 
 
 @pytest.fixture
@@ -12,7 +12,7 @@ def caplog_stream():
 
     # Create a new handler that writes to our StringIO object
     # Use the same formatter as in main.py
-    formatter = json.JsonFormatter()
+    formatter = JsonFormatter()
     handler = logging.StreamHandler(log_stream)
     handler.setFormatter(formatter)
     handler.setLevel(logging.DEBUG)  # Capture all levels for testing

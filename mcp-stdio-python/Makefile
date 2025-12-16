@@ -1,13 +1,14 @@
 # Makefile for mcp-stdio-python
 
-.PHONY: all install run build test lint format status pull push clean
+.PHONY: all install run build test lint format type-check status pull push clean
 
-all: install test lint
+all: install test lint type-check
 
 # Target to install dependencies
 install:
 	@echo "Installing dependencies..."
 	@pip install -r requirements.txt
+	@pip install -r requirements-dev.txt
 
 # Target to run the application
 run:
@@ -33,6 +34,11 @@ lint:
 format:
 	@echo "Formatting the code..."
 	@black .
+
+# Target to type-check the code
+type-check:
+	@echo "Type-checking the code..."
+	@mypy .
 
 # Target to show git status
 status:

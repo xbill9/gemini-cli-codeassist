@@ -1,5 +1,5 @@
-import pytest
 from main import greet
+
 
 def test_greet_returns_param():
     """
@@ -9,6 +9,7 @@ def test_greet_returns_param():
     result = greet(test_param)
     assert result == test_param
 
+
 def test_greet_with_empty_string():
     """
     Test that the greet tool handles an empty string parameter.
@@ -16,6 +17,7 @@ def test_greet_with_empty_string():
     test_param = ""
     result = greet(test_param)
     assert result == test_param
+
 
 def test_greet_with_special_characters():
     """
