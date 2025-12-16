@@ -1,0 +1,15 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+.pytest_cache
+.venv
+venv
+*.log
+README.md
+requirements-dev.txt
+test_*.py
+Makefile
+cloudbuild.yaml
+GEMINI.md
+.gemini
