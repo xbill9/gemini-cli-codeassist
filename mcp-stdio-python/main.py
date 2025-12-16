@@ -18,7 +18,6 @@ stderr_handler.setLevel(logging.INFO)  # Capture all levels from INFO up
 logger.addHandler(stderr_handler)
 
 # Initialize FastMCP server
-# Matching name from index.ts: "hello-world-server"
 mcp = FastMCP("hello-world-server")
 
 

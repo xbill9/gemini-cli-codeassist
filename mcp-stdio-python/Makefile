@@ -10,6 +10,10 @@ install:
 	@pip install -r requirements.txt
 	@pip install -r requirements-dev.txt
 
+release:
+	@echo "Installing dependencies..."
+	@pip install -r requirements.txt
+
 # Target to run the application
 run:
 	@echo "Running the application..."
