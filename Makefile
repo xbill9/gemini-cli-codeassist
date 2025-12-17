@@ -6,8 +6,8 @@ SUBDIRS := backend-rust \
 	firestore-https-go \
 	firestore-https-rust \
 	firestore-https-ts \
-	firestore-local-rust \
 	firestore-stdio-go \
+	firestore-stdio-python \
 	firestore-stdio-rust \
 	firestore-stdio-ts \
 	gcp-client-rust \
@@ -20,6 +20,7 @@ SUBDIRS := backend-rust \
 	mcp-cli-rust \
 	mcp-client-rust \
 	mcp-https-go \
+	mcp-https-python \
 	mcp-https-ts \
 	mcp-rust \
 	mcp-stdio-go \

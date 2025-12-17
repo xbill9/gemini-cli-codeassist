@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "firestore-stdio-python": {
+      "command": "python",
+      "args": [
+        "$HOME/gemini-cli-codeassist/firestore-stdio-python/main.py"
+      ]
+    }
+  }
+}
