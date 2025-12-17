@@ -1,7 +1,9 @@
 # main.py
 
+import asyncio
 import logging
 import sys
+import os
 
 from pythonjsonlogger.json import JsonFormatter
 from fastmcp import FastMCP
@@ -41,5 +43,12 @@ def greet(param: str) -> str:
 
 
 if __name__ == "__main__":
-    logger.debug("Starting MCP server")
-    mcp.run(transport="http", host="0.0.0.0", port=8080)
+    port = int(os.getenv("PORT", 8080))
+    logger.info(f"🚀 MCP server started on port {port}")
+    
+    mcp.run(
+        transport="http",
+        host="0.0.0.0",
+        port=port,
+    )
+

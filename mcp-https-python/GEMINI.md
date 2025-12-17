@@ -35,7 +35,7 @@ This is a **Python-based Model Context Protocol (MCP) server** using the `FastMC
 
 ## Running the Server
 
-The server is configured to run using the `HTTP` transport on `http://localhost:5000`.
+The server is configured to run using the `HTTP` transport on `http://localhost:8080`.
 
 ```bash
 python main.py
