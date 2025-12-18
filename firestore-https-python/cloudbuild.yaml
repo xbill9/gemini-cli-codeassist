@@ -29,4 +29,4 @@ images:
 timeout: 800s
 
 substitutions:
-  _SERVICE_NAME: firebase-https-python
+  _SERVICE_NAME: firestore-https-python

@@ -1,4 +1,4 @@
-# Makefile for firebase-stdio-python
+# Makefile for firestore-https-python
 
 .PHONY: all install run build test lint format type-check status pull push clean
 

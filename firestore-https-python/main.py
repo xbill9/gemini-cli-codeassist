@@ -50,7 +50,7 @@ mcp = FastMCP("inventory-server")
 # health check on standard http endpoint
 @mcp.custom_route("/health", methods=["GET"])
 async def health_check(request):
-    return JSONResponse({"status": "healthy", "service": "firebase-mcp-server"})
+    return JSONResponse({"status": "healthy", "service": "firestore-mcp-server"})
 
 
 # --- Helper Functions ---
