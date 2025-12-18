@@ -1,0 +1,10 @@
+fastmcp
+pydantic
+python-json-logger
+starlette
+google-cloud-firestore
+python-dotenv
+pytest
+flake8
+black
+mypy
