@@ -6,16 +6,19 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * Main entry point for the MCP Studio Application.
+ */
 @SpringBootApplication
 public class Application {
 
-	public static void main(String[] args) {
-		SpringApplication.run(Application.class, args);
-	}
+  public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+  }
 
-	@Bean
-	public ToolCallbackProvider toolCallbackProvider(Tools tools) {
-		return MethodToolCallbackProvider.builder().toolObjects(tools).build();
-	}
+  @Bean
+  public ToolCallbackProvider toolCallbackProvider(Tools tools) {
+    return MethodToolCallbackProvider.builder().toolObjects(tools).build();
+  }
 
 }

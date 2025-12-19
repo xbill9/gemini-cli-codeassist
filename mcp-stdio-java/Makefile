@@ -1,6 +1,6 @@
 # Makefile for mcp-stdio-java
 
-.PHONY: all install run build test clean status pull push
+.PHONY: all install run build test clean status pull push lint
 
 all: install build test
 
@@ -23,10 +23,20 @@ build:
 	@echo "Building the application..."
 	@./mvnw clean package -DskipTests
 
+# Target to build the application
+release:
+	@echo "Building the application..."
+	@./mvnw clean package -DskipTests
+
 # Target to run tests
 test:
 	@echo "Running tests..."
 	@./mvnw test
+
+# Target to run linting
+lint:
+	@echo "Running linting..."
+	@./mvnw checkstyle:check
 
 # Target to clean the project
 clean:
