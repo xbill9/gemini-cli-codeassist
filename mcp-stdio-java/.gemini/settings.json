@@ -3,7 +3,7 @@
     "hello-stdio-java": {
       "command": "java",
       "args": ["-jar",
-	      "/home/xbill/gemini-cli-codeassist/mcp-stdio-java/target/mcp-stdio-java-0.0.1-SNAPSHOT.jar"
+	      "$HOME/gemini-cli-codeassist/mcp-stdio-java/target/mcp-stdio-java-0.0.1-SNAPSHOT.jar"
       ],
       "transport": "stdio"
     }
