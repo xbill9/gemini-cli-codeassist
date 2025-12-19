@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+    "hello-cloudrun-java": {
+      "httpUrl": "https://mcp-https-java-1056842563084.us-central1.run.app/mcp"
+    }
+  }
+}
