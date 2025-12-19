@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "firestore-stdio-java": {
+      "command": "java",
+      "args": ["-jar",
+	      "$HOME/gemini-cli-codeassist/firestore-stdio-java/target/firestore-stdio-java-0.0.1-SNAPSHOT.jar"
+      ],
+      "transport": "stdio"
+    }
+  }
+}
