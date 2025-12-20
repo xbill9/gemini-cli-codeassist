@@ -1,7 +1,7 @@
  {
     "mcpServers": {
-    "hello-cloudrun-https": {
-	       "httpUrl": "https://mcp-https-go-$PROJECT_NUMBER.us-central1.run.app/mcp/"
+    "hello-cloudrun-java": {
+	       "httpUrl": "https://mcp-https-java-$PROJECT_NUMBER.us-central1.run.app/mcp/"
     }
   }
 }
