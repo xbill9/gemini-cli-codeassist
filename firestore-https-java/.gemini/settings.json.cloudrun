@@ -1,7 +1,7 @@
  {
     "mcpServers": {
     "firestore-cloudrun-java": {
-	       "httpUrl": "https://firestore-https-java-$PROJECT_NUMBER.us-central1.run.app/mcp/"
+	       "httpUrl": "https://firestore-https-java-$PROJECT_NUMBER.us-central1.run.app/mcp"
     }
   }
 }
