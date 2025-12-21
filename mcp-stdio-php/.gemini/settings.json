@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "hello-stdio-php": {
+      "command": "php",
+      "args": [
+        "$HOME/gemini-cli-codeassist/mcp-stdio-php/main.php"
+      ]
+    }
+  }
+}
