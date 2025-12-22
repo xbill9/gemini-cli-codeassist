@@ -7,10 +7,15 @@ all: install test lint
 # Target to install dependencies
 install:
 	@echo "Installing dependencies..."
-	@composer install
+	@php composer.phar install
+	@php composer.phar update
 
 # Target to run the application
 run:
+	@echo "Running the application..."
+	@php main.php
+
+release:
 	@echo "Running the application..."
 	@php main.php
 
