@@ -2,5 +2,5 @@ parameters:
     level: 5
     paths:
         - main.php
-        - GetCompatibleStreamableHttpTransport.php
+        - bootstrap.php
         - tests

@@ -37,7 +37,7 @@ format:
 # Target to type-check the code
 type-check:
 	@echo "Type-checking the code..."
-	@vendor/bin/phpstan analyse main.php --level 5
+	@vendor/bin/phpstan analyse
 
 # Target to show git status
 status:
