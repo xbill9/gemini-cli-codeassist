@@ -1,0 +1,8 @@
+ {
+    "mcpServers": {
+    "hello-cloudrun-php": {
+      "httpUrl": "https://mcp-https-php-$PROJECT_NUMBER.us-central1.run.app/mcp"
+    }
+  }
+}
+

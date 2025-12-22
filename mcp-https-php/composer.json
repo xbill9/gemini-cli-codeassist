@@ -1,0 +1,18 @@
+{
+    "require": {
+        "mcp/sdk": "^0.2.0",
+        "monolog/monolog": "^3.9",
+        "nyholm/psr7": "^1.8",
+        "nyholm/psr7-server": "^1.1",
+        "laminas/laminas-httphandlerrunner": "^2.13"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "phpstan/phpstan": "^2.1"
+    }
+}
