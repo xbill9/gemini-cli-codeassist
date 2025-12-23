@@ -1,6 +1,6 @@
 parameters:
-    level: 5
+    level: 8
     paths:
         - main.php
-        - bootstrap.php
+        - src
         - tests

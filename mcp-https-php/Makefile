@@ -1,4 +1,4 @@
-# Makefile for mcp-stdio-php
+# Makefile for mcp-https-php
 
 .PHONY: all install run build test lint format type-check status pull push clean
 
@@ -7,12 +7,13 @@ all: install test lint
 # Target to install dependencies
 install:
 	@echo "Installing dependencies..."
-	@composer install
+	@php composer.phar install
+	@php composer.phar update
 
 # Target to run the application
 run:
-	@echo "Running the application..."
-	@php main.php
+	@echo "Starting PHP built-in server..."
+	@php -S 0.0.0.0:8080 main.php
 
 # Target to build the application (placeholder)
 build:
@@ -59,7 +60,6 @@ clean:
 	@echo "Cleaning up..."
 	@rm -rf vendor
 
-# Submit the build to Google Cloud Build
 deploy:
 	@echo "Submitting build to Google Cloud Build..."
 	@gcloud builds submit . --config cloudbuild.yaml

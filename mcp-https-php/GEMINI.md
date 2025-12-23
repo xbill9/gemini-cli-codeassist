@@ -30,12 +30,12 @@ This is a **PHP based Model Context Protocol (MCP) server**. It is designed to e
 Start the PHP built-in web server:
 
 ```bash
-php -S localhost:8080 main.php
+php -S 0.0.0.0:8080 main.php
 ```
 
 ## Connecting an MCP Client
 
-Configure your MCP client to connect to `http://localhost:8080/mcp` (or the root `/`, depending on how the client discovers endpoints).
+Configure your MCP client to connect to `http://0.0.0.0:8080/mcp` (or the root `/`, depending on how the client discovers endpoints).
 
 ## Notes
 

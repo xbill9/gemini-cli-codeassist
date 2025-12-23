@@ -1,6 +1,6 @@
 # MCP Stdio PHP Server
 
-A simple Model Context Protocol (MCP) server implemented in PHP. This server is designed to communicate over `stdio` and serves as a foundational "Hello World" example for PHP-based MCP integrations.
+A simple Model Context Protocol (MCP) server implemented in PHP. This server is designed to communicate over http and serves as a foundational "Hello World" example for PHP-based MCP integrations.
 
 ## Overview
 
@@ -16,7 +16,7 @@ This project provides a basic MCP server named `hello-world-server` that exposes
 1.  **Clone the repository:**
     ```bash
     git clone <repository-url>
-    cd mcp-stdio-php
+    cd mcp-https-php
     ```
 
 2.  **Install dependencies:**
@@ -28,11 +28,11 @@ This project provides a basic MCP server named `hello-world-server` that exposes
 
 ## Usage
 
-This server is designed to be executed by an MCP client (like Claude Desktop or a Gemini-powered IDE extension) that handles the stdio communication.
+This server is designed to be executed by an MCP client (like Claude Desktop or a Gemini-powered IDE extension) that handles the http communication.
 
-To run the server manually (starts listening on stdio):
+To run the server manually (starts listening on http):
 ```bash
-php main.php
+php -S 0.0.0.0:8080 main.php
 ```
 
 ### Configuration for MCP Clients
@@ -44,7 +44,7 @@ If you are adding this to an MCP client config (e.g., `claude_desktop_config.jso
   "mcpServers": {
     "php-hello-world": {
       "command": "php",
-      "args": ["/path/to/mcp-stdio-php/main.php"]
+      "args": ["/path/to/mcp-https-php/main.php"]
     }
   }
 }
@@ -55,7 +55,7 @@ If you are adding this to an MCP client config (e.g., `claude_desktop_config.jso
 ## Tools
 
 ### `greet`
-- **Description:** Get a greeting from a local stdio server.
+- **Description:** Get a greeting from a local https server.
 - **Parameters:**
     - `param` (string): The text or name to echo back.
 - **Returns:** The string passed in `param`.

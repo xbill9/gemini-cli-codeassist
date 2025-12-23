@@ -1,70 +1,64 @@
 <?php
 
-/*
- * This file is part of the official PHP MCP SDK.
- *
- * A collaboration between Symfony and the PHP Foundation.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+declare(strict_types=1);
 
-require_once __DIR__.'/bootstrap.php';
-chdir(__DIR__);
+require_once __DIR__ . '/vendor/autoload.php';
 
-use Mcp\Server;
+use App\Tools;
+use Http\Discovery\Psr17Factory;
+use Laminas\HttpHandlerRunner\Emitter\SapiEmitter;
+use Mcp\Server\Builder;
 use Mcp\Server\Session\FileSessionStore;
+use Mcp\Server\Transport\StreamableHttpTransport;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+use Monolog\Formatter\JsonFormatter;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LogLevel;
 
-$server = Server::builder()
-    ->setServerInfo('HTTP User Profiles', '1.0.0')
-    ->setLogger(logger())
-    ->setContainer(container())
-    ->setSession(new FileSessionStore(__DIR__.'/sessions'))
-    ->setDiscovery(__DIR__)
+if ('cli' === \PHP_SAPI) {
+    fwrite(STDERR, "This MCP server is designed to run over HTTP.\nUse 'make run' or 'php -S 0.0.0.0:8080 main.php' to start it.\n");
+    exit(1);
+}
+
+// Set up logging to match index.ts/main.py behavior
+$logger = new Logger('mcp');
+$handler = new StreamHandler('php://stderr', LogLevel::INFO);
+$handler->setFormatter(new JsonFormatter());
+$logger->pushHandler($handler);
+
+$tools = new Tools($logger);
+
+// Initialize MCP Server
+$server = (new Builder())
+    ->setServerInfo('hello-world-server', '1.0.0')
+    ->setLogger($logger)
+    ->setSession(new FileSessionStore(__DIR__ . '/sessions'))
     ->addTool(
-        function (float $a, float $b, string $operation = 'add'): array {
-            $result = match ($operation) {
-                'add' => $a + $b,
-                'subtract' => $a - $b,
-                'multiply' => $a * $b,
-                'divide' => 0 != $b ? $a / $b : throw new InvalidArgumentException('Cannot divide by zero'),
-                default => throw new InvalidArgumentException("Unknown operation: {$operation}"),
-            };
-
-            return [
-                'operation' => $operation,
-                'operands' => [$a, $b],
-                'result' => $result,
-            ];
-        },
-        name: 'calculator',
-        description: 'Perform basic math operations (add, subtract, multiply, divide)'
+        fn (string $name) => $tools->greet($name),
+        'greet',
+        'Get a greeting from a local MCP http server.'
     )
-    ->addResource(
-        function (): array {
-            $memoryUsage = memory_get_usage(true);
-            $memoryPeak = memory_get_peak_usage(true);
-            $uptime = time() - ($_SERVER['REQUEST_TIME_FLOAT'] ?? time());
-            $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? 'CLI';
-
-            return [
-                'server_time' => date('Y-m-d H:i:s'),
-                'uptime_seconds' => $uptime,
-                'memory_usage_mb' => round($memoryUsage / 1024 / 1024, 2),
-                'memory_peak_mb' => round($memoryPeak / 1024 / 1024, 2),
-                'php_version' => \PHP_VERSION,
-                'server_software' => $serverSoftware,
-                'operating_system' => \PHP_OS_FAMILY,
-                'status' => 'healthy',
-            ];
-        },
-        uri: 'system://status',
-        name: 'system_status',
-        description: 'Current system status and runtime information',
-        mimeType: 'application/json'
+    ->addTool(
+        fn () => $tools->getTime(),
+        'get_time',
+        'Get the current system time.'
+    )
+    ->addTool(
+        fn () => $tools->getSystemSpecs(),
+        'get_system_specs',
+        'Get system specifications and information.'
     )
     ->build();
 
-$response = $server->run(transport());
+// Select transport based on SAPI
+$transport = new StreamableHttpTransport(
+    (new Psr17Factory())->createServerRequestFromGlobals(),
+    logger: $logger
+);
 
-shutdown($response);
+/** @var ResponseInterface $result */
+$result = $server->run($transport);
+
+(new SapiEmitter())->emit($result);
+exit(0);
