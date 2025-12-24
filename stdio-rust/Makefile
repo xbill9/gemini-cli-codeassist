@@ -16,7 +16,7 @@ build:
 # Run the project
 run:
 	@echo "Running the Rust project..."
-	@cargo run
+	@cargo run --release
 
 # Clean the project
 clean:
