@@ -24,4 +24,4 @@ steps:
 timeout: 800s
 
 substitutions:
-  _SERVICE_NAME: hello-rust
+  _SERVICE_NAME: mcp-https-rust

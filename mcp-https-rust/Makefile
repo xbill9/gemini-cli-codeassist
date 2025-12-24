@@ -1,7 +1,7 @@
 # Makefile for the Rust project
 
 # Variables
-SERVICE_NAME := mcp-stdio-rust
+SERVICE_NAME := mcp-https-rust
 REGION := us-central1
 
 .PHONY: all build run clean release test fmt clippy check docker-build deploy help
@@ -16,7 +16,7 @@ build:
 # Run the project
 run:
 	@echo "Running the Rust project..."
-	@cargo run
+	@cargo run  --release
 
 # Clean the project
 clean:

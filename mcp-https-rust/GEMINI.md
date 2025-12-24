@@ -1,10 +1,13 @@
-# Gemini Workspace for `stdio-rust`
+# Gemini Workspace for `mcp-https-rust`
 
 You are a Rust Developer working with Google Cloud.
 You should follow Rust Best practices.
 The recommended language level for rust is 2024 do not suggest 2021.
 
 This document provides a developer-focused overview of the `hello-rust` project, tailored for use with Gemini.
+
+rmcp github
+https://github.com/modelcontextprotocol/rust-sdk
 
 ## Project Overview
 

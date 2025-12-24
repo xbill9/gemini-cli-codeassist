@@ -1,10 +1,10 @@
 use anyhow::Result;
 use rmcp::{
-    handler::server::{tool::ToolRouter, wrapper::Parameters, ServerHandler},
+    handler::server::{ServerHandler, tool::ToolRouter, wrapper::Parameters},
     model::{ServerCapabilities, ServerInfo},
     schemars, tool, tool_handler, tool_router,
     transport::streamable_http_server::{
-        session::local::LocalSessionManager, StreamableHttpServerConfig, StreamableHttpService,
+        StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
     },
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -33,8 +33,7 @@ impl HelloWorld {
         &self,
         Parameters(GetMsgRequest { message }): Parameters<GetMsgRequest>,
     ) -> String {
-        let msg = format!("Hello World MCP! {}", message);
-        msg
+        format!("Hello World MCP! {}", message)
     }
 }
 
@@ -64,23 +63,70 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    tracing::info!("MCP Starting server on http://0.0.0.0:8080");
-
     let service_factory = || Ok(HelloWorld::new());
     let session_manager = LocalSessionManager::default();
     let config = StreamableHttpServerConfig::default();
-    
-    let service = StreamableHttpService::new(
-        service_factory,
-        session_manager.into(),
-        config,
-    );
 
-    // Use nest_service to delegate all requests to the MCP service
-    let app = axum::Router::new().nest_service("/", service);
+    let service = StreamableHttpService::new(service_factory, session_manager.into(), config);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
-    axum::serve(listener, app).await?;
+    // Add a specific health check route
+    let app = axum::Router::new()
+        .route("/health", axum::routing::get(|| async { "ok" }))
+        .fallback_service(service);
+
+    // Determine port from environment variable (Cloud Run standard)
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+    let addr = format!("0.0.0.0:{}", port);
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+
+    tracing::info!("MCP Server listening on http://{}", addr);
+
+    // Run with graceful shutdown
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
 
     Ok(())
+}
+
+/// Handles graceful shutdown for SIGINT and SIGTERM
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+
+    tracing::info!("Signal received, starting graceful shutdown...");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_greeting() {
+        let hello = HelloWorld::new();
+        let request = GetMsgRequest {
+            message: "Tester".to_string(),
+        };
+        let response = hello.greeting(Parameters(request)).await;
+        assert_eq!(response, "Hello World MCP! Tester");
+    }
 }
