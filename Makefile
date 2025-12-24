@@ -24,11 +24,14 @@ SUBDIRS := backend-rust \
 	mcp-client-rust \
 	mcp-https-go \
 	mcp-https-java \
+	mcp-https-php \
 	mcp-https-python \
+	mcp-https-rust \
 	mcp-https-ts \
 	mcp-rust \
 	mcp-stdio-go \
 	mcp-stdio-java \
+	mcp-stdio-php \
 	mcp-stdio-python \
 	mcp-stdio-rust \
 	mcp-stdio-ts \
