@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "hello-stdio-csharp": {
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "mcp-stdio-csharp.csproj"
+      ]
+    }
+  }
+}
