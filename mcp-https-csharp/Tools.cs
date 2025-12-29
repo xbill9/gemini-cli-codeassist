@@ -7,6 +7,7 @@ namespace mcp_https_csharp;
 public static class MyTools
 {
     [McpServerTool]
+    [Description("Greets the user and returns their greeting.")]
     public static string Greet(string name)
     {
         return $"Hello, {name}!";

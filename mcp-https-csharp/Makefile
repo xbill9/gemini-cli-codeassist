@@ -54,3 +54,8 @@ push:
 clean:
 	@echo "Cleaning up..."
 	@dotnet clean
+
+deploy:
+	@echo "Submitting build to Google Cloud Build..."
+	@gcloud builds submit . --config cloudbuild.yaml
+
