@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="mcp-https-csharp.csproj" />
+  <Project Path="mcp-https-csharp.Tests/mcp-https-csharp.Tests.csproj" />
+</Solution>
