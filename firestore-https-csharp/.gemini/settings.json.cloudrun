@@ -1,7 +1,7 @@
  {
     "mcpServers": {
-    "hello-cloudrun-csharp": {
-      "httpUrl": "https://mcp-https-csharp-$PROJECT_NUMBER.us-central1.run.app/mcp"
+    "firestore-cloudrun-csharp": {
+      "httpUrl": "https://firestore-https-csharp-$PROJECT_NUMBER.us-central1.run.app/mcp"
     }
   }
 }
