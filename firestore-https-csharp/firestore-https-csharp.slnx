@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="firestore-https-csharp.csproj" />
+  <Project Path="firestore-https-csharp.Tests/firestore-https-csharp.Tests.csproj" />
+</Solution>
