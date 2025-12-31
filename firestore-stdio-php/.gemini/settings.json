@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "firestore-stdio-php": {
+      "command": "php",
+      "args": [
+        "$HOME/gemini-cli-codeassist/firestore-stdio-php/main.php"
+      ]
+    }
+  }
+}
