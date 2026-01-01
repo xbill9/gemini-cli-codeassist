@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     autoconf
 
 # Install gRPC and protobuf extensions
-RUN pecl install grpc && pecl install protobuf && docker-php-ext-enable grpc protobuf
+RUN export MAKEFLAGS="-j$(nproc)" && pecl install grpc && pecl install protobuf && docker-php-ext-enable grpc protobuf
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
