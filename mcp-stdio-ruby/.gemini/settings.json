@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "hello-stdio-ruby": {
+      "command": "ruby",
+      "args": [
+        "$HOME/gemini-cli-codeassist/mcp-stdio-ruby/main.rb"
+      ]
+    }
+  }
+}

@@ -1,0 +1,18 @@
+# Ruby
+*.gem
+*.rbc
+/.bundle/
+/vendor/bundle/
+/spec/reports/
+/coverage/
+/tmp/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.iml
