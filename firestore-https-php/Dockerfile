@@ -8,7 +8,14 @@ ENV PORT=8080
 RUN apt-get update && apt-get install -y \
     git \
     zip \
-    unzip
+    unzip \
+    zlib1g-dev \
+    g++ \
+    make \
+    autoconf
+
+# Install gRPC and protobuf extensions
+RUN pecl install grpc && pecl install protobuf && docker-php-ext-enable grpc protobuf
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
