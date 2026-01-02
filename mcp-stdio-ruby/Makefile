@@ -61,4 +61,4 @@ push:
 .PHONY: clean
 clean:
 	@echo "Cleaning up..."
-	@rm -rf vendor .bundle Gemfile.lock
+	@rm -rf vendor .bundle

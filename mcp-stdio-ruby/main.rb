@@ -1,41 +1,14 @@
+#!/usr/bin/env ruby
 # frozen_string_literal: true
 
 require 'mcp'
 require 'logger'
+require_relative 'lib/greet_tool'
 
 # Set up logging to stderr
 # We use stderr because stdout is used for MCP protocol communication
 LOGGER = Logger.new($stderr)
 LOGGER.level = Logger::INFO
-
-# Define the greet tool
-class GreetTool < MCP::Tool
-  description 'Get a greeting from a local stdio server.'
-  input_schema(
-    type: 'object',
-    properties: {
-      message: {
-        type: 'string',
-        description: 'The message to repeat.'
-      }
-    },
-    required: ['message']
-  )
-
-  class << self
-    def call(message:)
-      LOGGER.info "GreetTool called with message: #{message}"
-      MCP::Tool::Response.new(
-        [
-          {
-            type: 'text',
-            text: message
-          }
-        ]
-      )
-    end
-  end
-end
 
 # Initialize MCP Server
 server = MCP::Server.new(
@@ -51,7 +24,7 @@ if __FILE__ == $PROGRAM_NAME
     transport = MCP::Server::Transports::StdioTransport.new(server)
     transport.open
   rescue Interrupt
-    LOGGER.info "Shutting down MCP server..."
+    LOGGER.info 'Shutting down MCP server...'
   rescue StandardError => e
     LOGGER.error "Server error: #{e.message}"
     LOGGER.error e.backtrace.join("\n")
