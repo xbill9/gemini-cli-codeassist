@@ -1,0 +1,15 @@
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
+
+gem 'logger'
+gem 'mcp'
+gem 'puma'
+gem 'rack'
+gem 'rackup'
+
+group :development, :test do
+  gem 'rspec'
+  gem 'rubocop'
+  gem 'rubocop-rspec'
+end
