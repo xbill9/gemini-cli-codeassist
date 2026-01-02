@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "hello-stdio-kotlin": {
+      "command": "/home/xbill/gemini-cli-codeassist/mcp-stdio-kotlin/build/install/mcp-stdio-kotlin/bin/mcp-stdio-kotlin",
+      "args": []
+    }
+  }
+}
