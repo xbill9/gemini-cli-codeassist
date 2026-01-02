@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "hello-stdio-flutter": {
+      "command": "/home/xbill/gemini-cli-codeassist/mcp-stdio-flutter/bin/mcp_stdio_flutter",
+      "args": []
+    }
+  }
+}
