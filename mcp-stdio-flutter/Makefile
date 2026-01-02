@@ -10,4 +10,4 @@ test:
 	dart test
 
 clean:
-	rm -rf .dart_tool build .packages .pub
+	rm -rf .dart_tool build .packages .pub bin/mcp_stdio_flutter
