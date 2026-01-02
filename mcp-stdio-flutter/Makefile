@@ -1,7 +1,10 @@
-.PHONY: get run test clean
+.PHONY: get run test clean build
 
 get:
 	dart pub get
+
+build:
+	dart compile exe bin/mcp_stdio_flutter.dart -o bin/mcp_stdio_flutter
 
 run:
 	dart run bin/mcp_stdio_flutter.dart
