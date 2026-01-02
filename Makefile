@@ -1,16 +1,24 @@
 SUBDIRS := backend-rust \
+	battle-royale \
 	cloudrun-rust \
 	firestore-cli-rust \
 	firestore-client-rust \
 	firestore-cloudrun-rust \
+	firestore-https-csharp \
 	firestore-https-go \
 	firestore-https-java \
+	firestore-https-php \
 	firestore-https-python \
+	firestore-https-ruby \
 	firestore-https-rust \
 	firestore-https-ts \
+	firestore-stdio-csharp \
 	firestore-stdio-go \
 	firestore-stdio-java \
+	firestore-stdio-kotlin \
+	firestore-stdio-php \
 	firestore-stdio-python \
+	firestore-stdio-ruby \
 	firestore-stdio-rust \
 	firestore-stdio-ts \
 	gcp-client-rust \
@@ -22,17 +30,24 @@ SUBDIRS := backend-rust \
 	logging-client-rust \
 	mcp-cli-rust \
 	mcp-client-rust \
+	mcp-cloudrun-rust \
+	mcp-https-csharp \
 	mcp-https-go \
 	mcp-https-java \
+	mcp-https-kotlin \
 	mcp-https-php \
 	mcp-https-python \
+	mcp-https-ruby \
 	mcp-https-rust \
 	mcp-https-ts \
 	mcp-rust \
+	mcp-stdio-csharp \
 	mcp-stdio-go \
 	mcp-stdio-java \
+	mcp-stdio-kotlin \
 	mcp-stdio-php \
 	mcp-stdio-python \
+	mcp-stdio-ruby \
 	mcp-stdio-rust \
 	mcp-stdio-ts \
 	mcp-ts \
