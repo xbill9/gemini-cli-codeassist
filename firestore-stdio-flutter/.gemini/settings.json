@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "firestore-stdio-flutter": {
+      "command": "/home/xbill/gemini-cli-codeassist/firestore-stdio-flutter/bin/firestore_stdio_flutter",
+      "args": []
+    }
+  }
+}
