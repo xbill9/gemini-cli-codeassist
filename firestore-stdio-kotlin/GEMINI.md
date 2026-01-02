@@ -4,27 +4,28 @@ This document provides context for the Gemini Code Assistant to understand the p
 
 ## Project Overview
 
-This is a **Kotlin-based Model Context Protocol (MCP) server** using the official `kotlin-sdk`. It is designed to expose tools (like `greet`) over standard input/output (stdio) for integration with MCP clients.
+This is a **Kotlin-based Model Context Protocol (MCP) server** using the official `kotlin-sdk`. It implements an **Inventory Management Server** that interacts with **Google Cloud Firestore**. It exposes tools to manage products via standard input/output (stdio).
 
 ## Key Technologies
 
 *   **Language:** Kotlin 2.3.0
 *   **SDK:** `io.modelcontextprotocol:kotlin-sdk`
-*   **Build Tool:** Gradle 9.2.1 (Kotlin DSL)
+*   **Database:** Google Cloud Firestore (`com.google.cloud:google-cloud-firestore`)
+*   **Build Tool:** Gradle 8.12 (Kotlin DSL)
 *   **JDK:** Java 25
-*   **MCP SDK:** https://github.com/modelcontextprotocol/kotlin-sdk
 
 ## Project Structure
 
-*   `src/main/kotlin/.../Main.kt`: The entry point. Initializes the server and defines tools.
+*   `src/main/kotlin/com/example/mcp/server/Main.kt`: Entry point. Initializes the MCP server, defines tools, and sets up the stdio transport.
+*   `src/main/kotlin/com/example/mcp/server/FirestoreService.kt`: Handles Firestore interactions, data modeling (Product), and business logic.
 *   `build.gradle.kts`: Gradle build configuration.
-*   `settings.gradle.kts`: Gradle settings.
-*   `Makefile`: Development shortcuts.
+*   `Makefile`: Development shortcuts for building and running.
 
 ## Development Setup
 
 1.  **Prerequisites:**
     - Java JDK 25
+    - Google Cloud Credentials (configured via `GOOGLE_APPLICATION_CREDENTIALS` environment variable or `gcloud auth application-default login`)
 
 2.  **Build:**
     ```bash
@@ -35,7 +36,7 @@ This is a **Kotlin-based Model Context Protocol (MCP) server** using the officia
 
 ## Running the Server
 
-The server is configured to run using the `stdio` transport.
+The server runs using the `stdio` transport.
 
 ```bash
 make run
@@ -43,10 +44,15 @@ make run
 ./gradlew run
 ```
 
+## Tools Summary
+
+*   `get_products`: List all products in the inventory.
+*   `get_product_by_id`: Retrieve a specific product by its Firestore ID.
+*   `seed`: Populate the database with sample inventory data.
+*   `reset`: Remove all products from the inventory.
+*   `check_db`: Verify Firestore connectivity.
+*   `get_root`: Returns a basic greeting.
+
 ## Resources
 
 *   **MCP Kotlin SDK (GitHub):** [https://github.com/modelcontextprotocol/kotlin-sdk](https://github.com/modelcontextprotocol/kotlin-sdk)
-
-## Legacy/mismatched files
-*   `Dockerfile`: Needs update for Kotlin.
-*   `cloudbuild.yaml`: Needs update for Kotlin.

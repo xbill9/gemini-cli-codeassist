@@ -5,7 +5,7 @@ GRADLE_CMD ?= ./gradlew
 all: build
 
 build:
-	$(GRADLE_CMD) build
+	$(GRADLE_CMD) build installDist
 
 run:
 	$(GRADLE_CMD) run
@@ -15,3 +15,6 @@ test:
 
 clean:
 	$(GRADLE_CMD) clean
+
+install:
+	$(GRADLE_CMD) installDist

@@ -1,5 +1,17 @@
+# Python
 __pycache__/
 *.pyc
 .venv/
 .env
 .pytest_cache/
+
+# Kotlin / Gradle
+.gradle/
+build/
+out/
+.idea/
+*.iml
+*.ipr
+*.iws
+local.properties
+.DS_Store

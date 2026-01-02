@@ -1,1 +1,1 @@
-rootProject.name = "mcp-stdio-kotlin"
+rootProject.name = "firestore-stdio-kotlin"

@@ -17,9 +17,11 @@ import kotlinx.io.asSink
 import kotlinx.io.buffered
 
 fun main() {
+    val firestoreService = FirestoreService()
+
     val server = Server(
         serverInfo = Implementation(
-            name = "hello-world-server",
+            name = "inventory-server",
             version = "1.0.0"
         ),
         options = ServerOptions(
@@ -29,27 +31,93 @@ fun main() {
         )
     )
 
+    // Tool: get_products
     server.addTool(
-        name = "greet",
-        description = "Get a greeting from a local stdio server.",
+        name = "get_products",
+        description = "Get a list of all products from the inventory database",
+        inputSchema = Tool.Input(
+            properties = buildJsonObject {},
+            required = listOf()
+        )
+    ) {
+        val result = firestoreService.getProducts()
+        CallToolResult(content = listOf(TextContent(result)))
+    }
+
+    // Tool: get_product_by_id
+    server.addTool(
+        name = "get_product_by_id",
+        description = "Get a single product from the inventory database by its ID",
         inputSchema = Tool.Input(
             properties = buildJsonObject {
-                put("param", buildJsonObject {
+                put("id", buildJsonObject {
                     put("type", "string")
-                    put("description", "The name to greet")
+                    put("description", "The ID of the product to get")
                 })
             },
-            required = listOf("param")
+            required = listOf("id")
         )
     ) { request ->
-        val param = request.arguments?.get("param")
-        val resultString = if (param is JsonPrimitive) {
-            param.content
+        val idParam = request.arguments?.get("id")
+        val id = if (idParam is JsonPrimitive) {
+            idParam.content
         } else {
-            param?.toString()?.replace("\"", "") ?: ""
+            idParam?.toString()?.replace("\"", "") ?: ""
         }
         
-        CallToolResult(content = listOf(TextContent(resultString)))
+        val result = firestoreService.getProductById(id)
+        CallToolResult(content = listOf(TextContent(result)))
+    }
+
+    // Tool: seed
+    server.addTool(
+        name = "seed",
+        description = "Seed the inventory database with products.",
+        inputSchema = Tool.Input(
+            properties = buildJsonObject {},
+            required = listOf()
+        )
+    ) {
+        val result = firestoreService.seed()
+        CallToolResult(content = listOf(TextContent(result)))
+    }
+
+    // Tool: reset
+    server.addTool(
+        name = "reset",
+        description = "Clears all products from the inventory database.",
+        inputSchema = Tool.Input(
+            properties = buildJsonObject {},
+            required = listOf()
+        )
+    ) {
+        val result = firestoreService.reset()
+        CallToolResult(content = listOf(TextContent(result)))
+    }
+    
+    // Tool: get_root (Functionally a tool here to match the registration pattern)
+    server.addTool(
+        name = "get_root",
+        description = "Get a greeting from the Cymbal Superstore Inventory API.",
+        inputSchema = Tool.Input(
+            properties = buildJsonObject {},
+            required = listOf()
+        )
+    ) {
+        CallToolResult(content = listOf(TextContent("🍎 Hello! This is the Cymbal Superstore Inventory API.")))
+    }
+
+    // Tool: check_db
+    server.addTool(
+        name = "check_db",
+        description = "Checks if the inventory database is running.",
+        inputSchema = Tool.Input(
+            properties = buildJsonObject {},
+            required = listOf()
+        )
+    ) {
+        val isRunning = firestoreService.checkDb()
+        CallToolResult(content = listOf(TextContent("Database running: $isRunning")))
     }
 
     val transport = StdioServerTransport(System.`in`.asSource().buffered(), System.out.asSink().buffered())
