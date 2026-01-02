@@ -15,3 +15,6 @@ test:
 
 clean:
 	$(GRADLE_CMD) clean
+
+install:
+	$(GRADLE_CMD) installDist
