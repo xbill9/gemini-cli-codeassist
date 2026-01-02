@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "hello-stdio-kotlin": {
-      "command": "/home/xbill/gemini-cli-codeassist/mcp-stdio-kotlin/build/install/mcp-stdio-kotlin/bin/mcp-stdio-kotlin",
+    "firestore-stdio-kotlin": {
+      "command": "/home/xbill/gemini-cli-codeassist/firestore-stdio-kotlin/build/install/firestore-stdio-kotlin/bin/firestore-stdio-kotlin",
       "args": []
     }
   }
