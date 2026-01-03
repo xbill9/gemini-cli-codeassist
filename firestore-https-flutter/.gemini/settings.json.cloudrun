@@ -1,0 +1,8 @@
+ {
+    "mcpServers": {
+    "firestore-cloudrun-flutter": {
+      "httpUrl": "https://firestore-https-flutter-$PROJECT_NUMBER.us-central1.run.app/mcp"
+    }
+  }
+}
+
