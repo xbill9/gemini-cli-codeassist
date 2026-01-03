@@ -8,7 +8,7 @@ bool dbRunning = false;
 
 Future<void> initFirestore(String projectId) async {
   try {
-    Firestore.initialize(projectId);
+    Firestore.initialize(projectId, useApplicationDefaultAuth: true);
     dbRunning = true;
   } catch (e) {
     dbRunning = false;
@@ -134,7 +134,7 @@ Future<void> initFirestoreCollection() async {
       price: (random.nextInt(10) + 1).toDouble(),
       quantity: random.nextInt(500) + 1,
       imgfile: "product-images/${productName.replaceAll(' ', '').toLowerCase()}.png",
-      timestamp: DateTime.now().subtract(Duration(milliseconds: random.nextInt(31536000000) + 7776000000)),
+      timestamp: DateTime.now().subtract(Duration(milliseconds: (random.nextDouble() * 31536000000).toInt() + 7776000000)),
       actualdateadded: DateTime.now(),
     );
     await addOrUpdateFirestore(product);
@@ -152,7 +152,7 @@ Future<void> initFirestoreCollection() async {
       price: (random.nextInt(10) + 1).toDouble(),
       quantity: random.nextInt(100) + 1,
       imgfile: "product-images/${productName.replaceAll(' ', '').toLowerCase()}.png",
-      timestamp: DateTime.now().subtract(Duration(milliseconds: random.nextInt(518400000) + 1)),
+      timestamp: DateTime.now().subtract(Duration(milliseconds: (random.nextDouble() * 518400000).toInt() + 1)),
       actualdateadded: DateTime.now(),
     );
     await addOrUpdateFirestore(product);
@@ -165,7 +165,7 @@ Future<void> initFirestoreCollection() async {
       price: (random.nextInt(10) + 1).toDouble(),
       quantity: 0,
       imgfile: "product-images/${productName.replaceAll(' ', '').toLowerCase()}.png",
-      timestamp: DateTime.now().subtract(Duration(milliseconds: random.nextInt(518400000) + 1)),
+      timestamp: DateTime.now().subtract(Duration(milliseconds: (random.nextDouble() * 518400000).toInt() + 1)),
       actualdateadded: DateTime.now(),
     );
     await addOrUpdateFirestore(product);
