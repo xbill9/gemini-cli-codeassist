@@ -15,3 +15,9 @@ test:
 
 clean:
 	$(GRADLE_CMD) clean
+
+install:
+	$(GRADLE_CMD) installDist	
+
+deploy:
+	gcloud builds submit . --config cloudbuild.yaml

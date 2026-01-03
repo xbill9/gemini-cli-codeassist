@@ -15,8 +15,9 @@ This is a **Kotlin-based Model Context Protocol (MCP) server** using the officia
 
 ## Project Structure
 
-*   `src/main/kotlin/.../Main.kt`: The entry point. Initializes the server and defines tools.
-*   `build.gradle.kts`: Gradle build configuration.
+*   `src/main/kotlin/.../Main.kt`: The entry point. Uses Ktor with a modular structure.
+*   `gradle/libs.versions.toml`: Gradle version catalog for dependency management.
+*   `build.gradle.kts`: Gradle build configuration using the version catalog.
 *   `settings.gradle.kts`: Gradle settings.
 *   `Makefile`: Development shortcuts.
 

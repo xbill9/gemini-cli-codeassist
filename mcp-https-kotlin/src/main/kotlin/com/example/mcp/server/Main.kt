@@ -10,31 +10,57 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sse.*
 import io.ktor.sse.*
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.Implementation
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.server.Server
-import io.modelcontextprotocol.kotlin.sdk.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
-import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
+import io.modelcontextprotocol.kotlin.sdk.server.SseServerTransport
+import io.modelcontextprotocol.kotlin.sdk.types.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.io.asSink
-import kotlinx.io.asSource
-import kotlinx.io.buffered
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.PipedInputStream
-import java.io.PipedOutputStream
-import java.util.UUID
+import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.http.*
+
+private val logger = LoggerFactory.getLogger("MCPServer")
+
 fun main() {
+    val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
+    embeddedServer(Netty, port = port, host = "0.0.0.0", module = Application::module)
+        .start(wait = true)
+}
+
+fun Application.module() {
+    configureSerialization()
+    configureCORS()
+    configureMcpServer()
+}
+
+fun Application.configureSerialization() {
+    install(ContentNegotiation) {
+        json()
+    }
+}
+
+fun Application.configureCORS() {
+    install(CORS) {
+        anyHost()
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Get)
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.Authorization)
+        anyHost() // Double check if anyHost is enough
+    }
+}
+
+fun Application.configureMcpServer() {
+    install(SSE)
+
     val server = Server(
         serverInfo = Implementation(
             name = "mcp-https-server",
@@ -50,7 +76,7 @@ fun main() {
     server.addTool(
         name = "greet",
         description = "Get a greeting from a local HTTPS server.",
-        inputSchema = Tool.Input(
+        inputSchema = ToolSchema(
             properties = buildJsonObject {
                 put("param", buildJsonObject {
                     put("type", "string")
@@ -61,95 +87,51 @@ fun main() {
         )
     ) { request ->
         val param = request.arguments?.get("param")
-        val resultString = if (param is JsonPrimitive) {
-            param.content
-        } else {
-            param?.toString()?.replace("\"", "") ?: ""
+        val name = when (param) {
+            is JsonPrimitive -> param.content
+            else -> param?.toString() ?: "World"
         }
-        
-        CallToolResult(content = listOf(TextContent(resultString)))
+
+        logger.info("Greeting name: $name")
+        CallToolResult(content = listOf(TextContent(text = "Hello, $name!")))
     }
 
-    val sessions = ConcurrentHashMap<String, PipedOutputStream>()
+    val transports = ConcurrentHashMap<String, SseServerTransport>()
 
-    embeddedServer(Netty, port = 8080) {
-        install(SSE)
-        install(ContentNegotiation) {
-            json()
-        }
+    routing {
+        sse("/sse") {
+            val transport = SseServerTransport("/messages", this)
+            transports[transport.sessionId] = transport
+            
+            logger.info("New session: ${transport.sessionId}")
 
-        routing {
-            sse("/sse") {
-                val sessionId = UUID.randomUUID().toString()
-                println("New session: $sessionId")
-
-                // Input for the server (Written to by POST /messages)
-                val serverInput = PipedInputStream()
-                val serverInputSink = PipedOutputStream(serverInput)
-                sessions[sessionId] = serverInputSink
-
-                // Output from the server (Read by this SSE loop)
-                val serverOutputSink = PipedOutputStream()
-                val serverOutput = PipedInputStream(serverOutputSink)
-
-                // Bridge streams to Transport
-                val transport = StdioServerTransport(
-                    serverInput.asSource().buffered(),
-                    serverOutputSink.asSink().buffered()
-                )
-
-                // Start the MCP session in a background coroutine
-                val sessionJob = launch(Dispatchers.IO) {
-                    try {
-                        server.createSession(transport)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-
-                try {
-                    // Send endpoint event
-                    send(ServerSentEvent(event = "endpoint", data = "/messages?sessionId=$sessionId"))
-
-                    // Read from server output and forward as SSE events
-                    val reader = BufferedReader(InputStreamReader(serverOutput))
-                    while (true) {
-                        val line = withContext(Dispatchers.IO) {
-                            reader.readLine() 
-                        } ?: break
-                        
-                        // MCP JSON-RPC messages are sent as "message" events
-                        send(ServerSentEvent(event = "message", data = line))
-                    }
-                } catch (e: Exception) {
-                    // Handle disconnect
-                } finally {
-                    sessions.remove(sessionId)
-                    serverInputSink.close()
-                    serverOutputSink.close()
-                    sessionJob.cancel()
-                    println("Session closed: $sessionId")
-                }
-            }
-
-            post("/messages") {
-                val sessionId = call.request.queryParameters["sessionId"]
-                if (sessionId == null || !sessions.containsKey(sessionId)) {
-                    call.respond(io.ktor.http.HttpStatusCode.BadRequest, "Invalid or missing sessionId")
-                    return@post
-                }
-
-                val body = call.receiveText()
-                val sessionInput = sessions[sessionId]!!
-                
-                withContext(Dispatchers.IO) {
-                    // StdioServerTransport usually expects line-delimited JSON
-                    sessionInput.write((body + "\n").toByteArray())
-                    sessionInput.flush()
-                }
-
-                call.respond(io.ktor.http.HttpStatusCode.OK)
+            try {
+                server.createSession(transport)
+                // Wait until the SSE session is closed
+                kotlinx.coroutines.awaitCancellation()
+            } catch (e: Exception) {
+                logger.error("Session error", e)
+            } finally {
+                transports.remove(transport.sessionId)
+                logger.info("Session closed: ${transport.sessionId}")
             }
         }
-    }.start(wait = true)
+
+        post("/messages") {
+            val sessionId = call.request.queryParameters["sessionId"]
+            logger.info("POST /messages with sessionId: $sessionId")
+            if (sessionId == null) {
+                call.respond(io.ktor.http.HttpStatusCode.BadRequest, "Missing sessionId")
+                return@post
+            }
+            val transport = transports[sessionId]
+            if (transport == null) {
+                logger.warn("No transport found for sessionId: $sessionId. Available: ${transports.keys}")
+                call.respond(io.ktor.http.HttpStatusCode.BadRequest, "Invalid sessionId")
+                return@post
+            }
+
+            transport.handlePostMessage(call)
+        }
+    }
 }

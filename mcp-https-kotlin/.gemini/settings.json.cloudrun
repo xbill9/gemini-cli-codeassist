@@ -1,8 +1,7 @@
- {
-    "mcpServers": {
+{
+  "mcpServers": {
     "hello-cloudrun-kotlin": {
-      "httpUrl": "https://mcp-https-kotlin-$PROJECT_NUMBER.us-central1.run.app/mcp"
+      "url": "https://mcp-https-kotlin-1056842563084.us-central1.run.app/sse"
     }
   }
 }
-

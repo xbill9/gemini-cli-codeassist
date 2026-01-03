@@ -74,8 +74,24 @@ def send_rpc():
     post_url = f"{BASE_URL}/messages?sessionId={SERVER_SESSION_ID}"
     
     try:
-        res = requests.post(post_url, json=init_msg)
+        # Force pretty-printed JSON to test server handling of newlines
+        res = requests.post(post_url, data=json.dumps(init_msg, indent=2), headers={"Content-Type": "application/json"})
         print(f"Initialize POST status: {res.status_code}", file=sys.stderr)
+    except Exception as e:
+        print(f"POST Error: {e}", file=sys.stderr)
+
+    time.sleep(1)
+
+    print("Sending tools/list request...", file=sys.stderr)
+    list_msg = {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "tools/list",
+        "params": {}
+    }
+    try:
+        res = requests.post(post_url, json=list_msg)
+        print(f"List POST status: {res.status_code}", file=sys.stderr)
     except Exception as e:
         print(f"POST Error: {e}", file=sys.stderr)
 
@@ -84,7 +100,7 @@ def send_rpc():
     print("Sending greet request...", file=sys.stderr)
     greet_msg = {
         "jsonrpc": "2.0",
-        "id": 2,
+        "id": 3,
         "method": "tools/call",
         "params": {
             "name": "greet",

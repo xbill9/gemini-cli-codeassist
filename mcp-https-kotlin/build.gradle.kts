@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "2.3.0"
+    alias(libs.plugins.kotlin.jvm)
     application
 }
 
@@ -11,14 +11,17 @@ repositories {
 }
 
 dependencies {
-    implementation("io.modelcontextprotocol:kotlin-sdk-jvm:0.8.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-    implementation("org.slf4j:slf4j-simple:2.0.9")
-    implementation("io.ktor:ktor-server-core:3.0.0")
-    implementation("io.ktor:ktor-server-netty:3.0.0")
-    implementation("io.ktor:ktor-server-sse:3.0.0")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.0")
-    implementation("io.ktor:ktor-server-content-negotiation:3.0.0")
+    implementation(libs.mcp.sdk)
+    implementation(libs.coroutines.core)
+    implementation(libs.slf4j.simple)
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.sse)
+    implementation(libs.ktor.serialization.json)
+    implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.server.cors)
+    testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.kotlin.test)
 }
 
 kotlin {
