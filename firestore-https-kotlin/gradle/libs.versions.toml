@@ -4,9 +4,11 @@ mcp-sdk = "0.8.1"
 coroutines = "1.9.0"
 slf4j = "2.0.9"
 ktor = "3.0.0"
+google-cloud-firestore = "3.28.0"
 
 [libraries]
 mcp-sdk = { module = "io.modelcontextprotocol:kotlin-sdk-jvm", version.ref = "mcp-sdk" }
+google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version.ref = "google-cloud-firestore" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
@@ -20,4 +22,5 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }

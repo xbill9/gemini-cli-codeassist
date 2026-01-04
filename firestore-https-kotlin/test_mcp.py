@@ -104,7 +104,7 @@ def send_rpc():
         "method": "tools/call",
         "params": {
             "name": "greet",
-            "arguments": {"param": "Galaxy"}
+            "arguments": {"name": "Galaxy"}
         }
     }
     try:

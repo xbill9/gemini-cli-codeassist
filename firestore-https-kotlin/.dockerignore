@@ -1,0 +1,10 @@
+.gradle
+build
+.kotlin
+.gemini
+index.ts
+test_mcp.py
+*.md
+Dockerfile
+cloudbuild.yaml
+.gitignore

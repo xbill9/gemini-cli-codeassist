@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "hello-https-kotlin": {
-      "url": "http://127.0.0.1:8080/sse"
+    "hello-cloudrun-kotlin": {
+      "url": "https://firestore-https-kotlin-1056842563084.us-central1.run.app/sse"
     }
   }
 }

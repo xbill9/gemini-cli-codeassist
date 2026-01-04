@@ -54,7 +54,7 @@ If you are adding this to an MCP client config, the configuration would look som
 ### `greet`
 - **Description:** Get a greeting from a local HTTPS server.
 - **Parameters:**
-    - `param` (string): The name to greet.
+    - `name` (string): The name to greet.
 - **Returns:** A string greeting.
 
 ## Project Structure

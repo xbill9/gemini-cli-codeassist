@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
     application
 }
 
@@ -12,6 +13,7 @@ repositories {
 
 dependencies {
     implementation(libs.mcp.sdk)
+    implementation(libs.google.cloud.firestore)
     implementation(libs.coroutines.core)
     implementation(libs.slf4j.simple)
     implementation(libs.ktor.server.core)
