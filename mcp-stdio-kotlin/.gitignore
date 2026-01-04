@@ -1,5 +1,36 @@
+# Build and local files
+build/
+bin/
+out/
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+.kotlin/
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+.nb-gradle/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python (existing)
 __pycache__/
 *.pyc
 .venv/
 .env
 .pytest_cache/
+
+# Local configuration
+local.properties

@@ -1,61 +1,49 @@
 package com.example.mcp.server
 
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.Implementation
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.server.Server
-import io.modelcontextprotocol.kotlin.sdk.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
+import io.modelcontextprotocol.kotlin.sdk.types.Implementation
+import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
-import kotlinx.io.asSource
 import kotlinx.io.asSink
+import kotlinx.io.asSource
 import kotlinx.io.buffered
+import org.slf4j.LoggerFactory
 
 fun main() {
-    val server = Server(
-        serverInfo = Implementation(
-            name = "hello-world-server",
-            version = "1.0.0"
-        ),
-        options = ServerOptions(
-            capabilities = ServerCapabilities(
-                tools = ServerCapabilities.Tools(listChanged = true)
-            )
+    val logger = LoggerFactory.getLogger("com.example.mcp.server.Main")
+    logger.info("Starting MCP server...")
+    val server =
+        Server(
+            serverInfo =
+                Implementation(
+                    name = "hello-world-server",
+                    version = "1.0.0",
+                ),
+            options =
+                ServerOptions(
+                    capabilities =
+                        ServerCapabilities(
+                            tools = ServerCapabilities.Tools(listChanged = true),
+                        ),
+                ),
         )
-    )
 
     server.addTool(
-        name = "greet",
-        description = "Get a greeting from a local stdio server.",
-        inputSchema = Tool.Input(
-            properties = buildJsonObject {
-                put("param", buildJsonObject {
-                    put("type", "string")
-                    put("description", "The name to greet")
-                })
-            },
-            required = listOf("param")
-        )
+        GreetingTool.toolDef,
     ) { request ->
-        val param = request.arguments?.get("param")
-        val resultString = if (param is JsonPrimitive) {
-            param.content
-        } else {
-            param?.toString()?.replace("\"", "") ?: ""
-        }
-        
-        CallToolResult(content = listOf(TextContent(resultString)))
+        GreetingTool.handle(request.arguments)
     }
 
     val transport = StdioServerTransport(System.`in`.asSource().buffered(), System.out.asSink().buffered())
 
     runBlocking {
-        server.createSession(transport)
-        kotlinx.coroutines.awaitCancellation()
+        val session = server.createSession(transport)
+        val done = kotlinx.coroutines.Job()
+        session.onClose {
+            done.complete()
+        }
+        done.join()
     }
 }

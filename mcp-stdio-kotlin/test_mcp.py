@@ -1,7 +1,12 @@
 import subprocess
 import json
-import time
-import os
+import sys
+import threading
+
+def read_stream(stream, callback):
+    """Reads lines from a stream and calls callback."""
+    for line in stream:
+        callback(line)
 
 def test_server():
     print("Starting server...")
@@ -10,72 +15,99 @@ def test_server():
                             stdout=subprocess.PIPE, 
                             stderr=subprocess.PIPE,
                             text=True,
-                            bufsize=1)
+                            bufsize=1) # Line buffered
 
-    init_msg = {
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "initialize",
-        "params": {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {"name": "test-client", "version": "1.0.0"}
-        }
-    }
-
-    print("Sending initialize request...")
-    proc.stdin.write(json.dumps(init_msg) + "\n")
-    proc.stdin.flush()
-
-    time.sleep(1)
+    # thread to print stderr to avoid blocking if buffer fills
+    def print_stderr(line):
+        print(f"STDERR: {line.strip()}", file=sys.stderr)
     
-    greet_msg = {
-        "jsonrpc": "2.0",
-        "id": 2,
-        "method": "tools/call",
-        "params": {
-            "name": "greet",
-            "arguments": {"param": "World"}
-        }
-    }
-    print("Sending greet request...")
-    proc.stdin.write(json.dumps(greet_msg) + "\n")
-    proc.stdin.flush()
+    stderr_thread = threading.Thread(target=read_stream, args=(proc.stderr, print_stderr), daemon=True)
+    stderr_thread.start()
 
-    print("Waiting for response...")
-    time.sleep(2)
+    def send_request(req):
+        print(f"Sending request: {req['method']} (id={req.get('id')})")
+        proc.stdin.write(json.dumps(req) + "\n")
+        proc.stdin.flush()
+
+    def read_response(expected_id):
+        print(f"Waiting for response id={expected_id}...")
+        while True:
+            line = proc.stdout.readline()
+            if not line:
+                raise Exception("Server closed stdout unexpectedly")
+            try:
+                msg = json.loads(line)
+                # Ignore notifications or other messages if not matching id (though strictly we expect response)
+                if msg.get("id") == expected_id:
+                    return msg
+                else:
+                    print(f"Received other message: {msg}")
+            except json.JSONDecodeError:
+                print(f"Received non-JSON: {line.strip()}")
+
     try:
-        # Set stdout to non-blocking
-        import fcntl
-        fd = proc.stdout.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        # 1. Initialize
+        init_msg = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "test-client", "version": "1.0.0"}
+            }
+        }
+        send_request(init_msg)
+        resp1 = read_response(1)
+        print(f"Initialize response: {json.dumps(resp1, indent=2)}")
+
+        # 2. Call Tool (greet)
+        greet_msg = {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+                "name": "greet",
+                "arguments": {"param": "World"}
+            }
+        }
+        send_request(greet_msg)
+        resp2 = read_response(2)
+        print(f"Greet response: {json.dumps(resp2, indent=2)}")
         
-        output = proc.stdout.read()
-        if output:
-            print(f"STDOUT: {output}")
+        # Verify content
+        content = resp2.get("result", {}).get("content", [])
+        if content and content[0].get("text") == "Hello, World!":
+            print("SUCCESS: Greeting is correct.")
         else:
-            print("STDOUT is empty")
-    except Exception as e:
-        print(f"Error reading stdout: {e}")
+            print("FAILURE: Greeting is incorrect.")
+            sys.exit(1)
 
-    # Give it a moment to print to stderr
-    time.sleep(1)
-    
-    # Read remaining stderr
-    try:
-        # We need to set stderr to non-blocking or just read what's available
-        import fcntl
-        fd = proc.stderr.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-        err = proc.stderr.read()
-        if err:
-            print(f"STDERR: {err}")
-    except Exception as e:
-        print(f"Error reading stderr: {e}")
+        # 3. Call Tool (missing param) - verify robustness/default
+        greet_msg_missing = {
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "tools/call",
+            "params": {
+                "name": "greet",
+                "arguments": {} 
+            }
+        }
+        send_request(greet_msg_missing)
+        resp3 = read_response(3)
+        print(f"Greet (missing param) response: {json.dumps(resp3, indent=2)}")
 
-    proc.terminate()
+        content = resp3.get("result", {}).get("content", [])
+        if content and content[0].get("text") == "Hello, World!":
+             print("SUCCESS: Default greeting is correct.")
+        else:
+             print("FAILURE: Default greeting is incorrect.")
+             sys.exit(1)
+
+    finally:
+        print("Terminating server...")
+        proc.terminate()
+        proc.wait()
 
 if __name__ == "__main__":
     test_server()

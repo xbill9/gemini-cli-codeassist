@@ -4,22 +4,32 @@ This document provides context for the Gemini Code Assistant to understand the p
 
 ## Project Overview
 
-This is a **Kotlin-based Model Context Protocol (MCP) server** using the official `kotlin-sdk`. It is designed to expose tools (like `greet`) over standard input/output (stdio) for integration with MCP clients.
+This is a **Kotlin-based Model Context Protocol (MCP) server** implementation. It leverages the official `io.modelcontextprotocol:kotlin-sdk` to expose server capabilities to MCP clients. The server is currently configured to run over **stdio** transport and provides a set of tools for interaction.
 
 ## Key Technologies
 
 *   **Language:** Kotlin 2.3.0
-*   **SDK:** `io.modelcontextprotocol:kotlin-sdk`
+*   **MCP SDK:** `io.modelcontextprotocol:kotlin-sdk-jvm:0.8.1`
 *   **Build Tool:** Gradle 9.2.1 (Kotlin DSL)
 *   **JDK:** Java 25
-*   **MCP SDK:** https://github.com/modelcontextprotocol/kotlin-sdk
+*   **Transport:** Standard Input/Output (Stdio)
+
+## Server Capabilities
+
+The server is initialized with the following capabilities:
+*   **Tools:** Enabled (with `listChanged` notification support).
+
+### Implemented Tools
+*   `greet`: A simple tool that takes a `param` (string) and returns a greeting message "Hello, {param}!".
 
 ## Project Structure
 
-*   `src/main/kotlin/.../Main.kt`: The entry point. Initializes the server and defines tools.
-*   `build.gradle.kts`: Gradle build configuration.
-*   `settings.gradle.kts`: Gradle settings.
-*   `Makefile`: Development shortcuts.
+*   `src/main/kotlin/com/example/mcp/server/`: Source code package.
+    *   `Main.kt`: Application entry point. Sets up the `Server`, `StdioServerTransport`, and registers tools.
+    *   `GreetingTool.kt`: Implementation of the `greet` tool, including its schema and handler logic.
+*   `src/test/kotlin/`: Unit tests.
+*   `build.gradle.kts`: Gradle build script with dependencies and plugin configuration.
+*   `test_mcp.py`: A Python script for integration testing the compiled server binary via stdio.
 
 ## Development Setup
 
@@ -35,7 +45,7 @@ This is a **Kotlin-based Model Context Protocol (MCP) server** using the officia
 
 ## Running the Server
 
-The server is configured to run using the `stdio` transport.
+To run the server in stdio mode (usually called by an MCP client):
 
 ```bash
 make run

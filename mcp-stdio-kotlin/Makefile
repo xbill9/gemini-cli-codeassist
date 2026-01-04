@@ -1,4 +1,4 @@
-.PHONY: all build run test clean
+.PHONY: all build run test clean lint format check
 
 GRADLE_CMD ?= ./gradlew
 
@@ -12,6 +12,14 @@ run:
 
 test:
 	$(GRADLE_CMD) test
+
+check: lint test
+
+lint:
+	$(GRADLE_CMD) ktlintCheck
+
+format:
+	$(GRADLE_CMD) ktlintFormat
 
 clean:
 	$(GRADLE_CMD) clean
