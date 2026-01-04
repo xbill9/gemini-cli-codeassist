@@ -1,0 +1,13 @@
+2026-01-03T22:34:33-0500 notice hello-world-server: [MCP] EOF received
+2026-01-03T22:34:33-0500 error hello-world-server: [mcp_stdio_swift] Tools JSON: [
+  {
+    "inputSchema" : {
+      "type" : "object",
+      "properties" : {
+
+      }
+    },
+    "name" : "greet",
+    "description" : "Get a greeting from a local stdio server."
+  }
+]

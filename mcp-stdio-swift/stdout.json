@@ -1,0 +1,2 @@
+{"id":1,"jsonrpc":"2.0","result":{"capabilities":{"tools":{"listChanged":true}},"protocolVersion":"2024-11-05","serverInfo":{"name":"hello-world-server","version":"1.0.0"}}}
+{"id":2,"jsonrpc":"2.0","result":{"tools":[{"description":"Get a greeting from a local stdio server.","inputSchema":{"properties":{"param":"The name or parameter to greet"},"required":["param"]},"name":"greet"}]}}
