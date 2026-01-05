@@ -4,14 +4,19 @@ A simple Model Context Protocol (MCP) server implemented in Swift. This server c
 
 ## Overview
 
-This project provides a basic MCP server named `hello-world-server` that exposes a single tool: `greet`. It uses the `swift-log` library for logging to stderr, ensuring that the stdout stream remains clean for the MCP protocol JSON-RPC messages.
+This project provides a basic MCP server named `hello-world-server` that exposes a single tool: `greet`. 
+
+**Key Features:**
+*   **Transport:** Uses standard input/output (`stdio`) for MCP communication.
+*   **Concurrency:** Built on Swift's structured concurrency and `ServiceLifecycle` for graceful shutdown.
+*   **Logging:** Uses `swift-log` directed to `stderr` to ensure the `stdout` channel remains clean for protocol messages.
 
 ## Prerequisites
 
 - **Swift 6.0+** (or compatible Swift toolchain)
-- **Linux / macOS**
+- **Linux** or **macOS**
 
-## Installation
+## Getting Started
 
 1.  **Clone the repository:**
     ```bash
@@ -20,44 +25,53 @@ This project provides a basic MCP server named `hello-world-server` that exposes
     ```
 
 2.  **Build the project:**
+    
+    For development (debug build):
     ```bash
     make build
-    # Or manually:
+    # Executable will be at: .build/debug/mcp-stdio-swift
+    ```
+
+    For production (release build):
+    ```bash
     swift build -c release
+    # Executable will be at: .build/release/mcp-stdio-swift
     ```
 
 ## Usage
 
 This server is designed to be executed by an MCP client (like Claude Desktop or a Gemini-powered IDE extension) that handles the stdio communication.
 
-To run the server manually (starts listening on stdio):
+To run the server manually for testing (starts listening on stdio):
 ```bash
-.build/release/mcp-stdio-swift
+.build/debug/mcp-stdio-swift
 ```
 
 ### Configuration for MCP Clients
 
-If you are adding this to an MCP client config (e.g., `claude_desktop_config.json`), the configuration would look something like this:
+If you are adding this to an MCP client config (e.g., `claude_desktop_config.json`), use the **absolute path** to the executable.
+
+**Example (using release build):**
 
 ```json
 {
   "mcpServers": {
     "swift-hello-world": {
-      "command": "/path/to/mcp-stdio-swift/.build/release/mcp-stdio-swift",
+      "command": "/absolute/path/to/mcp-stdio-swift/.build/release/mcp-stdio-swift",
       "args": []
     }
   }
 }
 ```
 
-*Note: Ensure you have built the project with `swift build -c release` first.*
+*Note: Run `swift build -c release` before configuring the client.*
 
 ## Tools
 
 ### `greet`
-- **Description:** Get a greeting from the local server.
+- **Description:** Get a greeting from the local stdio server.
 - **Parameters:**
-    - `param` (string): The text or name to echo back.
+    - `param` (string, required): The name or parameter to greet.
 - **Returns:** The string passed in `param`.
 
 ## Development
@@ -66,12 +80,14 @@ The project includes a `Makefile` to simplify common development tasks.
 
 - **Install dependencies:** `make install`
 - **Run the server (debug):** `make run`
-- **Build the server:** `make build`
+- **Build the server (debug):** `make build`
 - **Test:** `make test`
 - **Clean artifacts:** `make clean`
 
 ## Project Structure
 
-- `Package.swift`: Swift package definition and dependencies.
-- `Sources/mcp-stdio-swift/main.swift`: Entry point defining the server and tools.
-- `Makefile`: Commands for build, test, and maintenance.
+- `Package.swift`: Swift package definition, dependencies, and targets.
+- `Sources/mcp-stdio-swift/main.swift`: Entry point defining the server, `ServiceLifecycle` setup, and tool implementations.
+- `Sources/mcp-stdio-swift/Handlers.swift`: Tool implementations (`greet`).
+- `Sources/mcp-stdio-swift/MCPService.swift`: Service lifecycle integration.
+- `Makefile`: Shortcuts for build, test, and maintenance.
