@@ -6,6 +6,7 @@ require_relative 'app_logger'
 module McpStdioRuby
   # Define the greet tool
   class GreetTool < MCP::Tool
+    tool_name 'greet'
     description 'Gives a friendly greeting.'
     input_schema(
       type: 'object',
