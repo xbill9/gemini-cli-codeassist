@@ -1,102 +1,83 @@
-# Cymbal Superstore
+# Cymbal Superstore & MCP Monorepo
 
-This project is a sample microservices application for an e-commerce store called "Cymbal Superstore". It demonstrates how to build and deploy a modern, cloud-native application using Google Cloud services.
+This monorepo is an evolution of the **Cymbal Superstore** sample application, showcasing a modern microservices architecture integrated with the **Model Context Protocol (MCP)** and **Google Cloud Platform (GCP)**. It provides a comprehensive set of examples across multiple programming languages for building intelligent, tool-using agents.
 
-The Sample Cymbal Super Store files are here:
+## Core Concepts
 
-gs://duet-appdev/cymbal-superstore
+### Cymbal Superstore
+Originally a sample e-commerce application, this project now serves as the foundation for demonstrating:
+*   **Inventory Management**: Managing products via Google Cloud Firestore.
+*   **Cloud-Native Deployment**: Using Docker, Cloud Build, and Cloud Run.
+*   **AI Integration**: Exposing business logic as MCP tools for LLMs (like Gemini and Claude).
 
-To copy:
+### Model Context Protocol (MCP)
+The repo contains dozens of MCP server implementations, allowing AI models to interact with the Cymbal Superstore inventory or perform utility tasks.
 
-cd gemini-cli-codeassist
-gsutil -m cp -rp gs://duet-appdev/cymbal-superstore .
+## Project Categories
 
-Refactoring Prompt:
+### 1. MCP Servers (Inventory & Utilities)
+These servers expose tools to MCP clients via Stdio or HTTPS (SSE).
 
-fetch this url https://github.com/modelcontextprotocol/typescript-sdk for instructions on how to        
-   add mcp server support to the typescript file index.ts call the server name inventory-server and
-   export the url paths as mcp tools
+*   **Firestore Inventory Servers (`firestore-*`)**: 
+    *   Manage the Cymbal Superstore inventory.
+    *   **Languages:** C#, Flutter, Go, Java, Kotlin, PHP, Python, Ruby, Rust, TypeScript.
+    *   **Transports:** `stdio` (local), `https` (Cloud Run).
+*   **Basic MCP Servers (`mcp-*`)**: 
+    *   Simple "Hello World" examples exposing a `greet` tool.
+    *   **Languages:** All major languages including Swift and Dart/Flutter.
 
-## Project Structure
+### 2. Rust & Google Cloud Integrations
+Specialized Rust projects for deep GCP integration:
+*   **`cloudrun-rust`**: Minimal Cloud Run service.
+*   **`pubsub-client-rust`**: Pub/Sub messaging patterns.
+*   **`weather-rust` / `log-rust`**: Utility services and logging patterns.
+*   **`gcp-client-rust`**: Pattern for generic GCP API calls.
 
-The project is organized into several microservices and components:
+### 3. Experimental & Fun
+*   **`battle-royale/`**: Fun Python-based mascot battles and simulations.
 
--   **`frontend`**: A React-based web application that provides the user interface for the superstore.
--   **`backend`**: A backend service that exposes an inventory API. It is containerized using Docker and deployed on Google Cloud Run.
--   **`functions`**: Contains serverless functions, likely for handling specific business logic or events.
--   **`gateway`**: An API gateway to route requests to the appropriate microservices.
--   **`terraform`**: Infrastructure as Code (IaC) to provision and manage the necessary Google Cloud resources.
--   **`scripts`**: Utility scripts for tasks like environment setup, building, and deploying the application.
+## Root Scripts & Tooling
 
-## Technologies Used
+The root directory contains critical scripts for lifecycle management:
 
--   **Frontend**: React, React Router, Bootstrap
--   **Backend**: Python (likely, based on common use with Google Cloud), Docker
--   **Infrastructure**: Google Cloud Platform (GCP)
-    -   **Compute**: Google Cloud Run for serving the backend application.
-    -   **Database**: Google Firestore for the application's database.
-    -   **CI/CD**: Google Cloud Build for continuous integration and deployment.
-    -   **Container Registry**: Google Artifact Registry to store Docker images.
--   **Infrastructure as Code**: Terraform
+| Script | Description |
+| :--- | :--- |
+| `init.sh` | One-time setup: enables APIs, configures Docker, and sets up Firestore. |
+| `set_env.sh` | Exports essential vars like `PROJECT_ID` and `REGION`. (Usage: `source ./set_env.sh`) |
+| `backend.sh` | Main build/deploy script for the inventory backend. |
+| `backend-open.sh` | Deploys inventory to Cloud Run with public access. |
+| `backend-secure.sh` | Deploys inventory to Cloud Run with restricted access. |
+| `startproxy.sh` | Starts a local proxy (`gcloud run services proxy`) for secure testing. |
+| `enablemcp.sh` | Configures environment for MCP interaction. |
 
-## Shell Scripts
+## AI Assistant Integration
 
-This project includes several shell scripts to facilitate setup, deployment, and management of the application.
+Most subdirectories include a `GEMINI.md` file. These files provide specialized context for AI assistants (like Gemini) to understand the specific project's architecture, technologies, and development workflow. If you are using this repo with an AI assistant, it is highly recommended to reference these files.
 
-### `init.sh`
+## Quick Start
 
-This script initializes the Google Cloud environment for the project. It performs the following actions:
-
-*   Prompts the user for their Google Cloud project ID.
-*   Enables the required Google Cloud services (Cloud Run, Artifact Registry, Cloud Build, etc.).
-*   Configures Docker authentication with Google Cloud.
-*   Creates a Firestore database.
-*   Handles authentication for different environments (Google Cloud Shell, local machine, etc.).
-
-**Usage:**
-
+### 1. Initialize
 ```bash
 ./init.sh
-```
-
-### `set_env.sh`
-
-This script sets various Google Cloud related environment variables required for the project. It reads the project ID from a local file and exports variables like `PROJECT_ID`, `PROJECT_NUMBER`, `SERVICE_ACCOUNT_NAME`, `GOOGLE_CLOUD_LOCATION`, `REGION`, and `ID_TOKEN`.
-
-**Important:** This script must be sourced, not executed directly, to make the environment variables available in your current shell.
-
-**Usage:**
-
-```bash
 source ./set_env.sh
 ```
 
-### `backend.sh`
-
-This script builds the backend Docker image, pushes it to Google Artifact Registry, and deploys it to Google Cloud Run.
-
-**Usage:**
-
+### 2. Local Development (Stdio)
+Most directories follow a standard `Makefile` pattern:
 ```bash
-./backend.sh
+cd firestore-stdio-rust
+make build
+make run
 ```
 
-## Getting Started
+### 3. Deploy to Cloud (HTTPS)
+To deploy an MCP server as a containerized service:
+```bash
+cd firestore-https-ts
+make deploy
+```
 
-1.  **Initialize the environment:**
-
-    ```bash
-    ./init.sh
-    ```
-
-2.  **Set the environment variables:**
-
-    ```bash
-    source ./set_env.sh
-    ```
-
-3.  **Deploy the backend:**
-
-    ```bash
-    ./backend.sh
-    ```
+## Directory Naming Convention
+*   `firestore-[transport]-[lang]`: Inventory tool using Firestore.
+*   `mcp-[transport]-[lang]`: Basic tool implementation.
+*   `gcp-[name]-rust`: Specific GCP feature demonstration in Rust.
