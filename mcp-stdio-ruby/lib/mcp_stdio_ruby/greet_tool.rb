@@ -6,26 +6,26 @@ require_relative 'app_logger'
 module McpStdioRuby
   # Define the greet tool
   class GreetTool < MCP::Tool
-    description 'Get a greeting from a local stdio server.'
+    description 'Gives a friendly greeting.'
     input_schema(
       type: 'object',
       properties: {
-        message: {
+        name: {
           type: 'string',
-          description: 'The message to repeat.'
+          description: 'The name to greet.'
         }
       },
-      required: ['message']
+      required: ['name']
     )
 
     class << self
-      def call(message:)
-        AppLogger.logger.info "GreetTool called with message: #{message}"
+      def call(name:)
+        AppLogger.logger.info "GreetTool called with name: #{name}"
         MCP::Tool::Response.new(
           [
             {
               type: 'text',
-              text: message
+              text: "Hello, #{name}!"
             }
           ]
         )
