@@ -20,5 +20,9 @@ let package = Package(
                 .product(name: "Logging", package: "swift-log"),
             ]
         ),
+        .testTarget(
+            name: "mcp-stdio-swiftTests",
+            dependencies: ["mcp-stdio-swift"]
+        ),
     ]
 )

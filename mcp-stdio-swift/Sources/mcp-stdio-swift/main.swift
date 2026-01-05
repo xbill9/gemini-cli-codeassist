@@ -1,11 +1,11 @@
 import Foundation
+import Logging
 import MCP
 import ServiceLifecycle
-import Logging
 
 // Set up logging to stderr to avoid interfering with stdout transport
 LoggingSystem.bootstrap { label in
-    StreamLogHandler.standardError(label: label)
+  StreamLogHandler.standardError(label: label)
 }
 
 var logger = Logger(label: "hello-world-server")
@@ -13,11 +13,11 @@ logger.logLevel = .trace
 
 // Create the MCP server
 let server = Server(
-    name: "hello-world-server",
-    version: "1.0.0",
-    capabilities: .init(
-        tools: .init(listChanged: true)
-    )
+  name: "hello-world-server",
+  version: "1.0.0",
+  capabilities: .init(
+    tools: .init(listChanged: true)
+  )
 )
 
 let handlers = Handlers(logger: logger)
@@ -34,9 +34,9 @@ let transport = StdioTransport(logger: logger)
 let mcpService = MCPService(server: server, transport: transport, logger: logger)
 
 let serviceGroup = ServiceGroup(
-    services: [mcpService],
-    gracefulShutdownSignals: [.sigterm, .sigint],
-    logger: logger
+  services: [mcpService],
+  gracefulShutdownSignals: [.sigterm, .sigint],
+  logger: logger
 )
 
 // Run the service group
