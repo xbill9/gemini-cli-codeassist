@@ -1,7 +1,7 @@
 name: mcp_stdio_flutter
-description: A sample command-line application.
+description: A Dart-based Model Context Protocol (MCP) server implementation using stdio.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/xbill9/gemini-cli-codeassist/mcp_stdio_flutter
 
 environment:
   sdk: ^3.10.4

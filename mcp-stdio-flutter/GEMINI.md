@@ -15,7 +15,7 @@ This project is a Dart command-line application implementing a **Model Context P
 ## Project Structure
 -   `bin/mcp_stdio_flutter.dart`: The entry point of the application. Sets up the MCP server and stdio connection.
 -   `lib/`: Contains the core logic, including tool definitions and resource handlers.
-    -   `lib/tools.dart`: (Likely) definitions of MCP tools exposed by this server.
+    -   `lib/mcp_stdio_flutter.dart`: Definitions of MCP tools exposed by this server.
 -   `test/`: Unit tests.
 
 ## Development Guidelines
