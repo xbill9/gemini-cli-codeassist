@@ -4,7 +4,7 @@ get:
 	dart pub get
 
 run:
-	dart run bin/mcp_https_flutter.dart --transport http --port 8080 --host 0.0.0.0 --path /mcp
+	dart run bin/mcp_https_flutter.dart --port 8080 --host 0.0.0.0 --path /mcp
 
 test:
 	dart test

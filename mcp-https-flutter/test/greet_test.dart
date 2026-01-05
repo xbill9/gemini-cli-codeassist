@@ -1,5 +1,5 @@
 import 'package:mcp_dart/mcp_dart.dart';
-import 'package:mcp_https_flutter/tools.dart';
+import 'package:mcp_https_flutter/mcp_https_flutter.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -27,4 +27,4 @@ EXPOSE 8080
 # Run the application
 # We use --host 0.0.0.0 to listen on all interfaces as required by Cloud Run
 # We use a shell to expand the PORT environment variable
-CMD ["sh", "-c", "/app/bin/server --transport http --port ${PORT:-8080} --host 0.0.0.0 --path /mcp"]
+CMD ["sh", "-c", "/app/bin/server --port ${PORT:-8080} --host 0.0.0.0 --path /mcp"]

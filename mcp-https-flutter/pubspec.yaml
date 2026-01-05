@@ -1,7 +1,7 @@
 name: mcp_https_flutter
-description: A sample command-line application.
+description: A Model Context Protocol (MCP) server implementation in Dart supporting HTTPS and SSE transport.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/xbill9/gemini-cli-codeassist/mcp-https-flutter
 
 environment:
   sdk: ^3.10.4
@@ -11,6 +11,7 @@ dependencies:
   path: ^1.9.0
   mcp_dart: ^1.2.0
   args: ^2.5.0
+  logging: ^1.2.0
 
 dev_dependencies:
   lints: ^6.0.0
