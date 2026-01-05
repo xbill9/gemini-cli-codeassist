@@ -1,10 +1,12 @@
-.PHONY: get run test clean build lint release
+.PHONY: get run test clean build lint release check
 
 get:
 	dart pub get
 
 run:
 	dart run bin/mcp_https_flutter.dart --port 8080 --host 0.0.0.0 --path /mcp
+
+check: lint test
 
 test:
 	dart test
