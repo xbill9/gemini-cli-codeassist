@@ -1,0 +1,14 @@
+# frozen_string_literal: true
+
+require 'rubocop/rake_task'
+require 'rspec/core/rake_task'
+
+task default: %i[test lint]
+
+desc 'Run RSpec tests'
+RSpec::Core::RakeTask.new(:test) do |t|
+  t.pattern = 'spec/**/*_spec.rb'
+end
+
+desc 'Run RuboCop'
+RuboCop::RakeTask.new(:lint)

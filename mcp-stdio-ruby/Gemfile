@@ -2,10 +2,14 @@
 
 source 'https://rubygems.org'
 
+ruby '3.4.8'
+
 gem 'logger'
 gem 'mcp'
 
 group :development, :test do
+  gem 'rake'
   gem 'rspec'
   gem 'rubocop'
+  gem 'rubocop-rspec'
 end

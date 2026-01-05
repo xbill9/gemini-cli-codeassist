@@ -15,6 +15,10 @@ This is a **Ruby based Model Context Protocol (MCP) server**. It is designed to 
 ## Project Structure
 
 *   `main.rb`: Main entry point (Ruby).
+*   `lib/`: Application source code and tools.
+    *   `greet_tool.rb`: Example tool implementation.
+    *   `app_logger.rb`: Logging functionality.
+*   `spec/`: RSpec test suite.
 *   `Makefile`: Development shortcuts (test, lint, clean).
 
 ## Development Setup
@@ -22,6 +26,17 @@ This is a **Ruby based Model Context Protocol (MCP) server**. It is designed to 
 1.  **Install Dependencies:**
     ```bash
     bundle install
+    ```
+
+## Testing & Quality
+
+*   **Run Tests:**
+    ```bash
+    bundle exec rspec
+    ```
+*   **Lint Code:**
+    ```bash
+    bundle exec rubocop
     ```
 
 ## Running the Server
