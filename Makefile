@@ -54,6 +54,7 @@ SUBDIRS := backend-rust \
 	mcp-stdio-python \
 	mcp-stdio-ruby \
 	mcp-stdio-rust \
+	mcp-stdio-swift \
 	mcp-stdio-ts \
 	mcp-ts \
 	mcptest-rust \
