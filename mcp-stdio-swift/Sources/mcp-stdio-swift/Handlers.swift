@@ -2,6 +2,10 @@ import Foundation
 import Logging
 import MCP
 
+enum ToolName: String {
+  case greet
+}
+
 struct Handlers {
   let logger: Logger
 
@@ -19,7 +23,7 @@ struct Handlers {
 
     let tools = [
       Tool(
-        name: "greet",
+        name: ToolName.greet.rawValue,
         description: "Get a greeting from a local stdio server.",
         inputSchema: schema
       )
@@ -28,8 +32,12 @@ struct Handlers {
   }
 
   func callTool(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-    switch params.name {
-    case "greet":
+    guard let tool = ToolName(rawValue: params.name) else {
+      return .init(content: [.text("Unknown tool: \(params.name)")], isError: true)
+    }
+
+    switch tool {
+    case .greet:
       logger.debug("Executed greet tool")
 
       guard let param = params.arguments?["param"]?.stringValue else {
@@ -40,8 +48,6 @@ struct Handlers {
         content: [.text(param)],
         isError: false
       )
-    default:
-      return .init(content: [.text("Unknown tool: \(params.name)")], isError: true)
     }
   }
 }

@@ -18,6 +18,9 @@ let package = Package(
                 .product(name: "MCP", package: "swift-sdk"),
                 .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
                 .product(name: "Logging", package: "swift-log"),
+            ],
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency")
             ]
         ),
         .testTarget(
