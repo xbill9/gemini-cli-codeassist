@@ -1,4 +1,4 @@
-.PHONY: get run test clean build
+.PHONY: get run test clean build lint
 
 get:
 	dart pub get
@@ -8,6 +8,9 @@ run:
 
 test:
 	dart test
+
+lint:
+	dart analyze
 
 clean:
 	rm -rf .dart_tool build .packages .pub bin/mcp_https_flutter

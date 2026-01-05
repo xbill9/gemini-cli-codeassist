@@ -2,30 +2,59 @@
 
 A Model Context Protocol (MCP) server implemented in Dart, supporting both Stdio and Streamable HTTP transports.
 
+## Features
+
+- **Multi-transport Support**: Use either `stdio` (for local MCP clients) or `http` (for remote/web-based MCP clients).
+- **Native Performance**: Compiles to a native executable for fast startup and low memory footprint.
+- **Docker Ready**: Includes a `Dockerfile` for easy containerization and deployment.
+- **Cloud Run Support**: Configuration provided for Google Cloud Run deployment.
+
 ## Usage
 
-### Stdio Transport
+### Command Line Arguments
+
+| Argument | Abbreviation | Default | Description |
+|----------|--------------|---------|-------------|
+| `--transport` | `-t` | `stdio` | Transport to use: `stdio` or `http` |
+| `--port` | `-p` | `8080` | Port for HTTP transport |
+| `--host` | | `localhost` | Host for HTTP transport |
+| `--path` | | `/mcp` | Path for HTTP transport |
+
+### Stdio Transport (Local)
+
+Run the server using the default stdio transport:
 
 ```bash
 dart run bin/mcp_https_flutter.dart --transport stdio
 ```
 
-### Streamable HTTP Transport
+### Streamable HTTP Transport (Remote)
+
+Run the server as an HTTP endpoint:
 
 ```bash
 dart run bin/mcp_https_flutter.dart --transport http --port 8080 --host localhost --path /mcp
 ```
 
+## Tools
+
+The server provides the following tools:
+
+### `greet`
+Takes a string parameter and returns it.
+- **Parameters**:
+  - `param` (string, required): The parameter to return.
 
 ## Key Technologies
 
-*   **Language:** Dart
-*   **SDK:** `mcp_dart` (Model Context Protocol SDK for Dart)
-*   **Dependency Management:** `pub` / `pubspec.yaml`
+*   **Language:** Dart (SDK ^3.10.4)
+*   **Protocol:** [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
+*   **SDK:** `mcp_dart`
+*   **Dependency Management:** `pub`
 
 ## Prerequisites
 
-*   Dart SDK (version 3.10.0 or later)
+*   Dart SDK (version 3.10.4 or later)
 
 ## Setup
 
@@ -36,14 +65,32 @@ dart run bin/mcp_https_flutter.dart --transport http --port 8080 --host localhos
 
 ## Running the Server
 
-The server is configured to run using the `stdio` transport.
+For local development and testing:
 
 ```bash
 dart run bin/mcp_https_flutter.dart
 ```
 
-*Note: Since this is an MCP server running over stdio, it is typically not run directly by a human but rather spawned by an MCP client.*
+*Note: Since this is an MCP server running over stdio, it is typically spawned by an MCP client (like Claude Desktop).*
 
-## Tools
+## Docker & Deployment
 
-*   `greet`: Takes a `param` (string) and returns it.
+### Build Docker Image
+
+```bash
+docker build -t mcp-https-flutter .
+```
+
+### Run with Docker
+
+```bash
+docker run -p 8080:8080 mcp-https-flutter
+```
+
+### Google Cloud Run
+
+The project includes `cloudbuild.yaml` for automated deployment to Google Cloud Run. Use the following command to trigger a build and deploy:
+
+```bash
+gcloud builds submit --config cloudbuild.yaml --substitutions=_SERVICE_NAME=mcp-https-flutter
+```

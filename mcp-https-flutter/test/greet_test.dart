@@ -1,6 +1,6 @@
-import 'package:test/test.dart';
-import 'package:mcp_https_flutter/tools.dart';
 import 'package:mcp_dart/mcp_dart.dart';
+import 'package:mcp_https_flutter/tools.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('greet returns param', () async {
@@ -22,6 +22,9 @@ void main() {
     final args = <String, dynamic>{}; // No param
     final result = await greetHandler(args, null);
     expect(result.isError, isTrue);
-    expect((result.content.first as TextContent).text, contains("Missing 'param' argument"));
+    expect(
+      (result.content.first as TextContent).text,
+      contains("Missing 'param' argument"),
+    );
   });
 }
