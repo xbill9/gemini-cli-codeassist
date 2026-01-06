@@ -1,22 +1,39 @@
-# Gemini Context: mcp_stdio_flutter
+# Gemini Context: firestore_stdio_flutter
 
 ## Project Overview
-This project is a Dart command-line application implementing a **Model Context Protocol (MCP)** server using the `mcp_dart` package. It communicates via standard input/output (stdio).
+This project is a Dart command-line application implementing a **Model Context Protocol (MCP)** server for a fictional "Cymbal Superstore" inventory system. It uses **Firestore** as its database and communicates via standard input/output (stdio).
 
 ## Tech Stack
--   **Language**: Dart (SDK >= 3.10.4)
+-   **Language**: Dart (SDK ^3.10.4)
 -   **Key Dependencies**:
     -   `mcp_dart`: For MCP server implementation.
+    -   `firedart`: A Dart-native client for Firestore.
+    -   `dotenv`: For managing environment variables.
     -   `path`: For file path manipulation.
 -   **Dev Dependencies**:
     -   `lints`: For static analysis and enforcing Dart best practices.
     -   `test`: For unit testing.
 
 ## Project Structure
--   `bin/mcp_stdio_flutter.dart`: The entry point of the application. Sets up the MCP server and stdio connection.
--   `lib/`: Contains the core logic, including tool definitions and resource handlers.
-    -   `lib/mcp_stdio_flutter.dart`: Definitions of MCP tools exposed by this server.
--   `test/`: Unit tests.
+-   `bin/firestore_stdio_flutter.dart`: The entry point. Sets up the MCP server, registers tools, and handles the stdio connection.
+-   `lib/`:
+    -   `lib/product.dart`: Defines the `Product` data model and Firestore serialization.
+    -   `lib/tools.dart`: Contains the implementations of the MCP tools and Firestore interaction logic.
+-   `test/`: Contains unit tests for the application.
+
+## MCP Tools
+The server exposes the following tools:
+-   `get_products`: Returns a list of all products in the inventory.
+-   `get_product_by_id`: Returns details for a specific product given its ID.
+-   `seed`: Populates the Firestore collection with sample inventory data.
+-   `reset`: Deletes all products from the Firestore collection.
+-   `get_root`: Returns a welcome message from the Cymbal Superstore Inventory API.
+-   `check_db`: Checks if the Firestore connection is initialized.
+
+## Configuration
+The application requires a Firestore project ID. This can be provided via environment variables in a `.env` file or from the system environment:
+-   `FIRESTORE_PROJECT_ID`
+-   `GOOGLE_CLOUD_PROJECT`
 
 ## Development Guidelines
 
@@ -28,16 +45,14 @@ This project is a Dart command-line application implementing a **Model Context P
 -   Use `async`/`await` for asynchronous operations.
 
 ### MCP Implementation
--   **Tools**: Define tools using the `mcp_dart` primitives. Ensure clear descriptions and parameter schemas.
--   **Resources**: If implementing resources, ensure efficient reading and proper URI handling.
--   **Error Handling**: specific to MCP, return meaningful error codes/messages to the client.
--   **Stdio**: The server relies on reading from stdin and writing to stdout. Avoid using `print` for logging/debug info as it corrupts the protocol stream. Use `stderr` or MCP logging facilities instead.
+-   **Tools**: Defined in `bin/firestore_stdio_flutter.dart` and implemented in `lib/tools.dart`.
+-   **Logging**: Use the custom `log` function in `lib/tools.dart` which writes JSON-formatted logs to `stderr` to avoid corrupting the MCP stdio stream.
+-   **Error Handling**: Return meaningful error messages within `CallToolResult` to provide feedback to the MCP client.
 
 ### Testing
--   Write tests for all new tools and logic in `test/`.
 -   Run tests using `dart test`.
 
 ## Commands
--   **Run**: `dart run` (or `dart bin/mcp_stdio_flutter.dart`)
+-   **Run**: `dart run` (requires environment variables for Firestore)
 -   **Test**: `dart test`
 -   **Analyze**: `dart analyze`
