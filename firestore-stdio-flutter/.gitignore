@@ -5,13 +5,9 @@
 
 # Files and directories created by pub
 .packages
+.pub-cache/
 .pub/
 build/
-
-# Flutter-specific (in case this becomes a Flutter project)
-.flutter-plugins
-.flutter-plugins-dependencies
-.metadata
 
 # Documentation and temporary files
 doc/api/
@@ -33,3 +29,9 @@ Thumbs.db
 *.dll
 *.so
 *.dylib
+
+# Environment variables
+.env
+*.env
+.env.*
+! .env.example

@@ -128,6 +128,8 @@ Future<void> initFirestoreCollection() async {
     "Sunflower Seeds", "Fresh Basil", "Cinnamon",
   ];
 
+  final futures = <Future>[];
+
   for (final productName in oldProducts) {
     final product = Product(
       name: productName,
@@ -137,7 +139,7 @@ Future<void> initFirestoreCollection() async {
       timestamp: DateTime.now().subtract(Duration(milliseconds: (random.nextDouble() * 31536000000).toInt() + 7776000000)),
       actualdateadded: DateTime.now(),
     );
-    await addOrUpdateFirestore(product);
+    futures.add(addOrUpdateFirestore(product));
   }
 
   final recentProducts = [
@@ -155,7 +157,7 @@ Future<void> initFirestoreCollection() async {
       timestamp: DateTime.now().subtract(Duration(milliseconds: (random.nextDouble() * 518400000).toInt() + 1)),
       actualdateadded: DateTime.now(),
     );
-    await addOrUpdateFirestore(product);
+    futures.add(addOrUpdateFirestore(product));
   }
 
   final recentProductsOutOfStock = ["Wasabi Party Mix", "Jalapeno Seasoning"];
@@ -168,8 +170,10 @@ Future<void> initFirestoreCollection() async {
       timestamp: DateTime.now().subtract(Duration(milliseconds: (random.nextDouble() * 518400000).toInt() + 1)),
       actualdateadded: DateTime.now(),
     );
-    await addOrUpdateFirestore(product);
+    futures.add(addOrUpdateFirestore(product));
   }
+
+  await Future.wait(futures);
 }
 
 Future<void> addOrUpdateFirestore(Product product) async {
@@ -179,16 +183,13 @@ Future<void> addOrUpdateFirestore(Product product) async {
   if (querySnapshot.isEmpty) {
     await collection.add(product.toFirestore());
   } else {
-    for (final doc in querySnapshot) {
-      await collection.document(doc.id).update(product.toFirestore());
-    }
+    await Future.wait(querySnapshot.map((doc) =>
+        collection.document(doc.id).update(product.toFirestore())));
   }
 }
 
 Future<void> cleanFirestoreCollection() async {
   final collection = Firestore.instance.collection("inventory");
   final snapshot = await collection.get();
-  for (final doc in snapshot) {
-    await collection.document(doc.id).delete();
-  }
+  await Future.wait(snapshot.map((doc) => collection.document(doc.id).delete()));
 }
