@@ -13,7 +13,8 @@ repositories {
 dependencies {
     implementation(libs.mcp.sdk)
     implementation(libs.coroutines.core)
-    implementation(libs.slf4j.simple)
+    implementation(libs.logback.classic)
+    implementation(libs.logstash.logback.encoder)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.sse)

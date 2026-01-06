@@ -1,10 +1,10 @@
 # MCP HTTPS Kotlin Server
 
-A simple Model Context Protocol (MCP) server implemented in Kotlin using the official `kotlin-sdk`. This server is designed to communicate over `HTTPS` (SSE) and serves as a foundational "Hello World" example for Kotlin-based MCP integrations.
+A simple Model Context Protocol (MCP) server implemented in Kotlin using the official `kotlin-sdk`. This server is designed to communicate over **HTTPS (SSE)** and serves as a foundational "Hello World" example for Kotlin-based MCP integrations.
 
 ## Overview
 
-This project provides a basic MCP server named `hello-world-server` that exposes a single tool: `greet`. It communicates via standard input/output (stdio).
+This project provides a basic MCP server named `mcp-https-server` that exposes a single tool: `greet`. It runs a Ktor web server and communicates via Server-Sent Events (SSE).
 
 ## Prerequisites
 
@@ -23,31 +23,35 @@ This project provides a basic MCP server named `hello-world-server` that exposes
 
 ## Running the Server
 
-This server is designed to be executed by an MCP client (like Claude Desktop or a Gemini-powered IDE extension) that handles the HTTPS communication.
-
 To run the server manually:
 ```bash
 make run
 # Or manually:
 ./gradlew run
 ```
+The server will start on port `8080` (default) or the port specified by the `PORT` environment variable.
+
+### Endpoints
+- **SSE Endpoint:** `http://localhost:8080/sse`
+- **POST Endpoint:** `http://localhost:8080/messages`
 
 ### Configuration for MCP Clients
 
-If you are adding this to an MCP client config, the configuration would look something like this:
+To connect an MCP client (like an IDE extension or Claude Desktop if supported) to this server, you typically configure it to point to the SSE URL.
+
+**Example Configuration (Generic):**
 
 ```json
 {
   "mcpServers": {
-    "kotlin-hello-world": {
-      "command": "java",
-      "args": ["-jar", "/path/to/mcp-https-kotlin/build/libs/mcp-https-kotlin-1.0-SNAPSHOT.jar"]
+    "kotlin-https-server": {
+      "url": "http://localhost:8080/sse"
     }
   }
 }
 ```
 
-*Note: Ensure the absolute path is correct. The standard build produces `mcp-https-kotlin-1.0-SNAPSHOT.jar`.*
+*Note: Since this is an HTTP server, you must run the server (`make run`) separately before the client attempts to connect, unless your client supports launching HTTP servers automatically.*
 
 ## Tools
 
@@ -59,6 +63,6 @@ If you are adding this to an MCP client config, the configuration would look som
 
 ## Project Structure
 
-- `src/main/kotlin/.../Main.kt`: Entry point defining the server and tools.
+- `src/main/kotlin/.../Main.kt`: Entry point defining the Ktor server, SSE configuration, and MCP tools.
 - `build.gradle.kts`: Gradle build configuration (Kotlin DSL).
 - `Makefile`: Commands for build, test, and maintenance.
