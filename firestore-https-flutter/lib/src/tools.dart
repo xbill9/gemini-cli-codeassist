@@ -1,8 +1,8 @@
 export 'package:mcp_dart/mcp_dart.dart';
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:firedart/firedart.dart';
-import 'package:firestore_https_flutter/product.dart';
-import 'package:firestore_https_flutter/logger.dart';
+import 'product.dart';
+import 'logger.dart';
 import 'dart:math';
 import 'dart:convert';
 

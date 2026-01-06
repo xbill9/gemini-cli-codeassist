@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:firestore_https_flutter/tools.dart';
+import 'package:firestore_https_flutter/firestore_https_flutter.dart';
 
 void main() {
   test('greet returns name', () async {
