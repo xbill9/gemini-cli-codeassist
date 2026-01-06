@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:firedart/firedart.dart';
 import 'package:mcp_dart/mcp_dart.dart';
@@ -6,12 +7,22 @@ import 'product.dart';
 
 bool dbRunning = false;
 
+void log(String message, {bool isError = false}) {
+  final logEntry = {
+    'timestamp': DateTime.now().toIso8601String(),
+    'level': isError ? 'ERROR' : 'INFO',
+    'message': message,
+  };
+  stderr.writeln(jsonEncode(logEntry));
+}
+
 Future<void> initFirestore(String projectId) async {
   try {
     Firestore.initialize(projectId, useApplicationDefaultAuth: true);
     dbRunning = true;
   } catch (e) {
     dbRunning = false;
+    log("Failed to initialize Firestore: $e", isError: true);
     rethrow;
   }
 }
@@ -35,6 +46,7 @@ Future<CallToolResult> getProductsHandler(
       content: [TextContent(text: jsonEncode(productsList))],
     );
   } catch (e) {
+    log("Error getting products: $e", isError: true);
     return CallToolResult(
       isError: true,
       content: [TextContent(text: "Error getting products: $e")],
@@ -69,6 +81,7 @@ Future<CallToolResult> getProductByIdHandler(
       content: [TextContent(text: jsonEncode(product.toJson()))],
     );
   } catch (e) {
+    log("Product not found or error: $e", isError: true);
     return CallToolResult(
       isError: true,
       content: [TextContent(text: "Product not found or error: $e")],
@@ -92,6 +105,7 @@ Future<CallToolResult> seedHandler(
       content: [TextContent(text: "Database seeded successfully.")],
     );
   } catch (e) {
+    log("Error seeding database: $e", isError: true);
     return CallToolResult(
       isError: true,
       content: [TextContent(text: "Error seeding database: $e")],
@@ -115,6 +129,7 @@ Future<CallToolResult> resetHandler(
       content: [TextContent(text: "Database reset successfully.")],
     );
   } catch (e) {
+    log("Error resetting database: $e", isError: true);
     return CallToolResult(
       isError: true,
       content: [TextContent(text: "Error resetting database: $e")],

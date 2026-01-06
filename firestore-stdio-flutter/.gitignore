@@ -3,6 +3,9 @@
 # Created by `dart pub`
 .dart_tool/
 
+# Binary
+bin/firestore_stdio_flutter
+
 # Files and directories created by pub
 .packages
 .pub-cache/

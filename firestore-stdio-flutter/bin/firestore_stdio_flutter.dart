@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:firestore_stdio_flutter/tools.dart';
 import 'package:dotenv/dotenv.dart';
@@ -11,15 +10,13 @@ void main() async {
       'your-project-id';
 
   // Set up logging
-  void log(String message) {
-    stderr.writeln(message);
-  }
+  // Logging is handled by package:firestore_stdio_flutter/tools.dart
 
   try {
     await initFirestore(projectId);
     log("Firestore initialized for project: $projectId");
   } catch (e) {
-    log("Failed to initialize Firestore: $e");
+    log("Failed to initialize Firestore: $e", isError: true);
   }
 
   final server = McpServer(
