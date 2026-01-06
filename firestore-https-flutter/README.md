@@ -1,6 +1,6 @@
 # firestore-https-flutter
 
-A Dart package implementing a **Model Context Protocol (MCP)** server for accessing Cloud Firestore. It supports both STDIO and HTTP transports.
+A Dart package implementing a **Model Context Protocol (MCP)** server for accessing Cloud Firestore. It supports HTTP transport.
 
 ## Prerequisites
 
@@ -11,20 +11,10 @@ A Dart package implementing a **Model Context Protocol (MCP)** server for access
 
 ## Usage
 
-### STDIO
-
-Run the server using standard input/output. This is the default mode.
-
-```bash
-dart run bin/firestore_https_flutter.dart --transport stdio
-```
-
-### HTTP
-
 Run the server over HTTP (SSE):
 
 ```bash
-dart run bin/firestore_https_flutter.dart --transport http --port 8080 --host localhost --path /mcp
+dart run bin/firestore_https_flutter.dart --port 8080 --host localhost --path /mcp
 ```
 
 ## Tools

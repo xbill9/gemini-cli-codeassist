@@ -16,7 +16,7 @@ This project is a Dart command-line application implementing a **Model Context P
     -   `test`: For unit testing.
 
 ## Project Structure
--   `bin/firestore_https_flutter.dart`: The entry point of the application. Sets up the MCP server and handles transport selection (stdio or HTTP).
+-   `bin/firestore_https_flutter.dart`: The entry point of the application. Sets up the MCP server and handles HTTP configuration.
 -   `lib/tools.dart`: Definitions of MCP tools and their handlers, including Firestore logic.
 -   `test/`: Unit tests.
 
@@ -44,16 +44,15 @@ The server requires the `GOOGLE_CLOUD_PROJECT` environment variable to be set to
 
 ### MCP Implementation
 -   **Tools**: Defined in `bin/firestore_https_flutter.dart` and implemented in `lib/tools.dart`.
--   **Transports**: Supports `stdio` (default) and `http`. Use the `--transport` flag to switch.
+-   **Transports**: Supports `http`.
 -   **Error Handling**: specific to MCP, return meaningful error codes/messages to the client.
--   **Logging**: Use `stderr` for logging/debug info to avoid corrupting the protocol stream when using `stdio` transport.
+-   **Logging**: Use `stderr` for logging/debug info.
 
 ### Testing
 -   Write tests for all new tools and logic in `test/`.
 -   Run tests using `dart test`.
 
 ## Commands
--   **Run (stdio)**: `dart run`
--   **Run (HTTP)**: `dart run --transport http --port 8080`
+-   **Run**: `dart run --port 8080`
 -   **Test**: `dart test`
 -   **Analyze**: `dart analyze`
