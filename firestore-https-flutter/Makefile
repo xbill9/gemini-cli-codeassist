@@ -1,4 +1,11 @@
-.PHONY: get run test clean build
+.PHONY: get run test clean build lint check release deploy
+
+check: lint test
+
+lint:
+	dart analyze
+
+release: lint test build
 
 build:
 	dart compile exe bin/firestore_https_flutter.dart -o bin/firestore_https_flutter

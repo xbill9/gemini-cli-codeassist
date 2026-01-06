@@ -1,64 +1,14 @@
-library tools;
-
 export 'package:mcp_dart/mcp_dart.dart';
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:firedart/firedart.dart';
+import 'package:firestore_https_flutter/product.dart';
+import 'package:firestore_https_flutter/logger.dart';
 import 'dart:math';
 import 'dart:convert';
 
-class Product {
-  final String? id;
-  final String name;
-  final double price;
-  final int quantity;
-  final String imgfile;
-  final DateTime timestamp;
-  final DateTime actualdateadded;
-
-  Product({
-    this.id,
-    required this.name,
-    required this.price,
-    required this.quantity,
-    required this.imgfile,
-    required this.timestamp,
-    required this.actualdateadded,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'price': price,
-    'quantity': quantity,
-    'imgfile': imgfile,
-    'timestamp': timestamp.toIso8601String(),
-    'actualdateadded': actualdateadded.toIso8601String(),
-  };
-
-  factory Product.fromFirestore(Document doc) {
-    final data = doc.map;
-    return Product(
-      id: doc.id,
-      name: data['name'] ?? '',
-      price: (data['price'] ?? 0).toDouble(),
-      quantity: data['quantity'] ?? 0,
-      imgfile: data['imgfile'] ?? '',
-      timestamp: data['timestamp'] ?? DateTime.now(),
-      actualdateadded: data['actualdateadded'] ?? DateTime.now(),
-    );
-  }
-
-  Map<String, dynamic> toFirestore() => {
-    'name': name,
-    'price': price,
-    'quantity': quantity,
-    'imgfile': imgfile,
-    'timestamp': timestamp,
-    'actualdateadded': actualdateadded,
-  };
-}
-
+/// Handles the 'greet' tool call.
 Future<CallToolResult> greetHandler(Map<String, dynamic> args, dynamic extra) async {
+  log('INFO', 'Handling greet request', {'args': args});
   final name = args['name'] as String?;
   
   if (name != null) {
@@ -70,6 +20,7 @@ Future<CallToolResult> greetHandler(Map<String, dynamic> args, dynamic extra) as
       ]
     );
   } else {
+      log('WARNING', 'greet request missing name argument');
       return CallToolResult(
       isError: true,
       content: [
@@ -81,10 +32,13 @@ Future<CallToolResult> greetHandler(Map<String, dynamic> args, dynamic extra) as
   }
 }
 
+/// Handles the 'get_products' tool call.
 Future<CallToolResult> getProductsHandler(Map<String, dynamic> args, dynamic extra) async {
+  log('INFO', 'Handling get_products request');
   try {
     final docs = await Firestore.instance.collection('inventory').get();
     final products = docs.map((doc) => Product.fromFirestore(doc).toJson()).toList();
+    log('INFO', 'Successfully retrieved ${products.length} products');
     return CallToolResult(
       content: [
         TextContent(
@@ -93,6 +47,7 @@ Future<CallToolResult> getProductsHandler(Map<String, dynamic> args, dynamic ext
       ]
     );
   } catch (e) {
+    log('ERROR', 'Error fetching products', {'error': e.toString()});
     return CallToolResult(
       isError: true,
       content: [TextContent(text: "Error fetching products: $e")]
@@ -100,14 +55,18 @@ Future<CallToolResult> getProductsHandler(Map<String, dynamic> args, dynamic ext
   }
 }
 
+/// Handles the 'get_product_by_id' tool call.
 Future<CallToolResult> getProductByIdHandler(Map<String, dynamic> args, dynamic extra) async {
+  log('INFO', 'Handling get_product_by_id request', {'args': args});
   final id = args['id'] as String?;
   if (id == null) {
+    log('WARNING', 'get_product_by_id request missing id argument');
     return CallToolResult(isError: true, content: [TextContent(text: "Missing 'id' argument")]);
   }
   try {
     final doc = await Firestore.instance.collection('inventory').document(id).get();
     final product = Product.fromFirestore(doc);
+    log('INFO', 'Successfully retrieved product', {'id': id});
     return CallToolResult(
       content: [
         TextContent(
@@ -116,6 +75,7 @@ Future<CallToolResult> getProductByIdHandler(Map<String, dynamic> args, dynamic 
       ]
     );
   } catch (e) {
+    log('ERROR', 'Error fetching product', {'id': id, 'error': e.toString()});
     return CallToolResult(
       isError: true,
       content: [TextContent(text: "Error fetching product $id: $e")]
@@ -123,9 +83,12 @@ Future<CallToolResult> getProductByIdHandler(Map<String, dynamic> args, dynamic 
   }
 }
 
+/// Handles the 'search' tool call.
 Future<CallToolResult> searchHandler(Map<String, dynamic> args, dynamic extra) async {
+  log('INFO', 'Handling search request', {'args': args});
   final query = args['query'] as String?;
   if (query == null) {
+    log('WARNING', 'search request missing query argument');
     return CallToolResult(isError: true, content: [TextContent(text: "Missing 'query' argument")]);
   }
   try {
@@ -135,6 +98,7 @@ Future<CallToolResult> searchHandler(Map<String, dynamic> args, dynamic extra) a
         .where((p) => p.name.toLowerCase().contains(query.toLowerCase()))
         .map((p) => p.toJson())
         .toList();
+    log('INFO', 'Search found ${results.length} results', {'query': query});
     return CallToolResult(
       content: [
         TextContent(
@@ -143,6 +107,7 @@ Future<CallToolResult> searchHandler(Map<String, dynamic> args, dynamic extra) a
       ]
     );
   } catch (e) {
+    log('ERROR', 'Error searching products', {'query': query, 'error': e.toString()});
     return CallToolResult(
       isError: true,
       content: [TextContent(text: "Error searching products: $e")]
@@ -150,13 +115,17 @@ Future<CallToolResult> searchHandler(Map<String, dynamic> args, dynamic extra) a
   }
 }
 
+/// Handles the 'seed' tool call.
 Future<CallToolResult> seedHandler(Map<String, dynamic> args, dynamic extra) async {
+  log('INFO', 'Handling seed request');
   try {
     await _initFirestoreCollection();
+    log('INFO', 'Database seeded successfully');
     return CallToolResult(
       content: [TextContent(text: "Database seeded successfully.")]
     );
   } catch (e) {
+    log('ERROR', 'Error seeding database', {'error': e.toString()});
     return CallToolResult(
       isError: true,
       content: [TextContent(text: "Error seeding database: $e")]
@@ -164,13 +133,17 @@ Future<CallToolResult> seedHandler(Map<String, dynamic> args, dynamic extra) asy
   }
 }
 
+/// Handles the 'reset' tool call.
 Future<CallToolResult> resetHandler(Map<String, dynamic> args, dynamic extra) async {
+  log('INFO', 'Handling reset request');
   try {
     await _cleanFirestoreCollection();
+    log('INFO', 'Database reset successfully');
     return CallToolResult(
       content: [TextContent(text: "Database reset successfully.")]
     );
   } catch (e) {
+    log('ERROR', 'Error resetting database', {'error': e.toString()});
     return CallToolResult(
       isError: true,
       content: [TextContent(text: "Error resetting database: $e")]
@@ -178,12 +151,15 @@ Future<CallToolResult> resetHandler(Map<String, dynamic> args, dynamic extra) as
   }
 }
 
+/// Handles the 'get_root' tool call.
 Future<CallToolResult> getRootHandler(Map<String, dynamic> args, dynamic extra) async {
+  log('INFO', 'Handling get_root request');
   return CallToolResult(
     content: [TextContent(text: "🍎 Hello! This is the Cymbal Superstore Inventory API.")]
   );
 }
 
+/// Cleans up the 'inventory' collection in Firestore.
 Future<void> _cleanFirestoreCollection() async {
   final collectionRef = Firestore.instance.collection('inventory');
   final snapshot = await collectionRef.get();
@@ -193,6 +169,7 @@ Future<void> _cleanFirestoreCollection() async {
   }
 }
 
+/// Seeds the 'inventory' collection with sample products.
 Future<void> _initFirestoreCollection() async {
   final oldProducts = [
     "Apples", "Bananas", "Milk", "Whole Wheat Bread", "Eggs", "Cheddar Cheese",
@@ -211,7 +188,7 @@ Future<void> _initFirestoreCollection() async {
       quantity: random.nextInt(500) + 1,
       imgfile: "product-images/${productName.replaceAll(' ', '').toLowerCase()}.png",
       timestamp: DateTime.now().subtract(Duration(days: random.nextInt(365))),
-      actualdateadded: DateTime.now(),
+      actualDateAdded: DateTime.now(),
     );
     await _addOrUpdateFirestore(product);
   }
@@ -229,7 +206,7 @@ Future<void> _initFirestoreCollection() async {
       quantity: random.nextInt(100) + 1,
       imgfile: "product-images/${productName.replaceAll(' ', '').toLowerCase()}.png",
       timestamp: DateTime.now().subtract(Duration(days: random.nextInt(7))),
-      actualdateadded: DateTime.now(),
+      actualDateAdded: DateTime.now(),
     );
     await _addOrUpdateFirestore(product);
   }
@@ -242,12 +219,13 @@ Future<void> _initFirestoreCollection() async {
       quantity: 0,
       imgfile: "product-images/${productName.replaceAll(' ', '').toLowerCase()}.png",
       timestamp: DateTime.now().subtract(Duration(days: random.nextInt(7))),
-      actualdateadded: DateTime.now(),
+      actualDateAdded: DateTime.now(),
     );
     await _addOrUpdateFirestore(product);
   }
 }
 
+/// Adds or updates a product in Firestore based on its name.
 Future<void> _addOrUpdateFirestore(Product product) async {
   final collection = Firestore.instance.collection("inventory");
   final query = await collection.where("name", isEqualTo: product.name).get();

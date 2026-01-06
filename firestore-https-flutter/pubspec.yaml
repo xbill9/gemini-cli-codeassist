@@ -1,7 +1,7 @@
 name: firestore_https_flutter
-description: A sample command-line application.
+description: Firestore MCP server over streaming HTTP transport deployed to Cloud Run
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/xbill9/gemini-cli-codeassist
 
 environment:
   sdk: ^3.10.4

@@ -1,6 +1,5 @@
-import 'dart:io';
-import 'package:mcp_dart/mcp_dart.dart';
 import 'package:firestore_https_flutter/tools.dart';
+import 'package:firestore_https_flutter/logger.dart';
 import 'package:args/args.dart';
 import 'package:firedart/firedart.dart';
 import 'package:dotenv/dotenv.dart';
@@ -28,7 +27,7 @@ McpServer createServer() {
       required: ["name"],
     ),
     callback: (args, extra) async {
-      stderr.writeln("Executed greet tool");
+      log('INFO', 'Executed greet tool', {'args': args});
       return greetHandler(args, extra);
     },
   );
@@ -38,7 +37,7 @@ McpServer createServer() {
     description: "Get a list of all products from the inventory database",
     inputSchema: JsonSchema.object(properties: {}),
     callback: (args, extra) async {
-      stderr.writeln("Executed get_products tool");
+      log('INFO', 'Executed get_products tool');
       return getProductsHandler(args, extra);
     },
   );
@@ -53,7 +52,7 @@ McpServer createServer() {
       required: ["id"],
     ),
     callback: (args, extra) async {
-      stderr.writeln("Executed get_product_by_id tool");
+      log('INFO', 'Executed get_product_by_id tool', {'args': args});
       return getProductByIdHandler(args, extra);
     },
   );
@@ -68,7 +67,7 @@ McpServer createServer() {
       required: ["query"],
     ),
     callback: (args, extra) async {
-      stderr.writeln("Executed search tool");
+      log('INFO', 'Executed search tool', {'args': args});
       return searchHandler(args, extra);
     },
   );
@@ -78,7 +77,7 @@ McpServer createServer() {
     description: "Seed the inventory database with products.",
     inputSchema: JsonSchema.object(properties: {}),
     callback: (args, extra) async {
-      stderr.writeln("Executed seed tool");
+      log('INFO', 'Executed seed tool');
       return seedHandler(args, extra);
     },
   );
@@ -88,7 +87,7 @@ McpServer createServer() {
     description: "Clear all products from the inventory database.",
     inputSchema: JsonSchema.object(properties: {}),
     callback: (args, extra) async {
-      stderr.writeln("Executed reset tool");
+      log('INFO', 'Executed reset tool');
       return resetHandler(args, extra);
     },
   );
@@ -98,7 +97,7 @@ McpServer createServer() {
     description: "Get a greeting from the Cymbal Superstore Inventory API.",
     inputSchema: JsonSchema.object(properties: {}),
     callback: (args, extra) async {
-      stderr.writeln("Executed get_root tool");
+      log('INFO', 'Executed get_root tool');
       return getRootHandler(args, extra);
     },
   );
@@ -126,16 +125,16 @@ void main(List<String> arguments) async {
   final projectId = env['GOOGLE_CLOUD_PROJECT'];
   if (projectId != null) {
     Firestore.initialize(projectId,useApplicationDefaultAuth: true);
-    stderr.writeln("Firestore initialized for project: $projectId");
+    log('INFO', 'Firestore initialized', {'projectId': projectId});
   } else {
-    stderr.writeln("Warning: GOOGLE_CLOUD_PROJECT not found in environment.");
+    log('WARNING', 'GOOGLE_CLOUD_PROJECT not found in environment');
   }
 
   if (transportType == 'stdio') {
     final server = createServer();
     final transport = StdioServerTransport();
     await server.connect(transport);
-    stderr.writeln("Connected via stdio");
+    log('INFO', 'Connected via stdio');
   } else {
     final port = int.parse(results['port']);
     final host = results['host'];
@@ -148,5 +147,6 @@ void main(List<String> arguments) async {
       path: path,
     );
     await server.start();
+    log('INFO', 'Server started', {'transport': 'http', 'host': host, 'port': port, 'path': path});
   }
 }
