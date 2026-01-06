@@ -3,10 +3,7 @@ import 'logger.dart';
 
 McpServer createServer() {
   final server = McpServer(
-    Implementation(
-      name: "mcp-https-flutter",
-      version: "1.0.0",
-    ),
+    Implementation(name: "mcp-https-flutter", version: "1.0.0"),
     options: McpServerOptions(
       capabilities: ServerCapabilities(
         tools: ServerCapabilitiesTools(listChanged: true),
@@ -59,7 +56,9 @@ McpServer createServer() {
     description: "Search for products in the inventory database by name",
     inputSchema: JsonSchema.object(
       properties: {
-        "query": JsonSchema.string(description: "The search query to filter products by name"),
+        "query": JsonSchema.string(
+          description: "The search query to filter products by name",
+        ),
       },
       required: ["query"],
     ),

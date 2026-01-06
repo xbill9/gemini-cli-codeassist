@@ -5,10 +5,19 @@ import 'package:dotenv/dotenv.dart';
 
 void main(List<String> arguments) async {
   final parser = ArgParser()
-    ..addOption('port',
-        abbr: 'p', defaultsTo: '8080', help: 'Port for HTTP transport')
-    ..addOption('host', defaultsTo: 'localhost', help: 'Host for HTTP transport')
-    ..addOption('path', defaultsTo: '/mcp', help: 'Path for HTTP transport');
+    ..addOption(
+      'port',
+      abbr: 'p',
+      defaultsTo: '8080',
+      help: 'Port for HTTP transport',
+    )
+    ..addOption(
+      'host',
+      defaultsTo: 'localhost',
+      help: 'Host for HTTP transport',
+    )
+    ..addOption('path', defaultsTo: '/mcp', help: 'Path for HTTP transport')
+    ..addOption('transport', defaultsTo: 'http', help: 'Transport type');
 
   final results = parser.parse(arguments);
 
@@ -33,6 +42,10 @@ void main(List<String> arguments) async {
     path: path,
   );
   await server.start();
-  log('INFO', 'Server started',
-      {'transport': 'http', 'host': host, 'port': port, 'path': path});
+  log('INFO', 'Server started', {
+    'transport': 'http',
+    'host': host,
+    'port': port,
+    'path': path,
+  });
 }

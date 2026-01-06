@@ -21,6 +21,9 @@ void main() {
     final args = <String, dynamic>{}; // No name
     final result = await greetHandler(args, null);
     expect(result.isError, isTrue);
-    expect((result.content.first as TextContent).text, contains("Missing 'name' argument"));
+    expect(
+      (result.content.first as TextContent).text,
+      contains("Missing 'name' argument"),
+    );
   });
 }

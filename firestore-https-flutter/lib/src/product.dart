@@ -36,14 +36,14 @@ class Product {
 
   /// Converts the product to a JSON map.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'price': price,
-        'quantity': quantity,
-        'imgfile': imgfile,
-        'timestamp': timestamp.toIso8601String(),
-        'actualdateadded': actualDateAdded.toIso8601String(),
-      };
+    'id': id,
+    'name': name,
+    'price': price,
+    'quantity': quantity,
+    'imgfile': imgfile,
+    'timestamp': timestamp.toIso8601String(),
+    'actualdateadded': actualDateAdded.toIso8601String(),
+  };
 
   /// Creates a [Product] from a Firestore [Document].
   factory Product.fromFirestore(Document doc) {
@@ -61,11 +61,11 @@ class Product {
 
   /// Converts the product to a Firestore-compatible map.
   Map<String, dynamic> toFirestore() => {
-        'name': name,
-        'price': price,
-        'quantity': quantity,
-        'imgfile': imgfile,
-        'timestamp': timestamp,
-        'actualdateadded': actualDateAdded,
-      };
+    'name': name,
+    'price': price,
+    'quantity': quantity,
+    'imgfile': imgfile,
+    'timestamp': timestamp,
+    'actualdateadded': actualDateAdded,
+  };
 }
