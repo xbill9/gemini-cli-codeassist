@@ -1,5 +1,39 @@
+# Gradle
+.gradle/
+build/
+
+# Kotlin
+.kotlin/
+kotlin-js-store/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Python (Tests)
 __pycache__/
 *.pyc
 .venv/
 .env
-.pytest_cache/build/
+.pytest_cache/
+
+# Local configuration
+local.properties
+.secrets/
+
+# Logs
+*.log
