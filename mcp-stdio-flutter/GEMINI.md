@@ -13,10 +13,14 @@ This project is a Dart command-line application implementing a **Model Context P
     -   `test`: For unit testing.
 
 ## Project Structure
--   `bin/mcp_stdio_flutter.dart`: The entry point of the application. Sets up the MCP server and stdio connection.
--   `lib/`: Contains the core logic, including tool definitions and resource handlers.
-    -   `lib/mcp_stdio_flutter.dart`: Definitions of MCP tools exposed by this server.
+-   `bin/mcp_stdio_flutter.dart`: The entry point of the application. Sets up the MCP server, registers the `greet` tool, and initializes the stdio connection.
+-   `lib/`: Contains the core logic.
+    -   `lib/mcp_stdio_flutter.dart`: Implementation of the `greetHandler` used by the `greet` tool.
 -   `test/`: Unit tests.
+    -   `test/greet_test.dart`: Tests for the `greetHandler` logic.
+
+## Tools
+-   **greet**: A simple tool that takes a `param` string argument and returns it as text content.
 
 ## Development Guidelines
 
