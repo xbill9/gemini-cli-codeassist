@@ -9,6 +9,7 @@ This project implements a server named `hello-world-server` that exposes tools t
 - Defining and registering tools with JSON schemas.
 - Handling tool calls via `StdioServerTransport`.
 - Coroutine-based session management.
+- **Capabilities:** Tools (with `listChanged` notification support).
 
 ## Technical Stack
 
@@ -16,11 +17,13 @@ This project implements a server named `hello-world-server` that exposes tools t
 - **MCP SDK:** `io.modelcontextprotocol:kotlin-sdk-jvm:0.8.1`
 - **JDK:** Java 25
 - **Build System:** Gradle 9.2.1
+- **Linter/Formatter:** Ktlint 12.1.2
 
 ## Prerequisites
 
 - **Java JDK 25** (Required for the latest Kotlin and Gradle features used in this project)
 - **Gradle 9.2.1+** (The project includes a Gradle wrapper)
+- **Make** (Optional, for using the Makefile convenience commands)
 
 ## Getting Started
 
@@ -53,19 +56,20 @@ To use this server with an MCP client (such as Claude Desktop or a Gemini-integr
 {
   "mcpServers": {
     "kotlin-mcp-server": {
-      "command": "/path/to/mcp-stdio-kotlin/build/install/mcp-stdio-kotlin/bin/mcp-stdio-kotlin",
+      "command": "/absolute/path/to/mcp-stdio-kotlin/build/install/mcp-stdio-kotlin/bin/mcp-stdio-kotlin",
       "args": []
     }
   }
 }
 ```
+*Note: Replace `/absolute/path/to/` with the actual path to your project directory.*
 
 ## Available Tools
 
 ### `greet`
 - **Description:** Returns a friendly greeting message.
 - **Input Schema:**
-  - `param` (string, required): The name of the person or entity to greet.
+  - `param` (string, optional): The name of the person or entity to greet. Defaults to "World" if omitted.
 - **Output:** A `TextContent` object containing "Hello, {param}!".
 
 ## Project Structure
@@ -76,7 +80,7 @@ To use this server with an MCP client (such as Claude Desktop or a Gemini-integr
 - `test_mcp.py`: Integration test script to verify stdio communication.
 - `build.gradle.kts`: Project dependencies and build configuration.
 
-## Testing
+## Development & Testing
 
 Run unit tests:
 ```bash
@@ -89,4 +93,14 @@ Run integration tests (requires building first):
 ```bash
 make build
 python3 test_mcp.py
+```
+
+Check code style:
+```bash
+make lint
+```
+
+Format code:
+```bash
+make format
 ```

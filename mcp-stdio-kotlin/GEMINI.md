@@ -13,6 +13,7 @@ This is a **Kotlin-based Model Context Protocol (MCP) server** implementation. I
 *   **Build Tool:** Gradle 9.2.1 (Kotlin DSL)
 *   **JDK:** Java 25
 *   **Transport:** Standard Input/Output (Stdio)
+*   **Linter/Formatter:** Ktlint 12.1.2
 
 ## Server Capabilities
 
@@ -20,7 +21,7 @@ The server is initialized with the following capabilities:
 *   **Tools:** Enabled (with `listChanged` notification support).
 
 ### Implemented Tools
-*   `greet`: A simple tool that takes a `param` (string) and returns a greeting message "Hello, {param}!".
+*   `greet`: A simple tool that takes an optional `param` (string) and returns a greeting message "Hello, {param}!". Defaults to "Hello, World!" if param is omitted.
 
 ## Project Structure
 
@@ -35,12 +36,19 @@ The server is initialized with the following capabilities:
 
 1.  **Prerequisites:**
     - Java JDK 25
+    - Make (Optional)
 
 2.  **Build:**
     ```bash
     make build
     # or
     ./gradlew build
+    ```
+
+3.  **Lint & Format:**
+    ```bash
+    make lint
+    make format
     ```
 
 ## Running the Server
@@ -56,7 +64,3 @@ make run
 ## Resources
 
 *   **MCP Kotlin SDK (GitHub):** [https://github.com/modelcontextprotocol/kotlin-sdk](https://github.com/modelcontextprotocol/kotlin-sdk)
-
-## Legacy/mismatched files
-*   `Dockerfile`: Needs update for Kotlin.
-*   `cloudbuild.yaml`: Needs update for Kotlin.
