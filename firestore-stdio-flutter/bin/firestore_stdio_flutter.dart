@@ -5,7 +5,10 @@ import 'package:dotenv/dotenv.dart';
 
 void main() async {
   final env = DotEnv(includePlatformEnvironment: true)..load();
-  final projectId = env['FIRESTORE_PROJECT_ID'] ?? env['GOOGLE_CLOUD_PROJECT'] ?? 'your-project-id';
+  final projectId =
+      env['FIRESTORE_PROJECT_ID'] ??
+      env['GOOGLE_CLOUD_PROJECT'] ??
+      'your-project-id';
 
   // Set up logging
   void log(String message) {
@@ -20,10 +23,7 @@ void main() async {
   }
 
   final server = McpServer(
-    Implementation(
-      name: "inventory-server",
-      version: "1.0.0",
-    ),
+    Implementation(name: "inventory-server", version: "1.0.0"),
     options: McpServerOptions(
       capabilities: ServerCapabilities(
         tools: ServerCapabilitiesTools(listChanged: true),

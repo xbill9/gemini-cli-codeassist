@@ -16,7 +16,10 @@ Future<void> initFirestore(String projectId) async {
   }
 }
 
-Future<CallToolResult> getProductsHandler(Map<String, dynamic> args, dynamic extra) async {
+Future<CallToolResult> getProductsHandler(
+  Map<String, dynamic> args,
+  dynamic extra,
+) async {
   if (!dbRunning) {
     return CallToolResult(
       isError: true,
@@ -25,7 +28,9 @@ Future<CallToolResult> getProductsHandler(Map<String, dynamic> args, dynamic ext
   }
   try {
     final products = await Firestore.instance.collection("inventory").get();
-    final productsList = products.map((doc) => Product.fromFirestore(doc).toJson()).toList();
+    final productsList = products
+        .map((doc) => Product.fromFirestore(doc).toJson())
+        .toList();
     return CallToolResult(
       content: [TextContent(text: jsonEncode(productsList))],
     );
@@ -37,7 +42,10 @@ Future<CallToolResult> getProductsHandler(Map<String, dynamic> args, dynamic ext
   }
 }
 
-Future<CallToolResult> getProductByIdHandler(Map<String, dynamic> args, dynamic extra) async {
+Future<CallToolResult> getProductByIdHandler(
+  Map<String, dynamic> args,
+  dynamic extra,
+) async {
   final id = args['id'] as String?;
   if (id == null) {
     return CallToolResult(
@@ -52,7 +60,10 @@ Future<CallToolResult> getProductByIdHandler(Map<String, dynamic> args, dynamic 
     );
   }
   try {
-    final doc = await Firestore.instance.collection("inventory").document(id).get();
+    final doc = await Firestore.instance
+        .collection("inventory")
+        .document(id)
+        .get();
     final product = Product.fromFirestore(doc);
     return CallToolResult(
       content: [TextContent(text: jsonEncode(product.toJson()))],
@@ -65,7 +76,10 @@ Future<CallToolResult> getProductByIdHandler(Map<String, dynamic> args, dynamic 
   }
 }
 
-Future<CallToolResult> seedHandler(Map<String, dynamic> args, dynamic extra) async {
+Future<CallToolResult> seedHandler(
+  Map<String, dynamic> args,
+  dynamic extra,
+) async {
   if (!dbRunning) {
     return CallToolResult(
       isError: true,
@@ -85,7 +99,10 @@ Future<CallToolResult> seedHandler(Map<String, dynamic> args, dynamic extra) asy
   }
 }
 
-Future<CallToolResult> resetHandler(Map<String, dynamic> args, dynamic extra) async {
+Future<CallToolResult> resetHandler(
+  Map<String, dynamic> args,
+  dynamic extra,
+) async {
   if (!dbRunning) {
     return CallToolResult(
       isError: true,
@@ -105,13 +122,23 @@ Future<CallToolResult> resetHandler(Map<String, dynamic> args, dynamic extra) as
   }
 }
 
-Future<CallToolResult> getRootHandler(Map<String, dynamic> args, dynamic extra) async {
+Future<CallToolResult> getRootHandler(
+  Map<String, dynamic> args,
+  dynamic extra,
+) async {
   return CallToolResult(
-    content: [TextContent(text: "🍎 Hello! This is the Cymbal Superstore Inventory API.")],
+    content: [
+      TextContent(
+        text: "🍎 Hello! This is the Cymbal Superstore Inventory API.",
+      ),
+    ],
   );
 }
 
-Future<CallToolResult> checkDbHandler(Map<String, dynamic> args, dynamic extra) async {
+Future<CallToolResult> checkDbHandler(
+  Map<String, dynamic> args,
+  dynamic extra,
+) async {
   return CallToolResult(
     content: [TextContent(text: "Database running: $dbRunning")],
   );
@@ -121,11 +148,30 @@ Future<CallToolResult> checkDbHandler(Map<String, dynamic> args, dynamic extra) 
 Future<void> initFirestoreCollection() async {
   final random = Random();
   final oldProducts = [
-    "Apples", "Bananas", "Milk", "Whole Wheat Bread", "Eggs", "Cheddar Cheese",
-    "Whole Chicken", "Rice", "Black Beans", "Bottled Water", "Apple Juice",
-    "Cola", "Coffee Beans", "Green Tea", "Watermelon", "Broccoli",
-    "Jasmine Rice", "Yogurt", "Beef", "Shrimp", "Walnuts",
-    "Sunflower Seeds", "Fresh Basil", "Cinnamon",
+    "Apples",
+    "Bananas",
+    "Milk",
+    "Whole Wheat Bread",
+    "Eggs",
+    "Cheddar Cheese",
+    "Whole Chicken",
+    "Rice",
+    "Black Beans",
+    "Bottled Water",
+    "Apple Juice",
+    "Cola",
+    "Coffee Beans",
+    "Green Tea",
+    "Watermelon",
+    "Broccoli",
+    "Jasmine Rice",
+    "Yogurt",
+    "Beef",
+    "Shrimp",
+    "Walnuts",
+    "Sunflower Seeds",
+    "Fresh Basil",
+    "Cinnamon",
   ];
 
   final futures = <Future>[];
@@ -135,17 +181,28 @@ Future<void> initFirestoreCollection() async {
       name: productName,
       price: (random.nextInt(10) + 1).toDouble(),
       quantity: random.nextInt(500) + 1,
-      imgfile: "product-images/${productName.replaceAll(' ', '').toLowerCase()}.png",
-      timestamp: DateTime.now().subtract(Duration(milliseconds: (random.nextDouble() * 31536000000).toInt() + 7776000000)),
+      imgfile:
+          "product-images/${productName.replaceAll(' ', '').toLowerCase()}.png",
+      timestamp: DateTime.now().subtract(
+        Duration(
+          milliseconds:
+              (random.nextDouble() * 31536000000).toInt() + 7776000000,
+        ),
+      ),
       actualdateadded: DateTime.now(),
     );
     futures.add(addOrUpdateFirestore(product));
   }
 
   final recentProducts = [
-    "Parmesan Crisps", "Pineapple Kombucha", "Maple Almond Butter",
-    "Mint Chocolate Cookies", "White Chocolate Caramel Corn", "Acai Smoothie Packs",
-    "Smores Cereal", "Peanut Butter and Jelly Cups",
+    "Parmesan Crisps",
+    "Pineapple Kombucha",
+    "Maple Almond Butter",
+    "Mint Chocolate Cookies",
+    "White Chocolate Caramel Corn",
+    "Acai Smoothie Packs",
+    "Smores Cereal",
+    "Peanut Butter and Jelly Cups",
   ];
 
   for (final productName in recentProducts) {
@@ -153,8 +210,11 @@ Future<void> initFirestoreCollection() async {
       name: productName,
       price: (random.nextInt(10) + 1).toDouble(),
       quantity: random.nextInt(100) + 1,
-      imgfile: "product-images/${productName.replaceAll(' ', '').toLowerCase()}.png",
-      timestamp: DateTime.now().subtract(Duration(milliseconds: (random.nextDouble() * 518400000).toInt() + 1)),
+      imgfile:
+          "product-images/${productName.replaceAll(' ', '').toLowerCase()}.png",
+      timestamp: DateTime.now().subtract(
+        Duration(milliseconds: (random.nextDouble() * 518400000).toInt() + 1),
+      ),
       actualdateadded: DateTime.now(),
     );
     futures.add(addOrUpdateFirestore(product));
@@ -166,8 +226,11 @@ Future<void> initFirestoreCollection() async {
       name: productName,
       price: (random.nextInt(10) + 1).toDouble(),
       quantity: 0,
-      imgfile: "product-images/${productName.replaceAll(' ', '').toLowerCase()}.png",
-      timestamp: DateTime.now().subtract(Duration(milliseconds: (random.nextDouble() * 518400000).toInt() + 1)),
+      imgfile:
+          "product-images/${productName.replaceAll(' ', '').toLowerCase()}.png",
+      timestamp: DateTime.now().subtract(
+        Duration(milliseconds: (random.nextDouble() * 518400000).toInt() + 1),
+      ),
       actualdateadded: DateTime.now(),
     );
     futures.add(addOrUpdateFirestore(product));
@@ -178,18 +241,25 @@ Future<void> initFirestoreCollection() async {
 
 Future<void> addOrUpdateFirestore(Product product) async {
   final collection = Firestore.instance.collection("inventory");
-  final querySnapshot = await collection.where("name", isEqualTo: product.name).get();
+  final querySnapshot = await collection
+      .where("name", isEqualTo: product.name)
+      .get();
 
   if (querySnapshot.isEmpty) {
     await collection.add(product.toFirestore());
   } else {
-    await Future.wait(querySnapshot.map((doc) =>
-        collection.document(doc.id).update(product.toFirestore())));
+    await Future.wait(
+      querySnapshot.map(
+        (doc) => collection.document(doc.id).update(product.toFirestore()),
+      ),
+    );
   }
 }
 
 Future<void> cleanFirestoreCollection() async {
   final collection = Firestore.instance.collection("inventory");
   final snapshot = await collection.get();
-  await Future.wait(snapshot.map((doc) => collection.document(doc.id).delete()));
+  await Future.wait(
+    snapshot.map((doc) => collection.document(doc.id).delete()),
+  );
 }
