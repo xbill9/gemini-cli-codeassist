@@ -1,6 +1,6 @@
 name: firestore_https_flutter
 description: Firestore MCP server over streaming HTTP transport deployed to Cloud Run
-version: 1.0.0
+version: 1.0.1
 repository: https://github.com/xbill9/gemini-cli-codeassist
 
 environment:
