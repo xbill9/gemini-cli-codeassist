@@ -1,27 +1,32 @@
 package com.example.mcp.server
 
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.server.testing.*
-import kotlin.test.*
+import io.ktor.client.request.post
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.testing.testApplication
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class ApplicationTest {
-    @Test
-    fun testMessagesMissingSessionId() = testApplication {
-        application {
-            module()
-        }
-        val response = client.post("/messages")
-        println("Response status: ${response.status}")
-        assertEquals(HttpStatusCode.BadRequest, response.status)
-    }
+    private val logger = org.slf4j.LoggerFactory.getLogger(ApplicationTest::class.java)
 
     @Test
-    fun testMessagesInvalidSessionId() = testApplication {
-        application {
-            module()
+    fun testMessagesMissingSessionId() =
+        testApplication {
+            application {
+                module()
+            }
+            val response = client.post(Config.Routes.MESSAGES_ENDPOINT)
+            logger.info("Response status: ${response.status}")
+            assertEquals(HttpStatusCode.BadRequest, response.status)
         }
-        val response = client.post("/messages?sessionId=invalid")
-        assertEquals(HttpStatusCode.BadRequest, response.status)
-    }
+
+    @Test
+    fun testMessagesInvalidSessionId() =
+        testApplication {
+            application {
+                module()
+            }
+            val response = client.post("${Config.Routes.MESSAGES_ENDPOINT}?sessionId=invalid")
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+        }
 }
