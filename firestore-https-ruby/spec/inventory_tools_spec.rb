@@ -6,7 +6,7 @@ require_relative '../main'
 # rubocop:disable RSpec/DescribeClass
 RSpec.describe 'Inventory Server' do
   # rubocop:enable RSpec/DescribeClass
-  describe GetRootTool do
+  describe MCPServer::Tools::GetRoot do
     it 'returns a greeting message', :aggregate_failures do
       response = described_class.call
       expect(response).to be_a(MCP::Tool::Response)
@@ -14,7 +14,7 @@ RSpec.describe 'Inventory Server' do
     end
   end
 
-  describe CheckDbTool do
+  describe MCPServer::Tools::CheckDb do
     it 'returns the database status', :aggregate_failures do
       response = described_class.call
       expect(response).to be_a(MCP::Tool::Response)
