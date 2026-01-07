@@ -13,6 +13,7 @@ This is a **Kotlin-based Model Context Protocol (MCP) server** using the officia
 *   **Web Framework:** Ktor 3.0.0
 *   **Build Tool:** Gradle 9.2.1 (Kotlin DSL)
 *   **JDK:** Java 25
+*   **Style Guide:** https://kotlinlang.org/docs/coding-conventions.html
 
 ## Project Structure
 

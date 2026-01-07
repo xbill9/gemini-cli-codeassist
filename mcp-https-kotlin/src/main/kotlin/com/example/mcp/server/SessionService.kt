@@ -8,9 +8,20 @@ import io.modelcontextprotocol.kotlin.sdk.server.SseServerTransport
 import kotlinx.coroutines.awaitCancellation
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Service to handle MCP sessions over SSE (Server-Sent Events).
+ *
+ * @property server The MCP server instance.
+ */
 class SessionService(private val server: Server) {
     private val transports = ConcurrentHashMap<String, SseServerTransport>()
 
+    /**
+     * Handles an incoming SSE session.
+     * Keeps the connection open until cancellation.
+     *
+     * @param session The Ktor SSE session.
+     */
     suspend fun handleSseSession(session: ServerSSESession) {
         val transport = SseServerTransport(Config.Routes.MESSAGES_ENDPOINT, session)
         transports[transport.sessionId] = transport
@@ -30,6 +41,11 @@ class SessionService(private val server: Server) {
         }
     }
 
+    /**
+     * Handles an incoming POST message for an existing session.
+     *
+     * @param call The Ktor application call.
+     */
     suspend fun handlePostMessage(call: ApplicationCall) {
         val sessionId = call.request.queryParameters["sessionId"]
         logger.info("POST /messages with sessionId: $sessionId")

@@ -48,7 +48,6 @@ fun Application.configureCORS() {
         allowMethod(HttpMethod.Get)
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
-        anyHost() // Double check if anyHost is enough
     }
 }
 

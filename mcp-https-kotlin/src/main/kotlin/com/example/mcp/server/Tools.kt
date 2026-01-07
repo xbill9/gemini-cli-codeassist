@@ -8,7 +8,15 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
+/**
+ * Configures the tools available in the MCP server.
+ */
 object Tools {
+    /**
+     * Configures the server with available tools.
+     *
+     * @param server The MCP server instance.
+     */
     fun configure(server: Server) {
         server.addTool(
             name = Config.Tools.GREET,
@@ -36,7 +44,17 @@ object Tools {
                 }
 
             logger.info("Greeting name: $name")
-            CallToolResult(content = listOf(TextContent(text = "Hello, $name!")))
+            CallToolResult(content = listOf(TextContent(text = formatGreeting(name))))
         }
+    }
+
+    /**
+     * Formats the greeting message.
+     *
+     * @param name The name to greet.
+     * @return A greeting string.
+     */
+    fun formatGreeting(name: String): String {
+        return "Hello, $name!"
     }
 }
