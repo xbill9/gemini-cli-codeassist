@@ -3,8 +3,10 @@
 require 'mcp'
 require_relative 'firestore_client'
 
+# Tool to seed the Firestore collection with sample products.
 class SeedTool < MCP::Tool
-  description "Seed the inventory database with products."
+  tool_name 'seed'
+  description 'Seed the inventory database with products.'
   input_schema(type: 'object', properties: {})
 
   class << self
@@ -12,13 +14,13 @@ class SeedTool < MCP::Tool
       client = FirestoreClient.instance
       unless client.db_running
         return MCP::Tool::Response.new(
-          [{ type: 'text', text: "Inventory database is not running." }]
+          [{ type: 'text', text: 'Inventory database is not running.' }]
         )
       end
 
       client.seed
       MCP::Tool::Response.new(
-        [{ type: 'text', text: "Database seeded successfully." }]
+        [{ type: 'text', text: 'Database seeded successfully.' }]
       )
     end
   end

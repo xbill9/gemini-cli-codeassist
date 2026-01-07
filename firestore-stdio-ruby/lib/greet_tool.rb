@@ -4,6 +4,7 @@ require 'mcp'
 
 # Define the greet tool
 class GreetTool < MCP::Tool
+  tool_name 'greet'
   description 'Get a greeting from a local stdio server.'
   input_schema(
     type: 'object',

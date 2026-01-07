@@ -1,6 +1,6 @@
 # Makefile for mcp-stdio-ruby
 
-.PHONY: all install run build test lint format type-check status pull push clean
+.PHONY: all install run build gem test lint format type-check status pull push clean
 
 all: install test lint
 
@@ -23,6 +23,11 @@ build:
 	@echo "Building the application..."
 	@echo "No build steps defined for this project."
 
+# Target to build the gem
+gem:
+	@echo "Building the gem..."
+	@gem build firestore-mcp-server.gemspec
+
 # Target to run tests
 test:
 	@echo "Running tests..."
@@ -37,6 +42,8 @@ lint:
 format:
 	@echo "Formatting the code..."
 	@bundle exec rubocop -a
+
+check: format lint
 
 # Target to type-check the code
 type-check:
@@ -61,4 +68,4 @@ push:
 .PHONY: clean
 clean:
 	@echo "Cleaning up..."
-	@rm -rf vendor .bundle
+	@rm -rf vendor .bundle *.gem

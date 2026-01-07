@@ -3,6 +3,7 @@
 
 require 'mcp'
 require 'logger'
+require 'json'
 require_relative 'lib/greet_tool'
 require_relative 'lib/get_products_tool'
 require_relative 'lib/get_product_by_id_tool'
@@ -15,6 +16,14 @@ require_relative 'lib/firestore_client'
 # Set up logging to stderr
 # We use stderr because stdout is used for MCP protocol communication
 LOGGER = Logger.new($stderr)
+LOGGER.formatter = proc do |severity, datetime, progname, msg|
+  "#{({
+    severity: severity,
+    timestamp: datetime.iso8601,
+    progname: progname,
+    message: msg
+  }.to_json)}\n"
+end
 LOGGER.level = Logger::INFO
 
 # Initialize Firestore Client
@@ -23,7 +32,7 @@ FirestoreClient.instance
 # Initialize MCP Server
 server = MCP::Server.new(
   name: 'inventory-server',
-  version: '1.0.0',
+  version: '0.1.1',
   tools: [
     GreetTool,
     GetProductsTool,

@@ -3,8 +3,10 @@
 require 'mcp'
 require_relative 'firestore_client'
 
+# Tool to clear all products from the Firestore collection.
 class ResetTool < MCP::Tool
-  description "Clears all products from the inventory database."
+  tool_name 'reset'
+  description 'Clears all products from the inventory database.'
   input_schema(type: 'object', properties: {})
 
   class << self
@@ -12,13 +14,13 @@ class ResetTool < MCP::Tool
       client = FirestoreClient.instance
       unless client.db_running
         return MCP::Tool::Response.new(
-          [{ type: 'text', text: "Inventory database is not running." }]
+          [{ type: 'text', text: 'Inventory database is not running.' }]
         )
       end
 
       client.reset
       MCP::Tool::Response.new(
-        [{ type: 'text', text: "Database reset successfully." }]
+        [{ type: 'text', text: 'Database reset successfully.' }]
       )
     end
   end

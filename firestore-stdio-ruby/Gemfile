@@ -10,6 +10,6 @@ group :development, :test do
   gem 'rubocop'
 end
 
-gem "google-cloud-firestore", "~> 2.15"
+gem 'google-cloud-firestore', '~> 2.15'
 
-gem "dotenv", "~> 3.2"
+gem 'dotenv', '~> 3.2'
