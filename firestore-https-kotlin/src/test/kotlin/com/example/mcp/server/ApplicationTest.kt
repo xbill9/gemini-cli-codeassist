@@ -1,27 +1,38 @@
 package com.example.mcp.server
 
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.server.testing.*
-import kotlin.test.*
+import com.example.mcp.server.repository.InventoryRepository
+import io.ktor.client.request.post
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.testing.testApplication
+import io.mockk.every
+import io.mockk.mockk
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class ApplicationTest {
     @Test
-    fun testMessagesMissingSessionId() = testApplication {
-        application {
-            module()
+    fun testMessagesMissingSessionId() =
+        testApplication {
+            val repository = mockk<InventoryRepository>(relaxed = true)
+            every { repository.isDbRunning } returns true
+
+            application {
+                module(repository)
+            }
+            val response = client.post("/messages")
+            assertEquals(HttpStatusCode.BadRequest, response.status)
         }
-        val response = client.post("/messages")
-        println("Response status: ${response.status}")
-        assertEquals(HttpStatusCode.BadRequest, response.status)
-    }
 
     @Test
-    fun testMessagesInvalidSessionId() = testApplication {
-        application {
-            module()
+    fun testMessagesInvalidSessionId() =
+        testApplication {
+            val repository = mockk<InventoryRepository>(relaxed = true)
+            every { repository.isDbRunning } returns true
+
+            application {
+                module(repository)
+            }
+            val response = client.post("/messages?sessionId=invalid")
+            assertEquals(HttpStatusCode.BadRequest, response.status)
         }
-        val response = client.post("/messages?sessionId=invalid")
-        assertEquals(HttpStatusCode.BadRequest, response.status)
-    }
 }

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ktlint)
     application
 }
 
@@ -15,7 +16,8 @@ dependencies {
     implementation(libs.mcp.sdk)
     implementation(libs.google.cloud.firestore)
     implementation(libs.coroutines.core)
-    implementation(libs.slf4j.simple)
+    implementation(libs.logback.classic)
+    implementation(libs.logstash.logback.encoder)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.sse)
@@ -24,6 +26,7 @@ dependencies {
     implementation(libs.ktor.server.cors)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.mockk)
 }
 
 kotlin {
