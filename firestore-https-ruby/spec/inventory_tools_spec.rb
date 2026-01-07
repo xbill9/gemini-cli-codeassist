@@ -3,7 +3,9 @@
 require 'mcp'
 require_relative '../main'
 
-RSpec.describe 'Inventory Tools' do
+# rubocop:disable RSpec/DescribeClass
+RSpec.describe 'Inventory Server' do
+  # rubocop:enable RSpec/DescribeClass
   describe GetRootTool do
     it 'returns a greeting message', :aggregate_failures do
       response = described_class.call

@@ -2,6 +2,7 @@
 
 require 'mcp'
 require 'logger'
+require 'time'
 require 'rack'
 require 'rackup'
 require 'json'
@@ -9,9 +10,24 @@ require 'puma'
 require 'google/cloud/firestore'
 require 'dotenv/load'
 
-# Set up logging to stderr
+# Redirect stdout to stderr to ensure all output goes to stderr
+$stdout.reopen($stderr)
+
+# Set up logging to stderr with JSON format
 LOGGER = Logger.new($stderr)
 LOGGER.level = Logger::INFO
+LOGGER.formatter = proc do |severity, datetime, _progname, msg|
+  log_entry = {
+    timestamp: datetime.iso8601,
+    level: severity
+  }
+  if msg.is_a?(Hash)
+    log_entry.merge!(msg)
+  else
+    log_entry[:message] = msg.to_s
+  end
+  "#{log_entry.to_json}\n"
+end
 
 # Initialize Firestore
 begin
@@ -56,7 +72,14 @@ class DatabaseHelper
   end
 
   def self.seed_database
-    old_products = [
+    seed_old_products
+    seed_recent_products
+    seed_out_of_stock_products
+  end
+
+  # rubocop:disable Metrics/MethodLength
+  def self.seed_old_products
+    names = [
       'Apples', 'Bananas', 'Milk', 'Whole Wheat Bread', 'Eggs', 'Cheddar Cheese',
       'Whole Chicken', 'Rice', 'Black Beans', 'Bottled Water', 'Apple Juice',
       'Cola', 'Coffee Beans', 'Green Tea', 'Watermelon', 'Broccoli',
@@ -64,26 +87,28 @@ class DatabaseHelper
       'Sunflower Seeds', 'Fresh Basil', 'Cinnamon'
     ]
 
-    old_products.each do |name|
+    names.each do |name|
       product = {
         name: name,
         price: rand(1..10),
         quantity: rand(1..500),
         imgfile: "product-images/#{name.gsub(/\s+/, '').downcase}.png",
-        timestamp: Time.now - rand(0..31_536_000) - 7_776_000, # Approx values from TS (ms -> s)
+        timestamp: Time.now - rand(0..31_536_000) - 7_776_000,
         actualdateadded: Time.now
       }
       LOGGER.info "⬆️ Adding (or updating) product in firestore: #{product[:name]}"
       add_or_update_firestore(product)
     end
+  end
 
-    recent_products = [
+  def self.seed_recent_products
+    names = [
       'Parmesan Crisps', 'Pineapple Kombucha', 'Maple Almond Butter',
       'Mint Chocolate Cookies', 'White Chocolate Caramel Corn', 'Acai Smoothie Packs',
       'Smores Cereal', 'Peanut Butter and Jelly Cups'
     ]
 
-    recent_products.each do |name|
+    names.each do |name|
       product = {
         name: name,
         price: rand(1..10),
@@ -95,10 +120,12 @@ class DatabaseHelper
       LOGGER.info "🆕 Adding (or updating) product in firestore: #{product[:name]}"
       add_or_update_firestore(product)
     end
+  end
 
-    recent_products_out_of_stock = ['Wasabi Party Mix', 'Jalapeno Seasoning']
+  def self.seed_out_of_stock_products
+    names = ['Wasabi Party Mix', 'Jalapeno Seasoning']
 
-    recent_products_out_of_stock.each do |name|
+    names.each do |name|
       product = {
         name: name,
         price: rand(1..10),
@@ -112,25 +139,24 @@ class DatabaseHelper
     end
   end
 
+  # rubocop:disable Metrics/AbcSize
   def self.clean_firestore_collection
     LOGGER.info 'Cleaning Firestore collection...'
     snapshot = FIRESTORE.col('inventory').get
-    unless snapshot.empty?
-      batch = FIRESTORE.batch
-      count = 0
-      snapshot.each do |doc|
-        batch.delete(doc.ref)
-        count += 1
-        next unless count >= 400
+    return if snapshot.empty?
 
+    batch = FIRESTORE.batch
+    snapshot.each_with_index do |doc, index|
+      batch.delete(doc.ref)
+      if ((index + 1) % 400).zero?
         batch.commit
         batch = FIRESTORE.batch
-        count = 0
       end
-      batch.commit if count.positive?
     end
+    batch.commit if (snapshot.size % 400).positive?
     LOGGER.info 'Firestore collection cleaned.'
   end
+  # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
 end
 
 # Tool to get all products
@@ -245,6 +271,27 @@ class FixedStreamableHTTPTransport < MCP::Server::Transports::StreamableHTTPTran
   end
 end
 
+# Middleware for JSON request logging
+class JsonRequestLogger
+  def initialize(app, logger)
+    @app = app
+    @logger = logger
+  end
+
+  def call(env)
+    status, headers, body = @app.call(env)
+    # Only log if it's not a health check or similar if needed, but for now log all
+    @logger.info(
+      type: 'request',
+      method: env['REQUEST_METHOD'],
+      path: env['PATH_INFO'],
+      status: status,
+      remote_addr: env['REMOTE_ADDR']
+    )
+    [status, headers, body]
+  end
+end
+
 # Initialize MCP Server
 server = MCP::Server.new(
   name: 'inventory-server',
@@ -257,24 +304,25 @@ transport = FixedStreamableHTTPTransport.new(server)
 server.transport = transport
 
 # Create the Rack application
-app = proc do |env|
+base_app = proc do |env|
   request = Rack::Request.new(env)
-  response = transport.handle_request(request)
-  response
+  transport.handle_request(request)
 end
+
+# Wrap with JSON logger
+app = JsonRequestLogger.new(base_app, LOGGER)
 
 # Run the server using streaming HTTP transport
 if __FILE__ == $PROGRAM_NAME
   begin
     port = ENV.fetch('PORT', 8080).to_i
     LOGGER.info "Starting MCP server: #{server.name} (v#{server.version}) on HTTP port #{port}"
-    Rackup::Handler.get('puma').run(app, Port: port, Host: '0.0.0.0')
+    Rackup::Handler.get('puma').run(app, Port: port, Host: '0.0.0.0', Quiet: true)
   rescue Interrupt
     LOGGER.info 'Shutting down MCP server...'
     transport.close
   rescue StandardError => e
-    LOGGER.error "Server error: #{e.message}"
-    LOGGER.error e.backtrace.join("\n")
+    LOGGER.error(message: "Server error: #{e.message}", backtrace: e.backtrace)
     exit 1
   end
 end
