@@ -4,7 +4,7 @@ This document provides context for the Gemini Code Assistant to understand the p
 
 ## Project Overview
 
-This is a **Ruby based Model Context Protocol (MCP) server**. It is designed to expose tools (like `greet`) over standard input/output (stdio) for integration with MCP clients (such as Claude Desktop or Gemini clients).
+This is a **Ruby based Model Context Protocol (MCP) server**. It is designed to expose tools (like `greet`) over HTTP (SSE) for integration with MCP clients (such as Claude Desktop or Gemini clients).
 
 ## Key Technologies
 
@@ -26,13 +26,29 @@ This is a **Ruby based Model Context Protocol (MCP) server**. It is designed to 
 
 ## Running the Server
 
-The server is configured to run using the `stdio` transport.
+The server is configured to run using the `StreamableHTTPTransport` (SSE) on port 8080 (default).
 
 ```bash
 bundle exec ruby main.rb
 ```
 
-*Note: Since this is an MCP server running over stdio, it is typically not run directly by a human but rather spawned by an MCP client.*
+*Note: This MCP server listens for HTTP connections (SSE).*
+
+## Best Practices
+
+*   **Tool Definition:**
+    *   Define tools as classes inheriting from `MCP::Tool`.
+    *   Use `description` and `input_schema` to clearly define the tool's capabilities and parameters.
+    *   Implement the execution logic in the `self.call` class method.
+    *   Ensure strict typing in `input_schema` to allow the LLM to call the tool correctly.
+
+*   **Logging:**
+    *   Always log to `$stderr` to avoid interfering with protocol communication if `stdio` transport is ever used (though this project uses HTTP).
+    *   `LOGGER = Logger.new($stderr)` is the convention.
+
+*   **Testing:**
+    *   Unit test tools in isolation using `RSpec`.
+    *   Verify both the return structure (`MCP::Tool::Response`) and the content.
 
 ## Ruby MCP Developer Resources
 

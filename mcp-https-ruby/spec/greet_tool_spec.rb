@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'mcp'
-require_relative '../main'
+require_relative '../lib/tools/greet_tool'
 
 RSpec.describe GreetTool do
   it 'returns the provided message', :aggregate_failures do

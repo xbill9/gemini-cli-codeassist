@@ -1,4 +1,4 @@
-# Makefile for mcp-stdio-ruby
+# Makefile for mcp-https-ruby
 
 .PHONY: all install run build test lint format type-check status pull push clean
 
@@ -12,11 +12,11 @@ install:
 # Target to run the application
 run:
 	@echo "Running the application..."
-	@bundle exec ruby main.rb
+	@bundle exec ruby bin/mcp-https-ruby
 
 release:
 	@echo "Running the application..."
-	@bundle exec ruby main.rb
+	@bundle exec ruby bin/mcp-https-ruby
 
 # Target to build the application (placeholder)
 build:

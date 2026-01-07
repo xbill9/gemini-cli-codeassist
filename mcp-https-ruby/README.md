@@ -1,6 +1,6 @@
-# MCP Stdio Ruby Server
+# MCP HTTP/SSE Ruby Server
 
-A simple Model Context Protocol (MCP) server implemented in Ruby using the `mcp` SDK.
+A simple Model Context Protocol (MCP) server implemented in Ruby using the `mcp` SDK, exposing tools over HTTP (SSE).
 
 ## Features
 
@@ -13,21 +13,31 @@ A simple Model Context Protocol (MCP) server implemented in Ruby using the `mcp`
     ```bash
     bundle install
     ```
+    or
+    ```bash
+    make install
+    ```
 
 ## Running the Server
 
-To run the server locally via stdio:
+To run the server locally via HTTP (SSE) on port 8080:
 
 ```bash
 bundle exec ruby main.rb
 ```
+or
+```bash
+make run
+```
+
+The server will be available at `http://localhost:8080`.
 
 ## Testing
 
 Run tests with RSpec:
 
 ```bash
-bundle exec rspec
+make test
 ```
 
 ## Linting
@@ -35,5 +45,13 @@ bundle exec rspec
 Run RuboCop:
 
 ```bash
-bundle exec rubocop
+make lint
 ```
+
+## Development
+
+Use the following `make` commands for common tasks:
+- `make all`: Install, test, and lint.
+- `make format`: Auto-format code with RuboCop.
+- `make clean`: Clean up dependencies and lockfiles.
+

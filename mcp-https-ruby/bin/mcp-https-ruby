@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'mcp_https_ruby'
+
+# Set up logging to stderr
+LOGGER = Logger.new($stderr)
+LOGGER.formatter = proc do |severity, datetime, progname, msg|
+  "#{JSON.dump(
+    {
+      timestamp: datetime.iso8601,
+      severity: severity,
+      progname: progname,
+      message: msg
+    }
+  )}\n"
+end
+LOGGER.level = Logger::INFO
+
+# Configure MCP
+MCP.configure do |config|
+  config.protocol_version = '2024-11-05'
+end
+
+# Initialize MCP Server
+server = MCP::Server.new(
+  name: 'hello-world-server',
+  version: '1.0.0',
+  tools: [GreetTool]
+)
+
+# Create the Fixed Streamable HTTP transport
+transport = FixedStreamableHTTPTransport.new(server)
+server.transport = transport
+
+# Create the Rack application
+app = proc do |env|
+  request = Rack::Request.new(env)
+  response = transport.handle_request(request)
+  response
+end
+
+# Run the server using streaming HTTP transport
+begin
+  port = ENV.fetch('PORT', 8080).to_i
+  LOGGER.info "Starting MCP server: #{server.name} (v#{server.version}) on HTTP port #{port}"
+  Rackup::Handler.get('puma').run(app, Port: port, Host: '0.0.0.0', Silent: true)
+rescue Interrupt
+  LOGGER.info 'Shutting down MCP server...'
+  transport.close
+rescue StandardError => e
+  LOGGER.error "Server error: #{e.message}"
+  LOGGER.error e.backtrace.join("\n")
+  exit 1
+end

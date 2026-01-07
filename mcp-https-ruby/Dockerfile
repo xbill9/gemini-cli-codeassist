@@ -14,8 +14,8 @@ RUN apt-get update -qq && \
     apt-get install -y build-essential && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy Gemfile and Gemfile.lock
-COPY Gemfile Gemfile.lock ./
+# Copy Gemfile, Gemfile.lock and gemspec
+COPY Gemfile Gemfile.lock mcp-https-ruby.gemspec ./
 
 # Install gems
 RUN bundle install
@@ -27,4 +27,4 @@ COPY . .
 EXPOSE 8080
 
 # Run the application
-CMD ["bundle", "exec", "ruby", "main.rb"]
+CMD ["bundle", "exec", "ruby", "bin/mcp-https-ruby"]

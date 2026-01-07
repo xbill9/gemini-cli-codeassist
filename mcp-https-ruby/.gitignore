@@ -7,6 +7,12 @@
 /coverage/
 /tmp/
 *.log
+.ruby-version
+.ruby-gemset
+
+# Environment variables
+.env
+.env.*
 
 # OS
 .DS_Store

@@ -2,11 +2,7 @@
 
 source 'https://rubygems.org'
 
-gem 'logger'
-gem 'mcp'
-gem 'puma'
-gem 'rack'
-gem 'rackup'
+gemspec
 
 group :development, :test do
   gem 'rspec'
