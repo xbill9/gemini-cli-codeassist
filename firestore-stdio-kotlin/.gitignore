@@ -5,13 +5,36 @@ __pycache__/
 .env
 .pytest_cache/
 
-# Kotlin / Gradle
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# Gradle
 .gradle/
 build/
-out/
+/out/
+.gradletasknamecache
+gradle-app.setting
+
+# IntelliJ IDEA
 .idea/
 *.iml
 *.ipr
 *.iws
-local.properties
+out/
+scripts/
+
+# Kotlin
+.konan/
+.kotlin-js-store/
+.kotlin/
+
+# OS / Misc
 .DS_Store
+Thumbs.db
+local.properties
+.apple/
+*~
+*.swp
