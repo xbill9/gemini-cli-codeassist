@@ -1,7 +1,7 @@
  {
     "mcpServers": {
     "firestore-cloudrun-ruby": {
-      "httpUrl": "https://mcp-https-ruby-$PROJECT_NUMBER.us-central1.run.app/mcp"
+      "httpUrl": "https://firestore-https-ruby-$PROJECT_NUMBER.us-central1.run.app/mcp"
     }
   }
 }
