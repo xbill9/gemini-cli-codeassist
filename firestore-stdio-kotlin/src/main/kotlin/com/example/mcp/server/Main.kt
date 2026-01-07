@@ -1,108 +1,170 @@
 package com.example.mcp.server
 
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.Implementation
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.server.Server
-import io.modelcontextprotocol.kotlin.sdk.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.Implementation
+import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.asSink
+import kotlinx.io.asSource
+import kotlinx.io.buffered
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlinx.io.asSource
-import kotlinx.io.asSink
-import kotlinx.io.buffered
+import org.slf4j.bridge.SLF4JBridgeHandler
 
 fun main() {
-    val firestoreService = FirestoreService()
+    // Bridge JUL to SLF4J
+    SLF4JBridgeHandler.removeHandlersForRootLogger()
+    SLF4JBridgeHandler.install()
 
-    val server = Server(
-        serverInfo = Implementation(
-            name = "inventory-server",
-            version = "1.0.0"
-        ),
-        options = ServerOptions(
-            capabilities = ServerCapabilities(
-                tools = ServerCapabilities.Tools(listChanged = true)
-            )
+    val firestoreService = FirestoreService()
+    val json = Json { prettyPrint = true }
+
+    val server =
+        Server(
+            serverInfo =
+                Implementation(
+                    name = "inventory-server",
+                    version = "1.0.0",
+                ),
+            options =
+                ServerOptions(
+                    capabilities =
+                        ServerCapabilities(
+                            tools = ServerCapabilities.Tools(listChanged = true),
+                        ),
+                ),
         )
-    )
 
     // Tool: get_products
     server.addTool(
         name = "get_products",
         description = "Get a list of all products from the inventory database",
-        inputSchema = Tool.Input(
-            properties = buildJsonObject {},
-            required = listOf()
-        )
+        inputSchema =
+            ToolSchema(
+                properties = buildJsonObject {},
+                required = listOf(),
+            ),
     ) {
         val result = firestoreService.getProducts()
-        CallToolResult(content = listOf(TextContent(result)))
+        result.fold(
+            onSuccess = { products ->
+                CallToolResult(content = listOf(TextContent(json.encodeToString(products))))
+            },
+            onFailure = { e ->
+                CallToolResult(
+                    content = listOf(TextContent("Error retrieving products: ${e.message}")),
+                    isError = true,
+                )
+            },
+        )
     }
 
     // Tool: get_product_by_id
     server.addTool(
         name = "get_product_by_id",
         description = "Get a single product from the inventory database by its ID",
-        inputSchema = Tool.Input(
-            properties = buildJsonObject {
-                put("id", buildJsonObject {
-                    put("type", "string")
-                    put("description", "The ID of the product to get")
-                })
-            },
-            required = listOf("id")
-        )
+        inputSchema =
+            ToolSchema(
+                properties =
+                    buildJsonObject {
+                        put(
+                            "id",
+                            buildJsonObject {
+                                put("type", "string")
+                                put("description", "The ID of the product to get")
+                            },
+                        )
+                    },
+                required = listOf("id"),
+            ),
     ) { request ->
         val idParam = request.arguments?.get("id")
-        val id = if (idParam is JsonPrimitive) {
-            idParam.content
-        } else {
-            idParam?.toString()?.replace("\"", "") ?: ""
-        }
-        
+        val id =
+            if (idParam is JsonPrimitive) {
+                idParam.content
+            } else {
+                idParam?.toString()?.replace("\"", "") ?: ""
+            }
+
         val result = firestoreService.getProductById(id)
-        CallToolResult(content = listOf(TextContent(result)))
+        result.fold(
+            onSuccess = { product ->
+                CallToolResult(content = listOf(TextContent(json.encodeToString(product))))
+            },
+            onFailure = { e ->
+                CallToolResult(
+                    content = listOf(TextContent("Error retrieving product: ${e.message}")),
+                    isError = true,
+                )
+            },
+        )
     }
 
     // Tool: seed
     server.addTool(
         name = "seed",
         description = "Seed the inventory database with products.",
-        inputSchema = Tool.Input(
-            properties = buildJsonObject {},
-            required = listOf()
-        )
+        inputSchema =
+            ToolSchema(
+                properties = buildJsonObject {},
+                required = listOf(),
+            ),
     ) {
         val result = firestoreService.seed()
-        CallToolResult(content = listOf(TextContent(result)))
+        result.fold(
+            onSuccess = {
+                CallToolResult(content = listOf(TextContent("Database seeded successfully.")))
+            },
+            onFailure = { e ->
+                CallToolResult(
+                    content = listOf(TextContent("Error seeding database: ${e.message}")),
+                    isError = true,
+                )
+            },
+        )
     }
 
     // Tool: reset
     server.addTool(
         name = "reset",
         description = "Clears all products from the inventory database.",
-        inputSchema = Tool.Input(
-            properties = buildJsonObject {},
-            required = listOf()
-        )
+        inputSchema =
+            ToolSchema(
+                properties = buildJsonObject {},
+                required = listOf(),
+            ),
     ) {
         val result = firestoreService.reset()
-        CallToolResult(content = listOf(TextContent(result)))
+        result.fold(
+            onSuccess = {
+                CallToolResult(content = listOf(TextContent("Database reset successfully.")))
+            },
+            onFailure = { e ->
+                CallToolResult(
+                    content = listOf(TextContent("Error resetting database: ${e.message}")),
+                    isError = true,
+                )
+            },
+        )
     }
-    
+
     // Tool: get_root (Functionally a tool here to match the registration pattern)
     server.addTool(
         name = "get_root",
         description = "Get a greeting from the Cymbal Superstore Inventory API.",
-        inputSchema = Tool.Input(
-            properties = buildJsonObject {},
-            required = listOf()
-        )
+        inputSchema =
+            ToolSchema(
+                properties = buildJsonObject {},
+                required = listOf(),
+            ),
     ) {
         CallToolResult(content = listOf(TextContent("🍎 Hello! This is the Cymbal Superstore Inventory API.")))
     }
@@ -111,19 +173,24 @@ fun main() {
     server.addTool(
         name = "check_db",
         description = "Checks if the inventory database is running.",
-        inputSchema = Tool.Input(
-            properties = buildJsonObject {},
-            required = listOf()
-        )
+        inputSchema =
+            ToolSchema(
+                properties = buildJsonObject {},
+                required = listOf(),
+            ),
     ) {
-        val isRunning = firestoreService.checkDb()
+        val isRunning = firestoreService.isDbRunning()
         CallToolResult(content = listOf(TextContent("Database running: $isRunning")))
     }
 
     val transport = StdioServerTransport(System.`in`.asSource().buffered(), System.out.asSink().buffered())
 
     runBlocking {
-        server.createSession(transport)
-        kotlinx.coroutines.awaitCancellation()
+        try {
+            server.createSession(transport)
+            kotlinx.coroutines.awaitCancellation()
+        } finally {
+            firestoreService.close()
+        }
     }
 }

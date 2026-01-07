@@ -56,17 +56,41 @@ To use this with an MCP client, add it to your configuration file (e.g., `claude
 
 ## Tools
 
-- **`get_products`**: Get a list of all products from the inventory database.
-- **`get_product_by_id`**: Get a single product by its ID.
-  - Arguments: `id` (string)
-- **`seed`**: Seed the inventory database with sample products.
-- **`reset`**: Clears all products from the inventory database.
-- **`check_db`**: Checks if the inventory database is running.
-- **`get_root`**: Get a greeting from the API.
+The server exposes the following tools:
+
+- **`get_products`**: Get a JSON list of all products from the inventory collection.
+- **`get_product_by_id`**: Get a single product from the inventory database by its ID.
+  - **Arguments**:
+    - `id` (string): The ID of the product to retrieve.
+- **`seed`**: Seed the inventory database with a set of sample products (both old and new stock).
+- **`reset`**: Clears all documents from the `inventory` collection in Firestore.
+- **`check_db`**: Checks if the connection to Firestore is initialized and active.
+- **`get_root`**: Get a greeting from the Cymbal Superstore Inventory API.
+
+## Data Model
+
+The inventory uses the following `Product` schema:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | String | Unique identifier (Firestore document ID) |
+| `name` | String | Name of the product |
+| `price` | Integer | Price of the product |
+| `quantity` | Integer | Stock quantity |
+| `imgfile` | String | Path to the product image |
+| `timestamp` | String (ISO-8601) | Date associated with the product stock |
+| `actualdateadded` | String (ISO-8601) | Date the product was added to the database |
 
 ## Project Structure
 
-- `src/main/kotlin/.../Main.kt`: Server entry point and tool definitions.
-- `src/main/kotlin/.../FirestoreService.kt`: Firestore logic and data models.
-- `build.gradle.kts`: Gradle build configuration.
-- `Makefile`: Commands for building and running.
+- `src/main/kotlin/com/example/mcp/server/Main.kt`: Server entry point and MCP tool registrations.
+- `src/main/kotlin/com/example/mcp/server/FirestoreService.kt`: Firestore interaction logic, data models, and seeding/resetting functionality.
+- `build.gradle.kts`: Gradle build configuration and dependencies.
+- `Makefile`: Convenient shortcuts for building and running.
+
+## Development
+
+- **Language:** Kotlin 2.3.0
+- **JDK:** 25
+- **MCP SDK:** `io.modelcontextprotocol:kotlin-sdk-jvm:0.8.1`
+- **Database:** Google Cloud Firestore
