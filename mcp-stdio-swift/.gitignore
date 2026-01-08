@@ -17,4 +17,4 @@ xcuserdata/
 
 # OS generated files
 .DS_Store
-.env
+.envinit_request.json
