@@ -77,3 +77,6 @@ make run
 
 *   **MCP Swift SDK (GitHub):** [https://github.com/modelcontextprotocol/swift-sdk](https://github.com/modelcontextprotocol/swift-sdk)
 *   **MCP Protocol Documentation:** [https://modelcontextprotocol.io/](https://modelcontextprotocol.io/)
+package submission https://swiftpackageindex.com/add-a-package
+https://github.com/SwiftPackageIndex/PackageList/issues/new/choose
+https://github.com/SwiftPackageIndex/SwiftPackageIndex-Server/blob/main/CODE_OF_CONDUCT.md
