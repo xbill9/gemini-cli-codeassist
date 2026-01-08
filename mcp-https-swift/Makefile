@@ -1,4 +1,4 @@
-# Makefile for mcp-stdio-swift
+# Makefile for mcp-https-swift
 
 .PHONY: all install run build test lint format clean check release
 
@@ -20,7 +20,7 @@ install:
 # Target to run the application
 run:
 	@echo "Running the application..."
-	@swift run mcp-stdio-swift
+	@swift run mcp-https-swift
 
 # Target to build the application
 build:

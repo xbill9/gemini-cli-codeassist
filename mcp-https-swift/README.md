@@ -29,7 +29,7 @@ This project provides a basic MCP server named `mcp-http-server` that exposes a 
     
     ```bash
     make build
-    # Executable will be at: .build/debug/mcp-stdio-swift
+    # Executable will be at: .build/debug/mcp-https-swift
     ```
 
 ## Usage

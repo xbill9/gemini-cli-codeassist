@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "mcp-stdio-swift",
+    name: "mcp-https-swift",
     platforms: [
         .macOS(.v13),
     ],
@@ -14,7 +14,7 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "mcp-stdio-swift",
+            name: "mcp-https-swift",
             dependencies: [
                 .product(name: "MCP", package: "swift-sdk"),
                 .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
@@ -26,8 +26,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "mcp-stdio-swiftTests",
-            dependencies: ["mcp-stdio-swift"]
+            name: "mcp-https-swiftTests",
+            dependencies: ["mcp-https-swift"]
         ),
     ]
 )

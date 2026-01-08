@@ -19,10 +19,10 @@ This is a **Swift-based Model Context Protocol (MCP) server** using the `swift-s
 ## Project Structure
 
 *   `Package.swift`: Defines dependencies (`swift-sdk`, `hummingbird`, `swift-service-lifecycle`, `swift-log`).
-*   `Sources/mcp-stdio-swift/main.swift`: The main entry point. Initializes the Hummingbird app and MCP sessions.
-*   `Sources/mcp-stdio-swift/SSEServerTransport.swift`: Custom `Transport` implementation for SSE.
-*   `Sources/mcp-stdio-swift/SessionManager.swift`: Manages active MCP sessions.
-*   `Sources/mcp-stdio-swift/Handlers.swift`: Contains the `listTools` and `callTool` implementations.
+*   `Sources/mcp-https-swift/main.swift`: The main entry point. Initializes the Hummingbird app and MCP sessions.
+*   `Sources/mcp-https-swift/SSEServerTransport.swift`: Custom `Transport` implementation for SSE.
+*   `Sources/mcp-https-swift/SessionManager.swift`: Manages active MCP sessions.
+*   `Sources/mcp-https-swift/Handlers.swift`: Contains the `listTools` and `callTool` implementations.
 *   `Makefile`: Development shortcuts.
 
 ## Exposed Tools
