@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "hello-stdio-swift": {
+      "command": "$HOME/gemini-cli-codeassist/mcp-stdio-swift/.build/x86_64-unknown-linux-gnu/release/mcp-stdio-swift",
+      "args": []
+    }
+  }
+}
