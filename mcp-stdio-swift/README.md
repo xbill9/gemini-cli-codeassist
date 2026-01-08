@@ -10,6 +10,7 @@ This project provides a basic MCP server named `hello-world-server` that exposes
 *   **Transport:** Uses standard input/output (`stdio`) for MCP communication.
 *   **Concurrency:** Built on Swift's structured concurrency and `ServiceLifecycle` for graceful shutdown.
 *   **Logging:** Uses `swift-log` directed to `stderr` to ensure the `stdout` channel remains clean for protocol messages.
+*   **SDK:** Powered by the [MCP Swift SDK](https://github.com/modelcontextprotocol/swift-sdk).
 
 ## Prerequisites
 
@@ -34,7 +35,7 @@ This project provides a basic MCP server named `hello-world-server` that exposes
 
     For production (release build):
     ```bash
-    swift build -c release
+    make release
     # Executable will be at: .build/release/mcp-stdio-swift
     ```
 
@@ -42,9 +43,19 @@ This project provides a basic MCP server named `hello-world-server` that exposes
 
 This server is designed to be executed by an MCP client (like Claude Desktop or a Gemini-powered IDE extension) that handles the stdio communication.
 
+### Manual Testing
+
 To run the server manually for testing (starts listening on stdio):
 ```bash
 .build/debug/mcp-stdio-swift
+```
+
+### Testing with MCP Inspector
+
+You can use the [MCP Inspector](https://github.com/modelcontextprotocol/inspector) to interactively test your server:
+
+```bash
+npx @modelcontextprotocol/inspector .build/debug/mcp-stdio-swift
 ```
 
 ### Configuration for MCP Clients
@@ -64,7 +75,7 @@ If you are adding this to an MCP client config (e.g., `claude_desktop_config.jso
 }
 ```
 
-*Note: Run `swift build -c release` before configuring the client.*
+*Note: Run `make release` before configuring the client.*
 
 ## Tools
 
@@ -81,7 +92,10 @@ The project includes a `Makefile` to simplify common development tasks.
 - **Install dependencies:** `make install`
 - **Run the server (debug):** `make run`
 - **Build the server (debug):** `make build`
+- **Build the server (release):** `make release`
 - **Test:** `make test`
+- **Lint:** `make lint`
+- **Format:** `make format`
 - **Clean artifacts:** `make clean`
 
 ## Project Structure

@@ -63,11 +63,17 @@ This is critical because the MCP protocol uses `stdout` for communication. Any d
 make run
 ```
 
+## Swift MCP Best Practices
+
+1.  **Logging to `stderr`:** Always log to `stderr` using `LoggingSystem.bootstrap`. Never use `print()` as it writes to `stdout`, which is reserved for the MCP protocol transport and will cause protocol errors.
+2.  **Structured Concurrency:** Leverage Swift 6's `async/await` for tool handlers. Enable `StrictConcurrency` in `Package.swift` to catch data races at compile time.
+3.  **Graceful Shutdown:** Use `swift-service-lifecycle` to handle `SIGTERM` and `SIGINT`, ensuring the server closes its transport and cleans up resources properly.
+4.  **Input Validation:** Use the `Value` type and its helper methods to safely extract arguments from tool calls. Always validate required parameters and return clear error messages.
+5.  **Tool Schemas:** Define clear JSON schemas for tools in `listTools` to ensure clients provide the correct input types.
+6.  **Error Reporting:** Return informative error messages in `CallTool.Result` with `isError: true` rather than throwing fatal errors, which would crash the server and disconnect the client.
+7.  **Modular Handlers:** Keep tool implementations in a separate `Handlers` struct or class to improve testability and keep `main.swift` focused on orchestration.
+
 ## Swift MCP Developer Resources
 
 *   **MCP Swift SDK (GitHub):** [https://github.com/modelcontextprotocol/swift-sdk](https://github.com/modelcontextprotocol/swift-sdk)
 *   **MCP Protocol Documentation:** [https://modelcontextprotocol.io/](https://modelcontextprotocol.io/)
-
-## TODO / Legacy Files
-*   `Dockerfile`: Needs update to use a Swift base image (e.g., `swift:6.0-jammy`).
-*   `cloudbuild.yaml`: Needs update for Swift build steps.
