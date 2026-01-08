@@ -14,7 +14,7 @@ logger.logLevel = .trace
 // Create the MCP server
 let server = Server(
   name: "hello-world-server",
-  version: "1.0.0",
+  version: "1.1.0",
   capabilities: .init(
     tools: .init(listChanged: true)
   )
