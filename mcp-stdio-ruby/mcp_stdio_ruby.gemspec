@@ -2,8 +2,8 @@
 
 Gem::Specification.new do |spec|
   spec.name          = 'mcp_stdio_ruby'
-  spec.version       = '1.0.1'
-  spec.authors       = ['Code Assistant']
+  spec.version       = '1.0.2'
+  spec.authors       = ['xbill']
   spec.email         = ['xbill@glitnir.com']
 
   spec.summary       = 'A Ruby based Model Context Protocol (MCP) server.'
