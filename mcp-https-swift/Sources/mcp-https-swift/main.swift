@@ -100,9 +100,10 @@ router.post("/mcp") { request, context -> HTTPResponse.Status in
 }
 
 // Application
+let port = Int(ProcessInfo.processInfo.environment["PORT"] ?? "8080") ?? 8080
 let app = Application(
   router: router,
-  configuration: .init(address: .hostname("0.0.0.0", port: 8080)),
+  configuration: .init(address: .hostname("0.0.0.0", port: port)),
   logger: logger
 )
 

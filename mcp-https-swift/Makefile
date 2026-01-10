@@ -46,3 +46,6 @@ format:
 clean:
 	@echo "Cleaning up..."
 	@rm -rf .build
+
+deploy:
+	gcloud builds submit . --config cloudbuild.yaml
