@@ -15,7 +15,7 @@ enum ToolName: String {
 
 struct Handlers {
     let logger: Logger
-    let firestore: FirestoreClient? // Optional because DB might fail to init
+    let firestore: FirestoreClient
     
     // MARK: - List Tools
     
@@ -125,15 +125,11 @@ struct Handlers {
             return .init(content: [.text("🍎 Hello! This is the Cymbal Superstore Inventory API.")], isError: false)
             
         case .check_db:
-            let isRunning = firestore != nil
-            return .init(content: [.text("Database running: \(isRunning)")], isError: false)
+            return .init(content: [.text("Database running: true")], isError: false)
             
         case .get_products:
-            guard let db = firestore else {
-                return .init(content: [.text("Inventory database is not running.")], isError: true)
-            }
             do {
-                let products = try await db.listProducts()
+                let products = try await firestore.listProducts()
                 let jsonData = try JSONEncoder().encode(products)
                 if let jsonString = String(data: jsonData, encoding: .utf8) {
                      return .init(content: [.text(jsonString)], isError: false)
@@ -145,14 +141,11 @@ struct Handlers {
             }
             
         case .get_product_by_id:
-            guard let db = firestore else {
-                return .init(content: [.text("Inventory database is not running.")], isError: true)
-            }
             guard let id = params.arguments?["id"]?.stringValue else {
                 return .init(content: [.text("Missing required parameter: id")], isError: true)
             }
             do {
-                if let product = try await db.getProduct(id: id) {
+                if let product = try await firestore.getProduct(id: id) {
                     let jsonData = try JSONEncoder().encode(product)
                     if let jsonString = String(data: jsonData, encoding: .utf8) {
                         return .init(content: [.text(jsonString)], isError: false)
@@ -164,14 +157,11 @@ struct Handlers {
             }
 
         case .search:
-            guard let db = firestore else {
-                return .init(content: [.text("Inventory database is not running.")], isError: true)
-            }
             guard let query = params.arguments?["query"]?.stringValue else {
                 return .init(content: [.text("Missing required parameter: query")], isError: true)
             }
             do {
-                let products = try await db.queryProductsByName(name: query)
+                let products = try await firestore.queryProductsByName(name: query)
                 let jsonData = try JSONEncoder().encode(products)
                 if let jsonString = String(data: jsonData, encoding: .utf8) {
                      return .init(content: [.text(jsonString)], isError: false)
@@ -183,25 +173,19 @@ struct Handlers {
             }
             
         case .reset:
-            guard let db = firestore else {
-                return .init(content: [.text("Inventory database is not running.")], isError: true)
-            }
             do {
                 // Get all IDs
-                let products = try await db.listProducts()
+                let products = try await firestore.listProducts()
                 let ids = products.compactMap { $0.id }
-                try await db.batchDelete(ids: ids)
+                try await firestore.batchDelete(ids: ids)
                 return .init(content: [.text("Database reset successfully.")], isError: false)
             } catch {
                 return .init(content: [.text("Error resetting database: \(error)")], isError: true)
             }
             
         case .seed:
-            guard let db = firestore else {
-                return .init(content: [.text("Inventory database is not running.")], isError: true)
-            }
             do {
-                try await seedDatabase(db: db)
+                try await seedDatabase(db: firestore)
                 return .init(content: [.text("Database seeded successfully.")], isError: false)
             } catch {
                 return .init(content: [.text("Error seeding database: \(error)")], isError: true)

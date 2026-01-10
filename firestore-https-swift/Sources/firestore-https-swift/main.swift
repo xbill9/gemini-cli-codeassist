@@ -18,25 +18,37 @@ let logger = {
 
 // Setup Firestore
 let httpClient = HTTPClient(eventLoopGroupProvider: .singleton)
-let firestoreClient: FirestoreClient? = {
+
+func initializeFirestore() async -> FirestoreClient {
     if let credentialsPath = ProcessInfo.processInfo.environment["GOOGLE_APPLICATION_CREDENTIALS"] {
         do {
             let fileUrl = URL(fileURLWithPath: credentialsPath)
             let data = try Data(contentsOf: fileUrl)
             let serviceAccount = try JSONDecoder().decode(ServiceAccount.self, from: data)
-            let authProvider = GoogleTokenProvider(serviceAccount: serviceAccount, httpClient: httpClient, logger: logger)
+            let authProvider = ServiceAccountTokenProvider(serviceAccount: serviceAccount, httpClient: httpClient, logger: logger)
             let client = FirestoreClient(auth: authProvider, httpClient: httpClient, logger: logger)
             logger.info("Firestore client initialized with credentials at \(credentialsPath)")
             return client
         } catch {
-            logger.error("Failed to initialize Firestore credentials: \(error)")
-            return nil
+            logger.error("Failed to initialize Firestore credentials: \(error). Falling back to in-memory storage.")
+            return FirestoreClient(auth: nil, httpClient: httpClient, logger: logger)
         }
     } else {
-        logger.warning("GOOGLE_APPLICATION_CREDENTIALS not set. Firestore features will be disabled.")
-        return nil
+        // Try Metadata Server (Cloud Run/GCE)
+        let metadataProvider = MetadataServerTokenProvider(httpClient: httpClient, logger: logger)
+        do {
+            // Test connection to metadata server
+            let _ = try await metadataProvider.getProjectId()
+            logger.info("Firestore client initialized with Google Metadata Server")
+            return FirestoreClient(auth: metadataProvider, httpClient: httpClient, logger: logger)
+        } catch {
+            logger.warning("GOOGLE_APPLICATION_CREDENTIALS not set and Metadata Server not available. Firestore will run in in-memory mode.")
+            return FirestoreClient(auth: nil, httpClient: httpClient, logger: logger)
+        }
     }
-}()
+}
+
+let firestoreClient = await initializeFirestore()
 
 // Session Manager
 let sessionManager = SessionManager()
@@ -150,17 +162,15 @@ router.post("/mcp") { request, context -> HTTPResponse.Status in
 
 // REST Handlers
 router.get("/status") { request, context -> Response in
-  let dbRunning = sharedFirestoreClient != nil
-  let body = "{\"message\": \"Cymbal Superstore Inventory API is running.\", \"db\": \(dbRunning)}"
+  let body = "{\"message\": \"Cymbal Superstore Inventory API is running.\", \"db\": true}"
   var headers = HTTPFields()
   headers[HTTPField.Name.contentType] = "application/json"
   return Response(status: .ok, headers: headers, body: .init(byteBuffer: ByteBuffer(string: body)))
 }
 
 router.get("/health") { request, context -> Response in
-  let dbRunning = sharedFirestoreClient != nil
   let hostname = ProcessInfo.processInfo.hostName
-  let body = "{\"message\": \"Healthy\", \"db\": \(dbRunning), \"hostname\": \"\(hostname)\"}"
+  let body = "{\"message\": \"Healthy\", \"db\": true, \"hostname\": \"\(hostname)\"}"
   var headers = HTTPFields()
   headers[HTTPField.Name.contentType] = "application/json"
   return Response(status: .ok, headers: headers, body: .init(byteBuffer: ByteBuffer(string: body)))

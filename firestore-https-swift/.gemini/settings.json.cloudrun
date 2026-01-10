@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "firestore-https-swift": {
+    "firestore-cloudrun-swift": {
       "url": "https://firestore-https-swift-1056842563084.us-central1.run.app/mcp"
     }
   }

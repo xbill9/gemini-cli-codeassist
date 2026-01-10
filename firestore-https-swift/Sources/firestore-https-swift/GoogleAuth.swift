@@ -40,7 +40,12 @@ struct TokenResponse: Codable {
     let token_type: String
 }
 
-actor GoogleTokenProvider {
+protocol GoogleAuthProvider: Sendable {
+    func getAccessToken() async throws -> String
+    func getProjectId() async throws -> String
+}
+
+actor ServiceAccountTokenProvider: GoogleAuthProvider {
     private let serviceAccount: ServiceAccount
     private let httpClient: HTTPClient
     private var logger: Logger
@@ -60,6 +65,10 @@ actor GoogleTokenProvider {
         }
         
         return try await refreshToken()
+    }
+    
+    func getProjectId() async throws -> String {
+        return serviceAccount.project_id ?? serviceAccount.quota_project_id ?? "unknown"
     }
     
     private func refreshToken() async throws -> String {
@@ -144,8 +153,64 @@ actor GoogleTokenProvider {
         logger.debug("Token refreshed successfully.")
         return tokenResponse.access_token
     }
+}
+
+actor MetadataServerTokenProvider: GoogleAuthProvider {
+    private let httpClient: HTTPClient
+    private let logger: Logger
     
-    nonisolated var projectId: String {
-        return serviceAccount.project_id ?? serviceAccount.quota_project_id ?? "unknown"
+    private var currentToken: String?
+    private var tokenExpiration: Date?
+    private var cachedProjectId: String?
+    
+    init(httpClient: HTTPClient, logger: Logger) {
+        self.httpClient = httpClient
+        self.logger = logger
+    }
+    
+    func getAccessToken() async throws -> String {
+        if let token = currentToken, let expiration = tokenExpiration, expiration > Date() {
+            return token
+        }
+        
+        logger.debug("Fetching token from Metadata Server...")
+        let url = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
+        var request = HTTPClientRequest(url: url)
+        request.headers.add(name: "Metadata-Flavor", value: "Google")
+        
+        let response = try await httpClient.execute(request, timeout: .seconds(5))
+        guard response.status == .ok else {
+            let body = try await response.body.collect(upTo: 1024)
+            throw NSError(domain: "GoogleAuth", code: Int(response.status.code), userInfo: [NSLocalizedDescriptionKey: "Metadata server error: \(String(buffer: body))"])
+        }
+        
+        let bodyData = try await response.body.collect(upTo: 1024 * 1024)
+        let tokenResponse = try JSONDecoder().decode(TokenResponse.self, from: Data(buffer: bodyData))
+        
+        self.currentToken = tokenResponse.access_token
+        self.tokenExpiration = Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in - 60))
+        
+        return tokenResponse.access_token
+    }
+    
+    func getProjectId() async throws -> String {
+        if let projectId = cachedProjectId {
+            return projectId
+        }
+        
+        logger.debug("Fetching project ID from Metadata Server...")
+        let url = "http://metadata.google.internal/computeMetadata/v1/project/project-id"
+        var request = HTTPClientRequest(url: url)
+        request.headers.add(name: "Metadata-Flavor", value: "Google")
+        
+        let response = try await httpClient.execute(request, timeout: .seconds(5))
+        guard response.status == .ok else {
+            throw NSError(domain: "GoogleAuth", code: Int(response.status.code), userInfo: [NSLocalizedDescriptionKey: "Failed to fetch project ID from metadata server"])
+        }
+        
+        let bodyData = try await response.body.collect(upTo: 1024)
+        let projectId = String(buffer: bodyData).trimmingCharacters(in: .whitespacesAndNewlines)
+        self.cachedProjectId = projectId
+        return projectId
     }
 }

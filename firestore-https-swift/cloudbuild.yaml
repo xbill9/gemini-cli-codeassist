@@ -26,7 +26,7 @@ steps:
 images:
   - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest'
 
-timeout: 800s
+timeout: 1800s
 
 substitutions:
   _SERVICE_NAME: firestore-https-swift
