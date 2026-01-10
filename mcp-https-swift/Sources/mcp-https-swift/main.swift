@@ -70,16 +70,16 @@ router.post("/mcp") { request, context -> HTTPResponse.Status in
   var sessionId = request.headers[HTTPField.Name("Mcp-Session-Id")!]
 
   if sessionId == nil {
-      if let query = request.uri.query {
-           let params = query.split(separator: "&")
-           for param in params {
-               let pair = param.split(separator: "=")
-               if pair.count == 2, pair[0] == "sessionId" {
-                   sessionId = String(pair[1])
-                   break
-               }
-           }
+    if let query = request.uri.query {
+      let params = query.split(separator: "&")
+      for param in params {
+        let pair = param.split(separator: "=")
+        if pair.count == 2, pair[0] == "sessionId" {
+          sessionId = String(pair[1])
+          break
+        }
       }
+    }
   }
 
   guard let finalSessionId = sessionId else {
