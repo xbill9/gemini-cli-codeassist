@@ -24,7 +24,7 @@ struct Handlers {
     let tools = [
       Tool(
         name: ToolName.greet.rawValue,
-        description: "Get a greeting from a local stdio server.",
+        description: "Get a greeting from a HTTPS MCP server.",
         inputSchema: schema
       )
     ]

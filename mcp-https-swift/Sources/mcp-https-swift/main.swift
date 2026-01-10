@@ -7,6 +7,7 @@ import NIOCore
 import ServiceLifecycle
 
 // Logging setup
+LoggingSystem.bootstrap(JSONLogHandler.init)
 let logger = {
   var logger = Logger(label: "mcp-http-server")
   logger.logLevel = .trace
