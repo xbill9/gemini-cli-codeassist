@@ -106,9 +106,25 @@ let app = Application(
   logger: logger
 )
 
+struct SessionCleanupService: Service {
+  let sessionManager: SessionManager
+
+  func run() async throws {
+    let (stream, continuation) = AsyncStream.makeStream(of: Void.self)
+
+    await withGracefulShutdownHandler {
+      for await _ in stream {}
+    } onGracefulShutdown: {
+      continuation.finish()
+    }
+
+    await sessionManager.disconnectAll()
+  }
+}
+
 // Service Group
 let serviceGroup = ServiceGroup(
-  services: [app],
+  services: [app, SessionCleanupService(sessionManager: sessionManager)],
   gracefulShutdownSignals: [.sigterm, .sigint],
   logger: logger
 )

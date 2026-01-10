@@ -19,4 +19,11 @@ actor SessionManager {
   func removeSession(_ id: String) {
     sessions.removeValue(forKey: id)
   }
+
+  func disconnectAll() async {
+    for transport in sessions.values {
+      await transport.disconnect()
+    }
+    sessions.removeAll()
+  }
 }
