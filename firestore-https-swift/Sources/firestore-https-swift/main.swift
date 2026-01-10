@@ -176,40 +176,35 @@ let app = Application(
 
 struct SessionCleanupService: Service {
   let sessionManager: SessionManager
+  let logger: Logger
 
   func run() async throws {
     let (stream, continuation) = AsyncStream.makeStream(of: Void.self)
-
+    
     await withGracefulShutdownHandler {
+      logger.debug("SessionCleanupService: Waiting for shutdown")
       for await _ in stream {}
     } onGracefulShutdown: {
+      logger.debug("SessionCleanupService: Graceful shutdown triggered")
       continuation.finish()
     }
 
+    logger.debug("SessionCleanupService: Disconnecting all sessions")
     await sessionManager.disconnectAll()
+    logger.debug("SessionCleanupService: Finished")
   }
-}
-
-struct HTTPClientService: Service {
-    let client: HTTPClient
-    func run() async throws {
-        try await withGracefulShutdownHandler {
-            try await Task.sleep(nanoseconds: UInt64.max)
-        } onGracefulShutdown: {
-            try? client.syncShutdown()
-        }
-    }
 }
 
 // Service Group
 let serviceGroup = ServiceGroup(
-  services: [
-    app, 
-    SessionCleanupService(sessionManager: sessionManager),
-    HTTPClientService(client: httpClient)
-  ],
-  gracefulShutdownSignals: [.sigterm, .sigint],
-  logger: logger
+  configuration: .init(
+    services: [
+      app,
+      SessionCleanupService(sessionManager: sessionManager, logger: logger)
+    ],
+    gracefulShutdownSignals: [.sigterm, .sigint],
+    logger: logger
+  )
 )
 
 try await serviceGroup.run()
