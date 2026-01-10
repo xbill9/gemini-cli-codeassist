@@ -1,12 +1,12 @@
+import AsyncHTTPClient
 import Foundation
 import HTTPTypes
 import Hummingbird
 import Logging
 import MCP
+import NIO
 import NIOCore
 import ServiceLifecycle
-import AsyncHTTPClient
-import NIO
 
 // Logging setup
 LoggingSystem.bootstrap(JSONLogHandler.init)
@@ -20,32 +20,36 @@ let logger = {
 let httpClient = HTTPClient(eventLoopGroupProvider: .singleton)
 
 func initializeFirestore() async -> FirestoreClient {
-    if let credentialsPath = ProcessInfo.processInfo.environment["GOOGLE_APPLICATION_CREDENTIALS"] {
-        do {
-            let fileUrl = URL(fileURLWithPath: credentialsPath)
-            let data = try Data(contentsOf: fileUrl)
-            let serviceAccount = try JSONDecoder().decode(ServiceAccount.self, from: data)
-            let authProvider = ServiceAccountTokenProvider(serviceAccount: serviceAccount, httpClient: httpClient, logger: logger)
-            let client = FirestoreClient(auth: authProvider, httpClient: httpClient, logger: logger)
-            logger.info("Firestore client initialized with credentials at \(credentialsPath)")
-            return client
-        } catch {
-            logger.error("Failed to initialize Firestore credentials: \(error). Falling back to in-memory storage.")
-            return FirestoreClient(auth: nil, httpClient: httpClient, logger: logger)
-        }
-    } else {
-        // Try Metadata Server (Cloud Run/GCE)
-        let metadataProvider = MetadataServerTokenProvider(httpClient: httpClient, logger: logger)
-        do {
-            // Test connection to metadata server
-            let _ = try await metadataProvider.getProjectId()
-            logger.info("Firestore client initialized with Google Metadata Server")
-            return FirestoreClient(auth: metadataProvider, httpClient: httpClient, logger: logger)
-        } catch {
-            logger.warning("GOOGLE_APPLICATION_CREDENTIALS not set and Metadata Server not available. Firestore will run in in-memory mode.")
-            return FirestoreClient(auth: nil, httpClient: httpClient, logger: logger)
-        }
+  if let credentialsPath = ProcessInfo.processInfo.environment["GOOGLE_APPLICATION_CREDENTIALS"] {
+    do {
+      let fileUrl = URL(fileURLWithPath: credentialsPath)
+      let data = try Data(contentsOf: fileUrl)
+      let serviceAccount = try JSONDecoder().decode(ServiceAccount.self, from: data)
+      let authProvider = ServiceAccountTokenProvider(
+        serviceAccount: serviceAccount, httpClient: httpClient, logger: logger)
+      let client = FirestoreClient(auth: authProvider, httpClient: httpClient, logger: logger)
+      logger.info("Firestore client initialized with credentials at \(credentialsPath)")
+      return client
+    } catch {
+      logger.error(
+        "Failed to initialize Firestore credentials: \(error). Falling back to in-memory storage.")
+      return FirestoreClient(auth: nil, httpClient: httpClient, logger: logger)
     }
+  } else {
+    // Try Metadata Server (Cloud Run/GCE)
+    let metadataProvider = MetadataServerTokenProvider(httpClient: httpClient, logger: logger)
+    do {
+      // Test connection to metadata server
+      let _ = try await metadataProvider.getProjectId()
+      logger.info("Firestore client initialized with Google Metadata Server")
+      return FirestoreClient(auth: metadataProvider, httpClient: httpClient, logger: logger)
+    } catch {
+      logger.warning(
+        "GOOGLE_APPLICATION_CREDENTIALS not set and Metadata Server not available. Firestore will run in in-memory mode."
+      )
+      return FirestoreClient(auth: nil, httpClient: httpClient, logger: logger)
+    }
+  }
 }
 
 let firestoreClient = await initializeFirestore()
@@ -126,7 +130,6 @@ router.delete("/mcp") { request, context -> HTTPResponse.Status in
   return .noContent
 }
 
-
 // POST /mcp - Receive Message
 router.post("/mcp") { request, context -> HTTPResponse.Status in
   var sessionId = request.headers[HTTPField.Name("Mcp-Session-Id")!]
@@ -190,7 +193,7 @@ struct SessionCleanupService: Service {
 
   func run() async throws {
     let (stream, continuation) = AsyncStream.makeStream(of: Void.self)
-    
+
     await withGracefulShutdownHandler {
       logger.debug("SessionCleanupService: Waiting for shutdown")
       for await _ in stream {}
@@ -210,7 +213,7 @@ let serviceGroup = ServiceGroup(
   configuration: .init(
     services: [
       app,
-      SessionCleanupService(sessionManager: sessionManager, logger: logger)
+      SessionCleanupService(sessionManager: sessionManager, logger: logger),
     ],
     gracefulShutdownSignals: [.sigterm, .sigint],
     logger: logger

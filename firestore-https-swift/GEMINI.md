@@ -21,11 +21,11 @@ This is a **Firestore MCP Server** implemented in Swift using the `swift-sdk`. I
 *   `Package.swift`: Defines dependencies.
 *   `Sources/firestore-https-swift/main.swift`: Application entry point. Sets up the Hummingbird router, `SessionManager`, and starts the server.
 *   `Sources/firestore-https-swift/Handlers.swift`: Implements the MCP tools (`listTools`, `callTool`).
+*   `Sources/firestore-https-swift/FirestoreClient.swift`: Handles communication with the Google Cloud Firestore REST API.
+*   `Sources/firestore-https-swift/GoogleAuth.swift`: Provides token providers for Service Account and Metadata Server authentication.
+*   `Sources/firestore-https-swift/Models.swift`: Defines the data models used by the application (e.g., `Product`).
 *   `Sources/firestore-https-swift/SessionManager.swift`: Actor that manages active `SSEServerTransport` instances by Session ID.
 *   `Sources/firestore-https-swift/SSEServerTransport.swift`: Custom `Transport` implementation.
-    *   Bridges Hummingbird's request/response model to the MCP SDK's `Transport` protocol.
-    *   Manages an `AsyncStream<ServerSentEvent>` for outbound SSE messages.
-    *   Manages an `AsyncThrowingStream<Data, Error>` for inbound JSON-RPC messages (via POST).
 *   `Sources/firestore-https-swift/JSONLogHandler.swift`: Custom log handler for structured logging.
 *   `Makefile`: Development shortcuts.
 *   `Dockerfile`: Configuration for building the production image.
@@ -34,10 +34,31 @@ This is a **Firestore MCP Server** implemented in Swift using the `swift-sdk`. I
 ## Exposed Tools
 
 ### `greet`
-*   **Description:** Get a greeting from the server.
-*   **Arguments:**
-    *   `param` (string, required): The name or parameter to greet.
-*   **Response:** Returns the `param` value as text.
+*   **Description:** A simple greeting tool.
+*   **Arguments:** `name` (string, required).
+
+### `get_products`
+*   **Description:** Get a list of all products from the inventory database.
+
+### `get_product_by_id`
+*   **Description:** Get a single product from the inventory database by its ID.
+*   **Arguments:** `id` (string, required).
+
+### `search`
+*   **Description:** Search for products in the inventory database by name.
+*   **Arguments:** `query` (string, required).
+
+### `seed`
+*   **Description:** Seed the inventory database with sample products.
+
+### `reset`
+*   **Description:** Clears all products from the inventory database.
+
+### `get_root`
+*   **Description:** Get a greeting from the Cymbal Superstore Inventory API.
+
+### `check_db`
+*   **Description:** Checks if the inventory database is running.
 
 ## HTTP Endpoints
 
@@ -51,6 +72,16 @@ Endpoint to send JSON-RPC messages.
 - **Headers:** Requires `Mcp-Session-Id` header.
 - **Query Params:** Accepts `sessionId` as a fallback.
 - **Body:** JSON-RPC message payload.
+
+### `DELETE /mcp`
+Terminates an active session.
+- **Headers:** Requires `Mcp-Session-Id` header or `sessionId` query parameter.
+
+### `GET /status`
+Returns basic status of the API and database.
+
+### `GET /health`
+Returns health information including the hostname.
 
 ## Development Workflows
 

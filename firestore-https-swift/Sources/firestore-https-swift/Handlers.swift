@@ -3,271 +3,275 @@ import Logging
 import MCP
 
 enum ToolName: String {
-    case greet
-    case get_products
-    case get_product_by_id
-    case search
-    case seed
-    case reset
-    case get_root
-    case check_db
+  case greet
+  case getProducts = "get_products"
+  case getProductById = "get_product_by_id"
+  case search
+  case seed
+  case reset
+  case getRoot = "get_root"
+  case checkDb = "check_db"
 }
 
 struct Handlers {
-    let logger: Logger
-    let firestore: FirestoreClient
-    
-    // MARK: - List Tools
-    
-    func listTools(_ params: ListTools.Parameters) async throws -> ListTools.Result {
-        let tools = [
-            Tool(
-                name: ToolName.greet.rawValue,
-                description: "A simple greeting tool",
-                inputSchema: .object([
-                    "type": .string("object"),
-                    "properties": .object([
-                        "name": .object([
-                            "type": .string("string"),
-                            "description": .string("Name to greet"),
-                        ])
-                    ]),
-                    "required": .array([.string("name")]),
-                ])
-            ),
-            Tool(
-                name: ToolName.get_products.rawValue,
-                description: "Get a list of all products from the inventory database",
-                inputSchema: .object([
-                    "type": .string("object"),
-                    "properties": .object([:])
-                ])
-            ),
-            Tool(
-                name: ToolName.get_product_by_id.rawValue,
-                description: "Get a single product from the inventory database by its ID",
-                inputSchema: .object([
-                    "type": .string("object"),
-                    "properties": .object([
-                        "id": .object([
-                            "type": .string("string"),
-                            "description": .string("The ID of the product to get")
-                        ])
-                    ]),
-                    "required": .array([.string("id")])
-                ])
-            ),
-            Tool(
-                name: ToolName.search.rawValue,
-                description: "Search for products in the inventory database by name",
-                inputSchema: .object([
-                    "type": .string("object"),
-                    "properties": .object([
-                        "query": .object([
-                            "type": .string("string"),
-                            "description": .string("The search query to filter products by name"),
-                        ])
-                    ]),
-                    "required": .array([.string("query")]),
-                ])
-            ),
-            Tool(
-                name: ToolName.seed.rawValue,
-                description: "Seed the inventory database with products.",
-                inputSchema: .object([
-                    "type": .string("object"),
-                    "properties": .object([:])
-                ])
-            ),
-            Tool(
-                name: ToolName.reset.rawValue,
-                description: "Clears all products from the inventory database.",
-                inputSchema: .object([
-                    "type": .string("object"),
-                    "properties": .object([:])
-                ])
-            ),
-            Tool(
-                name: ToolName.get_root.rawValue,
-                description: "Get a greeting from the Cymbal Superstore Inventory API.",
-                inputSchema: .object([
-                    "type": .string("object"),
-                    "properties": .object([:])
-                ])
-            ),
-            Tool(
-                name: ToolName.check_db.rawValue,
-                description: "Checks if the inventory database is running.",
-                inputSchema: .object([
-                    "type": .string("object"),
-                    "properties": .object([:])
-                ])
-            )
-        ]
-        return .init(tools: tools)
-    }
-    
-    // MARK: - Call Tool
-    
-    func callTool(_ params: CallTool.Parameters) async throws -> CallTool.Result {
-        guard let toolName = ToolName(rawValue: params.name) else {
-            return .init(content: [.text("Unknown tool: \(params.name)")], isError: true)
-        }
-        
-        switch toolName {
-        case .greet:
-            guard let name = params.arguments?["name"]?.stringValue else {
-                return .init(content: [.text("Missing required parameter: name")], isError: true)
-            }
-            return .init(content: [.text("Hello, \(name)!")], isError: false)
+  let logger: Logger
+  let firestore: FirestoreClient
 
-        case .get_root:
-            return .init(content: [.text("🍎 Hello! This is the Cymbal Superstore Inventory API.")], isError: false)
-            
-        case .check_db:
-            return .init(content: [.text("Database running: true")], isError: false)
-            
-        case .get_products:
-            do {
-                let products = try await firestore.listProducts()
-                let jsonData = try JSONEncoder().encode(products)
-                if let jsonString = String(data: jsonData, encoding: .utf8) {
-                     return .init(content: [.text(jsonString)], isError: false)
-                } else {
-                     return .init(content: [.text("Failed to encode products")], isError: true)
-                }
-            } catch {
-                return .init(content: [.text("Error fetching products: \(error)")], isError: true)
-            }
-            
-        case .get_product_by_id:
-            guard let id = params.arguments?["id"]?.stringValue else {
-                return .init(content: [.text("Missing required parameter: id")], isError: true)
-            }
-            do {
-                if let product = try await firestore.getProduct(id: id) {
-                    let jsonData = try JSONEncoder().encode(product)
-                    if let jsonString = String(data: jsonData, encoding: .utf8) {
-                        return .init(content: [.text(jsonString)], isError: false)
-                    }
-                }
-                return .init(content: [.text("Product not found.")], isError: true)
-            } catch {
-                return .init(content: [.text("Error fetching product: \(error)")], isError: true)
-            }
+  // MARK: - List Tools
 
-        case .search:
-            guard let query = params.arguments?["query"]?.stringValue else {
-                return .init(content: [.text("Missing required parameter: query")], isError: true)
-            }
-            do {
-                let products = try await firestore.queryProductsByName(name: query)
-                let jsonData = try JSONEncoder().encode(products)
-                if let jsonString = String(data: jsonData, encoding: .utf8) {
-                     return .init(content: [.text(jsonString)], isError: false)
-                } else {
-                     return .init(content: [.text("Failed to encode products")], isError: true)
-                }
-            } catch {
-                return .init(content: [.text("Error searching products: \(error)")], isError: true)
-            }
-            
-        case .reset:
-            do {
-                // Get all IDs
-                let products = try await firestore.listProducts()
-                let ids = products.compactMap { $0.id }
-                try await firestore.batchDelete(ids: ids)
-                return .init(content: [.text("Database reset successfully.")], isError: false)
-            } catch {
-                return .init(content: [.text("Error resetting database: \(error)")], isError: true)
-            }
-            
-        case .seed:
-            do {
-                try await seedDatabase(db: firestore)
-                return .init(content: [.text("Database seeded successfully.")], isError: false)
-            } catch {
-                return .init(content: [.text("Error seeding database: \(error)")], isError: true)
-            }
-        }
-    }
-    
-    private func seedDatabase(db: FirestoreClient) async throws {
-        let oldProducts = [
-          "Apples", "Bananas", "Milk", "Whole Wheat Bread", "Eggs", "Cheddar Cheese",
-          "Whole Chicken", "Rice", "Black Beans", "Bottled Water", "Apple Juice",
-          "Cola", "Coffee Beans", "Green Tea", "Watermelon", "Broccoli",
-          "Jasmine Rice", "Yogurt", "Beef", "Shrimp", "Walnuts",
-          "Sunflower Seeds", "Fresh Basil", "Cinnamon",
-        ]
+  func listTools(_ params: ListTools.Parameters) async throws -> ListTools.Result {
+    let tools = [
+      Tool(
+        name: ToolName.greet.rawValue,
+        description: "A simple greeting tool",
+        inputSchema: .object([
+          "type": .string("object"),
+          "properties": .object([
+            "name": .object([
+              "type": .string("string"),
+              "description": .string("Name to greet"),
+            ])
+          ]),
+          "required": .array([.string("name")]),
+        ])
+      ),
+      Tool(
+        name: ToolName.getProducts.rawValue,
+        description: "Get a list of all products from the inventory database",
+        inputSchema: .object([
+          "type": .string("object"),
+          "properties": .object([:]),
+        ])
+      ),
+      Tool(
+        name: ToolName.getProductById.rawValue,
+        description: "Get a single product from the inventory database by its ID",
+        inputSchema: .object([
+          "type": .string("object"),
+          "properties": .object([
+            "id": .object([
+              "type": .string("string"),
+              "description": .string("The ID of the product to get"),
+            ])
+          ]),
+          "required": .array([.string("id")]),
+        ])
+      ),
+      Tool(
+        name: ToolName.search.rawValue,
+        description: "Search for products in the inventory database by name",
+        inputSchema: .object([
+          "type": .string("object"),
+          "properties": .object([
+            "query": .object([
+              "type": .string("string"),
+              "description": .string("The search query to filter products by name"),
+            ])
+          ]),
+          "required": .array([.string("query")]),
+        ])
+      ),
+      Tool(
+        name: ToolName.seed.rawValue,
+        description: "Seed the inventory database with products.",
+        inputSchema: .object([
+          "type": .string("object"),
+          "properties": .object([:]),
+        ])
+      ),
+      Tool(
+        name: ToolName.reset.rawValue,
+        description: "Clears all products from the inventory database.",
+        inputSchema: .object([
+          "type": .string("object"),
+          "properties": .object([:]),
+        ])
+      ),
+      Tool(
+        name: ToolName.getRoot.rawValue,
+        description: "Get a greeting from the Cymbal Superstore Inventory API.",
+        inputSchema: .object([
+          "type": .string("object"),
+          "properties": .object([:]),
+        ])
+      ),
+      Tool(
+        name: ToolName.checkDb.rawValue,
+        description: "Checks if the inventory database is running.",
+        inputSchema: .object([
+          "type": .string("object"),
+          "properties": .object([:]),
+        ])
+      ),
+    ]
+    return .init(tools: tools)
+  }
 
-        for productName in oldProducts {
-            let p = Product(
-                id: nil,
-                name: productName,
-                price: Double(Int.random(in: 1...10)),
-                quantity: Int.random(in: 1...500),
-                imgfile: "product-images/\(productName.replacingOccurrences(of: " ", with: "").lowercased()).png",
-                timestamp: Date(timeIntervalSinceNow: -Double(Int.random(in: 0...31536000))),
-                actualdateadded: Date()
-            )
-            try await addOrUpdate(db: db, product: p)
-        }
-        
-        let recentProducts = [
-            "Parmesan Crisps", "Pineapple Kombucha", "Maple Almond Butter",
-            "Mint Chocolate Cookies", "White Chocolate Caramel Corn", "Acai Smoothie Packs",
-            "Smores Cereal", "Peanut Butter and Jelly Cups",
-        ]
-        
-        for productName in recentProducts {
-            let p = Product(
-                id: nil,
-                name: productName,
-                price: Double(Int.random(in: 1...10)),
-                quantity: Int.random(in: 1...100),
-                imgfile: "product-images/\(productName.replacingOccurrences(of: " ", with: "").lowercased()).png",
-                timestamp: Date(timeIntervalSinceNow: -Double(Int.random(in: 0...518400))),
-                actualdateadded: Date()
-            )
-             try await addOrUpdate(db: db, product: p)
-        }
-        
-        let recentProductsOutOfStock = ["Wasabi Party Mix", "Jalapeno Seasoning"]
-        for productName in recentProductsOutOfStock {
-            let p = Product(
-                id: nil,
-                name: productName,
-                price: Double(Int.random(in: 1...10)),
-                quantity: 0,
-                imgfile: "product-images/\(productName.replacingOccurrences(of: " ", with: "").lowercased()).png",
-                timestamp: Date(timeIntervalSinceNow: -Double(Int.random(in: 0...518400))),
-                actualdateadded: Date()
-            )
-            try await addOrUpdate(db: db, product: p)
-        }
+  // MARK: - Call Tool
+
+  func callTool(_ params: CallTool.Parameters) async throws -> CallTool.Result {
+    guard let toolName = ToolName(rawValue: params.name) else {
+      return .init(content: [.text("Unknown tool: \(params.name)")], isError: true)
     }
-    
-    private func addOrUpdate(db: FirestoreClient, product: Product) async throws {
-        let existing = try await db.findProducts(name: product.name)
-        if existing.isEmpty {
-            try await db.addProduct(product)
-            logger.info("Added product: \(product.name)")
+
+    switch toolName {
+    case .greet:
+      guard let name = params.arguments?["name"]?.stringValue else {
+        return .init(content: [.text("Missing required parameter: name")], isError: true)
+      }
+      return .init(content: [.text("Hello, \(name)!")], isError: false)
+
+    case .getRoot:
+      return .init(
+        content: [.text("🍎 Hello! This is the Cymbal Superstore Inventory API.")], isError: false)
+
+    case .checkDb:
+      return .init(content: [.text("Database running: true")], isError: false)
+
+    case .getProducts:
+      do {
+        let products = try await firestore.listProducts()
+        let jsonData = try JSONEncoder().encode(products)
+        if let jsonString = String(data: jsonData, encoding: .utf8) {
+          return .init(content: [.text(jsonString)], isError: false)
         } else {
-            for var existingProd in existing {
-                // Update fields
-                existingProd.price = product.price
-                existingProd.quantity = product.quantity
-                existingProd.imgfile = product.imgfile
-                existingProd.timestamp = product.timestamp
-                existingProd.actualdateadded = product.actualdateadded
-                
-                if let id = existingProd.id {
-                    try await db.updateProduct(id: id, product: existingProd)
-                    logger.info("Updated product: \(product.name) (ID: \(id))")
-                }
-            }
+          return .init(content: [.text("Failed to encode products")], isError: true)
         }
+      } catch {
+        return .init(content: [.text("Error fetching products: \(error)")], isError: true)
+      }
+
+    case .getProductById:
+      guard let id = params.arguments?["id"]?.stringValue else {
+        return .init(content: [.text("Missing required parameter: id")], isError: true)
+      }
+      do {
+        if let product = try await firestore.getProduct(id: id) {
+          let jsonData = try JSONEncoder().encode(product)
+          if let jsonString = String(data: jsonData, encoding: .utf8) {
+            return .init(content: [.text(jsonString)], isError: false)
+          }
+        }
+        return .init(content: [.text("Product not found.")], isError: true)
+      } catch {
+        return .init(content: [.text("Error fetching product: \(error)")], isError: true)
+      }
+
+    case .search:
+      guard let query = params.arguments?["query"]?.stringValue else {
+        return .init(content: [.text("Missing required parameter: query")], isError: true)
+      }
+      do {
+        let products = try await firestore.queryProductsByName(name: query)
+        let jsonData = try JSONEncoder().encode(products)
+        if let jsonString = String(data: jsonData, encoding: .utf8) {
+          return .init(content: [.text(jsonString)], isError: false)
+        } else {
+          return .init(content: [.text("Failed to encode products")], isError: true)
+        }
+      } catch {
+        return .init(content: [.text("Error searching products: \(error)")], isError: true)
+      }
+
+    case .reset:
+      do {
+        // Get all IDs
+        let products = try await firestore.listProducts()
+        let ids = products.compactMap { $0.id }
+        try await firestore.batchDelete(ids: ids)
+        return .init(content: [.text("Database reset successfully.")], isError: false)
+      } catch {
+        return .init(content: [.text("Error resetting database: \(error)")], isError: true)
+      }
+
+    case .seed:
+      do {
+        try await seedDatabase(db: firestore)
+        return .init(content: [.text("Database seeded successfully.")], isError: false)
+      } catch {
+        return .init(content: [.text("Error seeding database: \(error)")], isError: true)
+      }
     }
+  }
+
+  private func seedDatabase(db: FirestoreClient) async throws {
+    let oldProducts = [
+      "Apples", "Bananas", "Milk", "Whole Wheat Bread", "Eggs", "Cheddar Cheese",
+      "Whole Chicken", "Rice", "Black Beans", "Bottled Water", "Apple Juice",
+      "Cola", "Coffee Beans", "Green Tea", "Watermelon", "Broccoli",
+      "Jasmine Rice", "Yogurt", "Beef", "Shrimp", "Walnuts",
+      "Sunflower Seeds", "Fresh Basil", "Cinnamon",
+    ]
+
+    for productName in oldProducts {
+      let p = Product(
+        id: nil,
+        name: productName,
+        price: Double(Int.random(in: 1...10)),
+        quantity: Int.random(in: 1...500),
+        imgfile:
+          "product-images/\(productName.replacingOccurrences(of: " ", with: "").lowercased()).png",
+        timestamp: Date(timeIntervalSinceNow: -Double(Int.random(in: 0...31_536_000))),
+        actualdateadded: Date()
+      )
+      try await addOrUpdate(db: db, product: p)
+    }
+
+    let recentProducts = [
+      "Parmesan Crisps", "Pineapple Kombucha", "Maple Almond Butter",
+      "Mint Chocolate Cookies", "White Chocolate Caramel Corn", "Acai Smoothie Packs",
+      "Smores Cereal", "Peanut Butter and Jelly Cups",
+    ]
+
+    for productName in recentProducts {
+      let p = Product(
+        id: nil,
+        name: productName,
+        price: Double(Int.random(in: 1...10)),
+        quantity: Int.random(in: 1...100),
+        imgfile:
+          "product-images/\(productName.replacingOccurrences(of: " ", with: "").lowercased()).png",
+        timestamp: Date(timeIntervalSinceNow: -Double(Int.random(in: 0...518400))),
+        actualdateadded: Date()
+      )
+      try await addOrUpdate(db: db, product: p)
+    }
+
+    let recentProductsOutOfStock = ["Wasabi Party Mix", "Jalapeno Seasoning"]
+    for productName in recentProductsOutOfStock {
+      let p = Product(
+        id: nil,
+        name: productName,
+        price: Double(Int.random(in: 1...10)),
+        quantity: 0,
+        imgfile:
+          "product-images/\(productName.replacingOccurrences(of: " ", with: "").lowercased()).png",
+        timestamp: Date(timeIntervalSinceNow: -Double(Int.random(in: 0...518400))),
+        actualdateadded: Date()
+      )
+      try await addOrUpdate(db: db, product: p)
+    }
+  }
+
+  private func addOrUpdate(db: FirestoreClient, product: Product) async throws {
+    let existing = try await db.findProducts(name: product.name)
+    if existing.isEmpty {
+      try await db.addProduct(product)
+      logger.info("Added product: \(product.name)")
+    } else {
+      for var existingProd in existing {
+        // Update fields
+        existingProd.price = product.price
+        existingProd.quantity = product.quantity
+        existingProd.imgfile = product.imgfile
+        existingProd.timestamp = product.timestamp
+        existingProd.actualdateadded = product.actualdateadded
+
+        if let id = existingProd.id {
+          try await db.updateProduct(id: id, product: existingProd)
+          logger.info("Updated product: \(product.name) (ID: \(id))")
+        }
+      }
+    }
+  }
 }

@@ -1,7 +1,7 @@
+import AsyncHTTPClient
 import Logging
 import MCP
 import XCTest
-import AsyncHTTPClient
 
 @testable import firestore_https_swift
 
@@ -52,7 +52,6 @@ final class HandlersTests: XCTestCase {
     }
   }
 
-
   func testCallToolMissingParam() async throws {
     let params = CallTool.Parameters(name: "greet", arguments: [:])
     let result = try await handlers.callTool(params)
@@ -75,7 +74,7 @@ final class HandlersTests: XCTestCase {
     let getParams = CallTool.Parameters(name: "get_products", arguments: [:])
     let getResult = try await handlers.callTool(getParams)
     XCTAssertFalse(getResult.isError ?? false)
-    
+
     if case .text(let json) = getResult.content[0] {
       let products = try JSONDecoder().decode([Product].self, from: json.data(using: .utf8)!)
       XCTAssertGreaterThan(products.count, 0)

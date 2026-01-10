@@ -1,13 +1,14 @@
 # Firestore MCP Server
 
-A Model Context Protocol (MCP) server implemented in Swift using the streaming HTTP transport (SSE).
+A Model Context Protocol (MCP) server implemented in Swift that integrates with Google Cloud Firestore. It uses the streaming HTTP transport (SSE) and is built on the Hummingbird 2.0 web framework.
 
 ## Overview
 
-This project provides a basic MCP server named `firestore-https-swift` that exposes a single tool: `greet`. It uses [Hummingbird 2.0](https://hummingbird.codes/) to provide an HTTP interface for the MCP protocol.
+This project provides an MCP server named `firestore-https-swift` that manages a product inventory in Firestore. It exposes several tools for querying and managing product data.
 
 **Key Features:**
 *   **Transport:** Uses Streaming HTTP (Server-Sent Events) for MCP communication.
+*   **Firestore Integration:** Connects to Google Cloud Firestore with support for local service account credentials or Google Cloud Metadata Server (for Cloud Run/GCE).
 *   **Concurrency:** Built on Swift's structured concurrency and `ServiceLifecycle`.
 *   **SDK:** Powered by the [MCP Swift SDK](https://github.com/modelcontextprotocol/swift-sdk).
 *   **Observability:** Uses `swift-log` with JSON formatting for structured logging.
@@ -18,6 +19,7 @@ This project provides a basic MCP server named `firestore-https-swift` that expo
 - **Swift 6.0+** (Developed with Swift 6.2)
 - **Linux** or **macOS**
 - **Docker** (optional, for containerized build/run)
+- **Google Cloud Project** with Firestore enabled (if using Firestore)
 
 ## Getting Started
 
@@ -27,17 +29,24 @@ This project provides a basic MCP server named `firestore-https-swift` that expo
     cd firestore-https-swift
     ```
 
-2.  **Install dependencies:**
+2.  **Install dependencies:
     ```bash
     make install
     ```
 
-3.  **Build the project:**
+3.  **Build the project:
     ```bash
     make build
     # or for release build
     make release
     ```
+
+## Configuration
+
+The server can be configured via environment variables:
+
+- `PORT`: The port to listen on (default: `8080`).
+- `GOOGLE_APPLICATION_CREDENTIALS`: Path to a Google Cloud Service Account JSON key file. If not set, the server will attempt to use the Google Cloud Metadata Server (useful for Cloud Run/GCE). If neither is available, it falls back to a limited in-memory mode.
 
 ## Usage
 
@@ -47,7 +56,7 @@ Start the server:
 ```bash
 make run
 ```
-The server will start listening on `http://0.0.0.0:8080` by default. You can override the port using the `PORT` environment variable.
+The server will start listening on `http://0.0.0.0:8080` by default.
 
 ### Docker
 
@@ -58,7 +67,7 @@ docker build -t firestore-https-swift .
 
 Run the container:
 ```bash
-docker run -p 8080:8080 firestore-https-swift
+docker run -p 8080:8080 -e GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json -v /path/to/key.json:/path/to/key.json firestore-https-swift
 ```
 
 ### Make Commands
@@ -83,7 +92,7 @@ The server exposes the following endpoints:
 Establishes an SSE connection.
 - **Returns:** An event stream.
 - **Headers:** The response includes an `Mcp-Session-Id` header identifying the session.
-- **Events:** The server sends an endpoint event containing the session ID in the query parameters (e.g., `/mcp?sessionId=<UUID>`).
+- **Events:** The server sends an `endpoint` event containing the session URL (e.g., `/mcp?sessionId=<UUID>`).
 
 ### `POST /mcp`
 Endpoint to send JSON-RPC messages to the server.
@@ -91,13 +100,44 @@ Endpoint to send JSON-RPC messages to the server.
 - **Query Params:** Alternatively, `sessionId` can be passed as a query parameter (fallback).
 - **Body:** The JSON-RPC message.
 
+### `DELETE /mcp`
+Terminates an active session.
+- **Headers:** Requires `Mcp-Session-Id` header.
+
+### `GET /status` & `GET /health`
+Returns JSON information about the server and database status.
+
 ## Tools
 
 ### `greet`
-- **Description:** Get a greeting from the local server.
-- **Parameters:**
-    - `param` (string, required): The name or parameter to greet.
-- **Returns:** The string passed in `param`.
+- **Description:** A simple greeting tool.
+- **Arguments:**
+    - `name` (string, required): The name to greet.
+
+### `get_products`
+- **Description:** Get a list of all products from the inventory database.
+
+### `get_product_by_id`
+- **Description:** Get a single product from the inventory database by its ID.
+- **Arguments:**
+    - `id` (string, required): The ID of the product.
+
+### `search`
+- **Description:** Search for products in the inventory database by name.
+- **Arguments:
+    - `query` (string, required): The search query.
+
+### `seed`
+- **Description:** Seed the inventory database with sample products.
+
+### `reset`
+- **Description:** Clears all products from the inventory database.
+
+### `get_root`
+- **Description:** Get a greeting from the Cymbal Superstore Inventory API.
+
+### `check_db`
+- **Description:** Checks if the inventory database is running.
 
 ## Deployment
 
@@ -114,8 +154,11 @@ Ensure you have the Google Cloud SDK installed and authenticated.
 - `Sources/firestore-https-swift/`: Source code.
   - `main.swift`: Entry point, server configuration, and routing.
   - `Handlers.swift`: MCP tool implementations.
+  - `FirestoreClient.swift`: Client for interacting with Firestore.
+  - `GoogleAuth.swift`: Authentication logic for Google Cloud.
   - `SessionManager.swift`: Manages active MCP sessions.
   - `SSEServerTransport.swift`: Custom SSE transport implementation.
   - `JSONLogHandler.swift`: Custom log handler for JSON output.
+  - `Models.swift`: Data models.
 - `Tests/`: Unit tests.
 - `Dockerfile`: Multi-stage Docker build configuration.
