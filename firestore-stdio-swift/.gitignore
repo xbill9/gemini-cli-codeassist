@@ -1,0 +1,20 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+
+# Logs and temporary files
+*.log
+*.temp
+stdout.json
+
+# IDEs
+.vscode/
+.idea/
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+
+# OS generated files
+.DS_Store
+.envinit_request.json
