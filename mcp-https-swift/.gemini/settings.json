@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "hello-cloudrun-swift": {
-      "url": "https://mcp-https-swift-1056842563084.us-central1.run.app/mcp"
+    "hello-https-swift": {
+      "url": "http://127.0.0.1:8080/mcp"
     }
   }
 }
