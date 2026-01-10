@@ -52,6 +52,10 @@ actor SSEServerTransport: Transport {
     }
   }
 
+  func sendEndpointEvent(_ endpoint: String) {
+    sseContinuation.yield(ServerSentEvent(data: endpoint, event: "endpoint"))
+  }
+
   func receive() -> AsyncThrowingStream<Data, Error> {
     return receiveStream
   }

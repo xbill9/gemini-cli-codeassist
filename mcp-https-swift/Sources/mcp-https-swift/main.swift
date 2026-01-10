@@ -22,6 +22,7 @@ let router = Router()
 // GET /mcp - Start SSE Session
 router.get("/mcp") { request, context -> Response in
   let transport = await sessionManager.createSession(logger: logger)
+  await transport.sendEndpointEvent("/mcp?sessionId=\(transport.sessionId)")
   let sessionId = transport.sessionId
 
   let server = Server(
@@ -40,6 +41,7 @@ router.get("/mcp") { request, context -> Response in
   Task {
     do {
       try await server.start(transport: transport)
+      await server.waitUntilCompleted()
       logger.info("Server session ended: \(sessionId)")
       await sessionManager.removeSession(sessionId)
     } catch {
@@ -65,11 +67,26 @@ router.get("/mcp") { request, context -> Response in
 
 // POST /mcp - Receive Message
 router.post("/mcp") { request, context -> HTTPResponse.Status in
-  guard let sessionId = request.headers[HTTPField.Name("Mcp-Session-Id")!] else {
+  var sessionId = request.headers[HTTPField.Name("Mcp-Session-Id")!]
+
+  if sessionId == nil {
+      if let query = request.uri.query {
+           let params = query.split(separator: "&")
+           for param in params {
+               let pair = param.split(separator: "=")
+               if pair.count == 2, pair[0] == "sessionId" {
+                   sessionId = String(pair[1])
+                   break
+               }
+           }
+      }
+  }
+
+  guard let finalSessionId = sessionId else {
     throw HTTPError(.badRequest, message: "Missing Mcp-Session-Id header")
   }
 
-  guard let transport = await sessionManager.getSession(sessionId) else {
+  guard let transport = await sessionManager.getSession(finalSessionId) else {
     throw HTTPError(.notFound, message: "Session not found")
   }
 
