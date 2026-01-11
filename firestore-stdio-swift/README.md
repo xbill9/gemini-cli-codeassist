@@ -33,7 +33,7 @@ This project provides an MCP server named `inventory-server` (exposed via the `f
     ```
 
 3.  **Configure Credentials:**
-    The server requires the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to be set to the path of your Service Account JSON key file.
+    The server requires the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to be set to the path of your Service Account JSON key file to enable Firestore functionality. If not set, database tools will return errors.
 
     ```bash
     export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account-key.json"
@@ -73,28 +73,30 @@ To use this server with an MCP client (like Claude Desktop), add the following t
 - **Description:** Get a list of all products from the inventory database.
 
 ### `get_product_by_id`
-- **Description:** Get a single product by its ID.
+- **Description:** Get a single product from the inventory database by its ID.
 - **Parameters:**
-    - `id` (string, required): The ID of the product.
+    - `id` (string, required): The ID of the product to get.
 
 ### `seed`
-- **Description:** Seed the inventory database with a set of default products.
+- **Description:** Seed the inventory database with products.
 
 ### `reset`
 - **Description:** Clears all products from the inventory database.
 
 ### `check_db`
-- **Description:** Checks if the Firestore client is correctly initialized.
+- **Description:** Checks if the inventory database is running.
 
 ### `get_root`
-- **Description:** Get a welcome message from the Cymbal Superstore Inventory API.
+- **Description:** Get a greeting from the Cymbal Superstore Inventory API.
 
 ## Development
 
-- **Build:** `make build`
+- **Build:** `make build` (Debug build)
+- **Release:** `make release` (Release build)
 - **Run:** `make run` (Requires `GOOGLE_APPLICATION_CREDENTIALS`)
-- **Clean:** `make clean`
 - **Test:** `make test`
+- **Format:** `make format` (Requires `swift-format`)
+- **Clean:** `make clean`
 
 ## Project Structure
 
