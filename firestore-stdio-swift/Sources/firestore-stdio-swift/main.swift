@@ -31,13 +31,14 @@ let httpClient = HTTPClient(eventLoopGroupProvider: .singleton)
 func initializeFirestore(logger: Logger) async -> FirestoreClient? {
   // Check for GOOGLE_APPLICATION_CREDENTIALS or default location
   var credentialsPath = ProcessInfo.processInfo.environment["GOOGLE_APPLICATION_CREDENTIALS"]
-  
+
   if credentialsPath == nil {
     let defaultPath = FileManager.default.homeDirectoryForCurrentUser
       .appendingPathComponent(".config/gcloud/application_default_credentials.json").path
     if FileManager.default.fileExists(atPath: defaultPath) {
       credentialsPath = defaultPath
-      logger.info("GOOGLE_APPLICATION_CREDENTIALS not set. Using default credentials at \(defaultPath)")
+      logger.info(
+        "GOOGLE_APPLICATION_CREDENTIALS not set. Using default credentials at \(defaultPath)")
     }
   }
 
