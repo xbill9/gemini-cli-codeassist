@@ -10,8 +10,11 @@ LoggingSystem.bootstrap { label in
   JSONLogHandler(label: label)
 }
 
-var logger = Logger(label: "firestore-stdio-server")
-logger.logLevel = .info
+let logger = {
+  var logger = Logger(label: "firestore-stdio-server")
+  logger.logLevel = .info
+  return logger
+}()
 
 // Create the MCP server
 let server = Server(
@@ -24,24 +27,53 @@ let server = Server(
 
 // Setup Firestore
 let httpClient = HTTPClient(eventLoopGroupProvider: .singleton)
-var firestoreClient: FirestoreClient? = nil
 
-if let credentialsPath = ProcessInfo.processInfo.environment["GOOGLE_APPLICATION_CREDENTIALS"] {
-  do {
-    let fileUrl = URL(fileURLWithPath: credentialsPath)
-    let data = try Data(contentsOf: fileUrl)
-    let serviceAccount = try JSONDecoder().decode(ServiceAccount.self, from: data)
-    let authProvider = GoogleTokenProvider(
-      serviceAccount: serviceAccount, httpClient: httpClient, logger: logger)
-    firestoreClient = FirestoreClient(auth: authProvider, httpClient: httpClient, logger: logger)
-    logger.info("Firestore client initialized with credentials at \(credentialsPath)")
-  } catch {
-    logger.error("Failed to initialize Firestore credentials: \(error)")
+func initializeFirestore(logger: Logger) async -> FirestoreClient? {
+  // Check for GOOGLE_APPLICATION_CREDENTIALS or default location
+  var credentialsPath = ProcessInfo.processInfo.environment["GOOGLE_APPLICATION_CREDENTIALS"]
+  
+  if credentialsPath == nil {
+    let defaultPath = FileManager.default.homeDirectoryForCurrentUser
+      .appendingPathComponent(".config/gcloud/application_default_credentials.json").path
+    if FileManager.default.fileExists(atPath: defaultPath) {
+      credentialsPath = defaultPath
+      logger.info("GOOGLE_APPLICATION_CREDENTIALS not set. Using default credentials at \(defaultPath)")
+    }
   }
-} else {
-  logger.warning("GOOGLE_APPLICATION_CREDENTIALS not set. Firestore features will be disabled.")
+
+  if let credentialsPath {
+    do {
+      let fileUrl = URL(fileURLWithPath: credentialsPath)
+      let data = try Data(contentsOf: fileUrl)
+      let serviceAccount = try JSONDecoder().decode(ServiceAccount.self, from: data)
+      let authProvider = ServiceAccountTokenProvider(
+        serviceAccount: serviceAccount, httpClient: httpClient, logger: logger)
+      let client = FirestoreClient(auth: authProvider, httpClient: httpClient, logger: logger)
+      logger.info("Firestore client initialized with credentials at \(credentialsPath)")
+      return client
+    } catch {
+      logger.error(
+        "Failed to initialize Firestore credentials: \(error). Falling back to Metadata Server."
+      )
+    }
+  }
+
+  // Try Metadata Server (Cloud Run/GCE)
+  let metadataProvider = MetadataServerTokenProvider(httpClient: httpClient, logger: logger)
+  do {
+    // Test connection to metadata server
+    _ = try await metadataProvider.getProjectId()
+    logger.info("Firestore client initialized with Google Metadata Server")
+    return FirestoreClient(auth: metadataProvider, httpClient: httpClient, logger: logger)
+  } catch {
+    logger.warning(
+      "GOOGLE_APPLICATION_CREDENTIALS not set and Metadata Server not available. Firestore features will be disabled."
+    )
+    return nil
+  }
 }
 
+let firestoreClient = await initializeFirestore(logger: logger)
 let handlers = Handlers(logger: logger, firestore: firestoreClient)
 
 // Register ListTools handler

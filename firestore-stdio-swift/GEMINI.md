@@ -4,7 +4,7 @@ This document provides context for the Gemini Code Assistant to understand the p
 
 ## Project Overview
 
-This is a **Swift-based Model Context Protocol (MCP) server** named `inventory-server`. it integrates with Google Cloud Firestore to manage a product inventory database over standard input/output (stdio).
+This is a **Swift-based Model Context Protocol (MCP) server** named `inventory-server` (implemented in the `firestore-stdio-swift` package). It integrates with Google Cloud Firestore to manage a product inventory database over standard input/output (stdio).
 
 ## Key Technologies
 
@@ -54,10 +54,15 @@ This is a **Swift-based Model Context Protocol (MCP) server** named `inventory-s
 
 ## Development Workflows
 
+### Environment Configuration
+The server requires the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to be set to the path of a Google Service Account JSON key file with `Cloud Datastore User` permissions. Without this, tools interacting with Firestore will fail.
+
 ### Makefile Commands
-*   `make build`: Compiles the project using `swift build`.
+*   `make build`: Compiles the project using `swift build` (Debug mode).
+*   `make release`: Compiles the project using `swift build -c release`.
 *   `make run`: Executes the server using `swift run`. Requires `GOOGLE_APPLICATION_CREDENTIALS`.
 *   `make test`: Runs unit tests.
+*   `make format`: Formats the source code (requires `swift-format`).
 *   `make clean`: Removes the `.build` directory.
 
 ### Logging

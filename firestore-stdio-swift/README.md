@@ -4,7 +4,14 @@ A Model Context Protocol (MCP) server implemented in Swift that integrates with 
 
 ## Overview
 
-This project provides an MCP server named `inventory-server` (exposed via the `firestore-stdio-swift` package) that interacts with a Firestore database using the REST API. It is built using Swift 6, leveraging structured concurrency and the official MCP Swift SDK.
+This project provides an MCP server named `inventory-server` (implemented in the `firestore-stdio-swift` package) that interacts with a Firestore database using the REST API. Built with **Swift 6**, it leverages structured concurrency and the official MCP Swift SDK.
+
+**Implementation Details:**
+- **MCP SDK:** Uses the official `modelcontextprotocol/swift-sdk`.
+- **Concurrency:** Fully utilizes Swift 6 `async/await` and `actor` models.
+- **Networking:** Employs `swift-server/async-http-client` for high-performance asynchronous HTTP requests.
+- **Security:** Integrates `vapor/jwt-kit` for Google Service Account JWT authentication.
+- **Lifecycle:** Uses `swift-server/swift-service-lifecycle` for robust process management and graceful shutdown.
 
 **Key Features:**
 *   **Firestore Integration:** Perform CRUD operations on a `inventory` collection.
@@ -106,3 +113,4 @@ To use this server with an MCP client (like Claude Desktop), add the following t
 - `Sources/firestore-stdio-swift/GoogleAuth.swift`: Google Service Account authentication logic.
 - `Sources/firestore-stdio-swift/Models.swift`: Data models for Products and Firestore documents.
 - `Sources/firestore-stdio-swift/JSONLogHandler.swift`: Custom logger for JSON output to `stderr`.
+- `Sources/firestore-stdio-swift/MCPService.swift`: Bridges the MCP Server with the Swift Service Lifecycle.

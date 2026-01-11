@@ -13,21 +13,30 @@ enum FirestoreError: Error {
 }
 
 actor FirestoreClient {
-  private let auth: GoogleTokenProvider
+  private let auth: TokenProvider?
   private let httpClient: HTTPClient
   private let logger: Logger
 
-  private var baseUrl: String {
-    "https://firestore.googleapis.com/v1/projects/\(auth.projectId)/databases/(default)/documents"
+  private func getBaseUrl() async throws -> String {
+    guard let auth = auth else {
+      throw FirestoreError.apiError(
+        status: .internalServerError, message: "Firestore not initialized (missing authentication)")
+    }
+    let projectId = try await auth.getProjectId()
+    return "https://firestore.googleapis.com/v1/projects/\(projectId)/databases/(default)/documents"
   }
 
-  init(auth: GoogleTokenProvider, httpClient: HTTPClient, logger: Logger) {
+  init(auth: TokenProvider?, httpClient: HTTPClient, logger: Logger) {
     self.auth = auth
     self.httpClient = httpClient
     self.logger = logger
   }
 
   private func getHeaders() async throws -> HTTPHeaders {
+    guard let auth = auth else {
+      throw FirestoreError.apiError(
+        status: .internalServerError, message: "Firestore not initialized (missing authentication)")
+    }
     let token = try await auth.getAccessToken()
     var headers = HTTPHeaders()
     headers.add(name: "Authorization", value: "Bearer \(token)")
@@ -38,6 +47,7 @@ actor FirestoreClient {
   // MARK: - CRUD
 
   func listProducts() async throws -> [Product] {
+    let baseUrl = try await getBaseUrl()
     let url = "\(baseUrl)/inventory"
     var request = HTTPClientRequest(url: url)
     request.method = .GET
@@ -61,6 +71,7 @@ actor FirestoreClient {
   }
 
   func getProduct(id: String) async throws -> Product? {
+    let baseUrl = try await getBaseUrl()
     let url = "\(baseUrl)/inventory/\(id)"
     var request = HTTPClientRequest(url: url)
     request.method = .GET
@@ -83,6 +94,7 @@ actor FirestoreClient {
   }
 
   func addProduct(_ product: Product) async throws {
+    let baseUrl = try await getBaseUrl()
     let url = "\(baseUrl)/inventory"
     var request = HTTPClientRequest(url: url)
     request.method = .POST
@@ -101,6 +113,7 @@ actor FirestoreClient {
   }
 
   func updateProduct(id: String, product: Product) async throws {
+    let baseUrl = try await getBaseUrl()
     let url = "\(baseUrl)/inventory/\(id)"
     var request = HTTPClientRequest(url: url)
     request.method = .PATCH
@@ -119,6 +132,7 @@ actor FirestoreClient {
   }
 
   func deleteProduct(id: String) async throws {
+    let baseUrl = try await getBaseUrl()
     let url = "\(baseUrl)/inventory/\(id)"
     var request = HTTPClientRequest(url: url)
     request.method = .DELETE
@@ -135,6 +149,7 @@ actor FirestoreClient {
   // MARK: - Query
 
   func findProducts(name: String) async throws -> [Product] {
+    let baseUrl = try await getBaseUrl()
     let url = "\(baseUrl):runQuery"
     var request = HTTPClientRequest(url: url)
     request.method = .POST
@@ -180,16 +195,16 @@ actor FirestoreClient {
   func batchDelete(ids: [String]) async throws {
     if ids.isEmpty { return }
 
+    guard let auth = auth else {
+      throw FirestoreError.apiError(
+        status: .internalServerError, message: "Firestore not initialized (missing authentication)")
+    }
+    let projectId = try await auth.getProjectId()
     let url =
-      "https://firestore.googleapis.com/v1/projects/\(auth.projectId)/databases/(default)/documents:commit"
+      "https://firestore.googleapis.com/v1/projects/\(projectId)/databases/(default)/documents:commit"
     var request = HTTPClientRequest(url: url)
     request.method = .POST
     request.headers = try await getHeaders()
-
-    // We capture projectId in a local variable to use in the map closure safely if needed,
-    // but since auth.projectId is nonisolated now, we can access it.
-    // However, map closure is synchronous and non-isolated.
-    let projectId = auth.projectId
 
     let writes = ids.map { id in
       return [
