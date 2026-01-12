@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "hello-stdio-perl": {
+      "command": "perl",
+      "args": [
+        "-I$HOME/gemini-cli-codeassist/mcp-stdio-perl/local/lib/perl5",
+        "$HOME/gemini-cli-codeassist/mcp-stdio-perl/server.pl"
+      ]
+    }
+  }
+}
