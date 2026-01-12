@@ -81,7 +81,11 @@ if ($firestore) {
         },
         code => sub ( $tool, $args ) {
             $log->debug("Executed list_products");
-            return $firestore->list_products;
+            my $products = $firestore->list_products;
+            $log->info("Returning " . scalar(@$products) . " products");
+            my $result = $tool->structured_result({ products => $products });
+            $log->info("Result type: " . ref($result));
+            return $result;
         }
     );
 
@@ -97,7 +101,7 @@ if ($firestore) {
         },
         code => sub ( $tool, $args ) {
             $log->debug( "Executed get_product: " . $args->{id} );
-            return $firestore->get_product( $args->{id} );
+            return $tool->structured_result( $firestore->get_product( $args->{id} ) );
         }
     );
 
@@ -191,7 +195,7 @@ if ($firestore) {
         },
         code => sub ( $tool, $args ) {
             $log->debug( "Executed find_products: " . $args->{name} );
-            return $firestore->find_products( $args->{name} );
+            return $tool->structured_result( { products => $firestore->find_products( $args->{name} ) } );
         }
     );
 
