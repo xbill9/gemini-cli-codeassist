@@ -37,3 +37,9 @@ format:
 clean:
 	@echo "Cleaning up..."
 	@rm -rf local
+
+deploy:
+	@echo "Submitting build to Google Cloud Build..."
+	@gcloud builds submit . --config cloudbuild.yaml
+
+
