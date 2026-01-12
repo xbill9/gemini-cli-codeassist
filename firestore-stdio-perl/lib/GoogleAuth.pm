@@ -4,7 +4,7 @@ use Mojo::UserAgent;
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File;
 use MIME::Base64 qw(encode_base64url);
-use Crypt::PK::RSA;   # For signing if we do it manually. Wait, do we have this?
+# use Crypt::PK::RSA;   # For signing if we do it manually. Wait, do we have this?
 
 # Check dependencies. If we don't have Crypt::PK::RSA or similar, we might be in trouble for manual signing.
 # The swift code uses JWTKit.
