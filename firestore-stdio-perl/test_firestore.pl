@@ -31,11 +31,11 @@ my $auth = GoogleAuth->new;
 eval {
     my $project_id = $auth->get_project_id;
     $log->info("Project ID: $project_id");
-    
-    my $firestore = FirestoreClient->new(auth => $auth, log => $log);
-    my $products = $firestore->list_products;
-    
-    $log->info("Products found: " . scalar(@$products));
+
+    my $firestore = FirestoreClient->new( auth => $auth, log => $log );
+    my $products  = $firestore->list_products;
+
+    $log->info( "Products found: " . scalar(@$products) );
     foreach my $p (@$products) {
         $log->info(" - $p->{name} ($p->{id})");
     }

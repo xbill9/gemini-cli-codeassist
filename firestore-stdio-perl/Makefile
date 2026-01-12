@@ -26,12 +26,12 @@ test:
 # Target to lint the code
 lint:
 	@echo "Linting the code..."
-	@PERL5LIB=local/lib/perl5 perl local/bin/perlcritic server.pl
+	@PERL5LIB=local/lib/perl5 perl local/bin/perlcritic server.pl lib/*.pm test_firestore.pl
 
 # Target to format the code
 format:
 	@echo "Formatting the code..."
-	@PERL5LIB=local/lib/perl5 perl local/bin/perltidy -b -bext='/' server.pl
+	@PERL5LIB=local/lib/perl5 perl local/bin/perltidy -b -bext='/' server.pl lib/*.pm test_firestore.pl
 
 .PHONY: clean
 clean:

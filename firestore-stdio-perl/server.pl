@@ -43,8 +43,8 @@ eval {
     # Check if we can get project ID (this verifies auth to some extent)
     my $project_id = $auth->get_project_id;
     $log->info("Initializing Firestore for project: $project_id");
-    
-    $firestore = FirestoreClient->new(auth => $auth, log => $log);
+
+    $firestore = FirestoreClient->new( auth => $auth, log => $log );
     $log->info("Firestore initialized successfully");
 };
 if ($@) {
@@ -73,59 +73,60 @@ $server->tool(
 
 if ($firestore) {
     $server->tool(
-        name        => 'list_products',
-        description => 'List all products in the inventory',
+        name         => 'list_products',
+        description  => 'List all products in the inventory',
         input_schema => {
-            type => 'object',
+            type       => 'object',
             properties => {},
         },
-        code => sub ($tool, $args) {
+        code => sub ( $tool, $args ) {
             $log->debug("Executed list_products");
             return $firestore->list_products;
         }
     );
 
     $server->tool(
-        name        => 'get_product',
-        description => 'Get a product by ID',
+        name         => 'get_product',
+        description  => 'Get a product by ID',
         input_schema => {
-            type => 'object',
+            type       => 'object',
             properties => {
                 id => { type => 'string' }
             },
             required => ['id']
         },
-        code => sub ($tool, $args) {
-            $log->debug("Executed get_product: " . $args->{id});
-            return $firestore->get_product($args->{id});
+        code => sub ( $tool, $args ) {
+            $log->debug( "Executed get_product: " . $args->{id} );
+            return $firestore->get_product( $args->{id} );
         }
     );
 
     $server->tool(
-        name        => 'add_product',
-        description => 'Add a new product',
+        name         => 'add_product',
+        description  => 'Add a new product',
         input_schema => {
-            type => 'object',
+            type       => 'object',
             properties => {
                 name     => { type => 'string' },
                 price    => { type => 'number' },
                 quantity => { type => 'integer' },
                 imgfile  => { type => 'string' },
             },
-            required => ['name', 'price', 'quantity', 'imgfile']
+            required => [ 'name', 'price', 'quantity', 'imgfile' ]
         },
-        code => sub ($tool, $args) {
+        code => sub ( $tool, $args ) {
             $log->debug("Executed add_product");
             my $now = Mojo::Date->new->to_datetime;
-            # Ensure format compatible with Firestore expectations if needed, but Mojo::Date is RFC3339 compatible-ish
-            # Models.swift uses ISO8601 with fractional seconds. Mojo::Date uses RFC 7231 by default but to_datetime is ISO 8601.
-            
+
+# Ensure format compatible with Firestore expectations if needed, but Mojo::Date is RFC3339 compatible-ish
+# Models.swift uses ISO8601 with fractional seconds. Mojo::Date uses RFC 7231 by default but to_datetime is ISO 8601.
+
             my $product = {
-                name => $args->{name},
-                price => $args->{price},
-                quantity => $args->{quantity},
-                imgfile => $args->{imgfile},
-                timestamp => $now . "Z", # Simple approximation
+                name            => $args->{name},
+                price           => $args->{price},
+                quantity        => $args->{quantity},
+                imgfile         => $args->{imgfile},
+                timestamp       => $now . "Z",          # Simple approximation
                 actualdateadded => $now . "Z",
             };
             return $firestore->add_product($product);
@@ -133,10 +134,10 @@ if ($firestore) {
     );
 
     $server->tool(
-        name        => 'update_product',
-        description => 'Update an existing product',
+        name         => 'update_product',
+        description  => 'Update an existing product',
         input_schema => {
-            type => 'object',
+            type       => 'object',
             properties => {
                 id       => { type => 'string' },
                 name     => { type => 'string' },
@@ -144,68 +145,69 @@ if ($firestore) {
                 quantity => { type => 'integer' },
                 imgfile  => { type => 'string' },
             },
-            required => ['id', 'name', 'price', 'quantity', 'imgfile']
+            required => [ 'id', 'name', 'price', 'quantity', 'imgfile' ]
         },
-        code => sub ($tool, $args) {
-            $log->debug("Executed update_product: " . $args->{id});
-            my $now = Mojo::Date->new->to_datetime;
+        code => sub ( $tool, $args ) {
+            $log->debug( "Executed update_product: " . $args->{id} );
+            my $now     = Mojo::Date->new->to_datetime;
             my $product = {
-                name => $args->{name},
-                price => $args->{price},
-                quantity => $args->{quantity},
-                imgfile => $args->{imgfile},
-                timestamp => $now . "Z",
-                actualdateadded => $now . "Z", # Preserving original creation time might be better but simplification for now
+                name            => $args->{name},
+                price           => $args->{price},
+                quantity        => $args->{quantity},
+                imgfile         => $args->{imgfile},
+                timestamp       => $now . "Z",
+                actualdateadded => $now . "Z"
+                , # Preserving original creation time might be better but simplification for now
             };
-            return $firestore->update_product($args->{id}, $product);
+            return $firestore->update_product( $args->{id}, $product );
         }
     );
 
     $server->tool(
-        name        => 'delete_product',
-        description => 'Delete a product by ID',
+        name         => 'delete_product',
+        description  => 'Delete a product by ID',
         input_schema => {
-            type => 'object',
+            type       => 'object',
             properties => {
                 id => { type => 'string' }
             },
             required => ['id']
         },
-        code => sub ($tool, $args) {
-            $log->debug("Executed delete_product: " . $args->{id});
-            return $firestore->delete_product($args->{id});
+        code => sub ( $tool, $args ) {
+            $log->debug( "Executed delete_product: " . $args->{id} );
+            return $firestore->delete_product( $args->{id} );
         }
     );
-    
+
     $server->tool(
-        name        => 'find_products',
-        description => 'Find products by name',
+        name         => 'find_products',
+        description  => 'Find products by name',
         input_schema => {
-            type => 'object',
+            type       => 'object',
             properties => {
                 name => { type => 'string' }
             },
             required => ['name']
         },
-        code => sub ($tool, $args) {
-            $log->debug("Executed find_products: " . $args->{name});
-            return $firestore->find_products($args->{name});
+        code => sub ( $tool, $args ) {
+            $log->debug( "Executed find_products: " . $args->{name} );
+            return $firestore->find_products( $args->{name} );
         }
     );
 
     $server->tool(
-        name        => 'batch_delete',
-        description => 'Delete multiple products by ID',
+        name         => 'batch_delete',
+        description  => 'Delete multiple products by ID',
         input_schema => {
-            type => 'object',
+            type       => 'object',
             properties => {
                 ids => { type => 'array', items => { type => 'string' } }
             },
             required => ['ids']
         },
-        code => sub ($tool, $args) {
+        code => sub ( $tool, $args ) {
             $log->debug("Executed batch_delete");
-            return $firestore->batch_delete($args->{ids});
+            return $firestore->batch_delete( $args->{ids} );
         }
     );
 }
