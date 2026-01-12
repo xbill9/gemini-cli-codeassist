@@ -1,0 +1,8 @@
+ {
+    "mcpServers": {
+    "firebase-https-perl": {
+      "httpUrl": "http://127.0.0.1:8080/mcp"
+    }
+  }
+}
+
