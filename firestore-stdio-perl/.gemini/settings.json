@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "firestore-stdio-perl": {
+      "command": "/usr/bin/perl",
+      "args": [
+        "-I/home/xbill/gemini-cli-codeassist/firestore-stdio-perl/local/lib/perl5",
+        "-I/home/xbill/gemini-cli-codeassist/firestore-stdio-perl/lib",
+        "/home/xbill/gemini-cli-codeassist/firestore-stdio-perl/server.pl"
+      ]
+    }
+  }
+}
