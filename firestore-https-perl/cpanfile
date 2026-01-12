@@ -1,0 +1,13 @@
+requires 'Mojolicious::Lite';
+requires 'MCP::Server';
+requires 'JSON::MaybeXS';
+requires 'WWW::Google::Cloud::Auth::ServiceAccount';
+requires 'URI::Encode';
+requires 'LWP::Protocol::https';
+
+
+on 'develop' => sub {
+    requires 'Perl', '5.010';
+    requires 'Perl::Critic';
+    requires 'Perl::Tidy';
+};
