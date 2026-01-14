@@ -25,7 +25,10 @@ server: main.o mcpc/src/libmcpc.a
 main.o: main.c
 	$(CC) $(CFLAGS) -c main.c
 
-mcpc/src/libmcpc.a:
+mcpc:
+	git clone https://github.com/micl2e2/mcpc
+
+mcpc/src/libmcpc.a: | mcpc
 	$(MAKE) -C mcpc $(MCPC_FLAGS)
 
 lint:
@@ -41,6 +44,6 @@ format:
 
 clean:
 	rm -f server main.o
-	$(MAKE) -C mcpc clean
+	[ -d mcpc ] && $(MAKE) -C mcpc clean || true
 
 .PHONY: all clean lint test check format debug release
