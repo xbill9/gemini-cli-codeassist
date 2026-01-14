@@ -13,6 +13,7 @@ server
 *.d
 compile_commands.json
 .cache/
+cpp-mcp/build/
 
 # Editor and System files
 .vscode/

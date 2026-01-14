@@ -13,11 +13,10 @@ WORKDIR /app
 # Copy the entire project
 COPY . .
 
-# Build the application (this will also build cpp-mcp as per Makefile)
+# Build the application
 RUN make release
 
 # Deploy stage
-# Use distroless cc image for C++ applications
 FROM gcr.io/distroless/cc-debian12:nonroot
 
 WORKDIR /app
@@ -28,5 +27,8 @@ COPY --from=build /app/server /app/server
 # Expose the port (informative)
 EXPOSE 8080
 
-# Run the application as non-root user
+# Environment variables
+ENV PORT=8080
+
+# Run the application
 ENTRYPOINT ["/app/server"]

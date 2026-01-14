@@ -1,0 +1,8 @@
+.gcloudignore
+.git
+.gitignore
+cpp-mcp/build/
+*.o
+server
+server.log
+.gemini/

@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+    "hello-cloudrun-cplus": {
+	       "url": "https://mcp-https-cplus-$PROJECT_NUMBER.us-central1.run.app/sse"
+    }
+  }
+}

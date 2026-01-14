@@ -38,13 +38,22 @@ void log_json(std::string_view level, std::string_view msg,
 
 int main() {
   try {
-    // Ensure file directory exists
-    std::filesystem::create_directories("./files");
+    // Read port from environment variable, default to 8080
+    int port = 8080;
+    const char *port_env = std::getenv("PORT");
+    if (port_env) {
+      try {
+        port = std::stoi(port_env);
+      } catch (...) {
+        log_json("WARNING", "Invalid PORT environment variable, using default",
+                 {{"port", port}});
+      }
+    }
 
     // Create and configure server
     mcp::server::configuration srv_conf;
     srv_conf.host = "0.0.0.0";
-    srv_conf.port = 8080;
+    srv_conf.port = port;
 
     mcp::server server(srv_conf);
     server.set_server_info("mcp-https-cplus", "1.0.0");
