@@ -77,32 +77,45 @@ def test_server():
         sock.connect(('127.0.0.1', 8080))
 
         def send(msg):
-            sock.sendall(json.dumps(msg).encode('utf-8'))
-            # Note: The server implementation might expect separate packets or delimiters
-            # Based on mcpc server.c:
-            # It reads byte by byte and looks for braces {} to count depth.
-            # So just sending JSON is fine.
+            body = json.dumps(msg)
+            req = (
+                f"POST / HTTP/1.1\r\n"
+                f"Host: 127.0.0.1:8080\r\n"
+                f"Content-Type: application/json\r\n"
+                f"Content-Length: {len(body)}\r\n"
+                f"\r\n"
+                f"{body}"
+            )
+            sock.sendall(req.encode('utf-8'))
 
         def receive():
-            # Minimalistic JSON receiver
-            # We assume the server sends one JSON object per response.
-            # We read until we can parse a valid JSON object.
-            # This is naive but sufficient for testing given we know the protocol.
-            buffer = ""
+            # Minimalistic HTTP receiver
+            buffer = b""
             while True:
-                chunk = sock.recv(4096).decode('utf-8')
+                chunk = sock.recv(4096)
                 if not chunk:
                     return None
                 buffer += chunk
-                try:
-                    # Try to parse the buffer
-                    obj = json.loads(buffer)
-                    return obj
-                except json.JSONDecodeError:
-                    # If multiple objects are in the buffer (e.g. notifications), this naive
-                    # approach might fail or need refinement. 
-                    # But mcpc sends one response at a time usually.
-                    continue
+                
+                # Find end of headers
+                idx = buffer.find(b"\r\n\r\n")
+                if idx != -1:
+                    # Parse Content-Length
+                    headers = buffer[:idx].decode('utf-8')
+                    cl = 0
+                    for line in headers.split('\r\n'):
+                        if line.lower().startswith("content-length:"):
+                            cl = int(line.split(':')[1].strip())
+                    
+                    body_start = idx + 4
+                    if len(buffer) - body_start >= cl:
+                        # We have the full body
+                        body = buffer[body_start:body_start+cl]
+                        try:
+                            return json.loads(body.decode('utf-8'))
+                        except json.JSONDecodeError:
+                            return None
+            return None
 
         # 1. Initialize
         send(init_req)

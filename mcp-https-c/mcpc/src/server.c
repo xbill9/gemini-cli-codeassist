@@ -681,81 +681,94 @@ _wait_conn (void *args)
 
   tulog_d ("New connection from client IP address %s and port %d", inet_ntoa (caddr.sin_addr), ntohs (caddr.sin_port));
 
-  char ch;
-  int n_brace = 0;
-  bool start_read = false;
-  bool enter_str = false;
-  size_t rbuf_cap = BUFCAP_INIT_JSONREQ;
-  char *rbuf = mcpc_alloc (rbuf_cap);
-  char *rbuf_p = rbuf;
-  i32_t last_nrecv = 0;
-  char last_read = 0;
-  char lastlast_read = 0;
+  size_t buf_cap = 4096;
+  char *buf = mcpc_alloc (buf_cap);
+  size_t buf_len = 0;
 
   while (true)
     {
-      last_nrecv = recv (csock, &ch, 1, 0);
-      if (false)
-	;
-      else if (last_nrecv == 0)
-	{
-	  break;
-	}
-      else if (last_nrecv < 0)
-	{
-	  tulog_d ("recv err %s", strerror (errno));
-	  break;
-	}
+      ssize_t nrecv = recv (csock, buf + buf_len, buf_cap - buf_len, 0);
+      if (nrecv <= 0)
+        break;
+      buf_len += nrecv;
 
-      if (!enter_str && ch == CH_LBRC)
-	{
-	  n_brace += 1;
-	  if (!start_read)
-	    start_read = true;
-	}
+      // Find end of headers
+      char *headers_end = nullptr;
+      for (size_t i = 0; i < buf_len; ++i)
+        {
+          if (i + 3 < buf_len && buf[i] == '\r' && buf[i+1] == '\n' && buf[i+2] == '\r' && buf[i+3] == '\n')
+            {
+              headers_end = buf + i;
+              break;
+            }
+        }
 
-      if (!start_read)
-	{
-	  continue;
-	}
+      if (!headers_end)
+        {
+          if (buf_len == buf_cap)
+            {
+              buf_cap *= 2;
+              buf = mcpc_realloc (buf, buf_cap);
+            }
+          continue;
+        }
 
-      if (start_read)
-	{
-	  *rbuf_p = ch;
-	  rbuf_p += 1;
-	  lastlast_read = last_read;
-	  last_read = ch;
-	  if (rbuf_p - rbuf >= (ptrdiff_t) rbuf_cap)
-	    {
-	      ptrdiff_t offset = rbuf_p - rbuf;
-	      rbuf_cap += rbuf_cap;
-	      rbuf = mcpc_realloc (rbuf, rbuf_cap);
-	      rbuf_p = rbuf + offset;
-	    }
-	}
+      // Parse Content-Length
+      // Temporarily null-terminate to use string functions safely on headers
+      *headers_end = '\0';
+      
+      size_t content_len = 0;
+      // Simple case-insensitive check for Content-Length
+      char *cl_ptr = strstr (buf, "Content-Length:");
+      if (!cl_ptr) cl_ptr = strstr (buf, "content-length:");
+      
+      if (cl_ptr)
+        {
+          // Move past "Content-Length:"
+          cl_ptr += 15; 
+          // Parse number
+          while (*cl_ptr == ' ' || *cl_ptr == '\t') cl_ptr++;
+          content_len = (size_t) strtoul (cl_ptr, NULL, 10);
+        }
 
-      if (!enter_str && last_read == CH_RBRC)
-	{
-	  n_brace -= 1;
-	  if (n_brace == 0)
-	    {
-	      ptrdiff_t nread = rbuf_p - rbuf;
-	      rbuf[nread - 1] = CH_RBRC;
-	      rbuf[nread] = 0x00;
-	      handle_inone (sv, rbuf, (size_t) nread, csock);
-	      rbuf_p = rbuf;
-	      start_read = false;
-	      enter_str = false;
-	      tulog_d ("one msg handled");
-	    }
-	}
-      if (last_read == CH_QUO && lastlast_read != CH_BSLASH)
-	{
-	  enter_str = !enter_str;
-	}
+      // Restore
+      *headers_end = '\r';
+
+      char *body_start = headers_end + 4;
+      size_t header_len = body_start - buf;
+
+      // Ensure we have the full body
+      while (buf_len - header_len < content_len)
+        {
+           if (buf_len == buf_cap)
+            {
+              buf_cap *= 2;
+              buf = mcpc_realloc (buf, buf_cap);
+              body_start = buf + header_len; // Update pointer
+            }
+           nrecv = recv (csock, buf + buf_len, buf_cap - buf_len, 0);
+           if (nrecv <= 0) goto cleanup;
+           buf_len += nrecv;
+        }
+
+      // Handle the request
+      handle_inone (sv, body_start, content_len, csock);
+
+      // Prepare for next request (Keep-Alive)
+      size_t total_msg_len = header_len + content_len;
+      if (buf_len > total_msg_len)
+        {
+          memmove (buf, buf + total_msg_len, buf_len - total_msg_len);
+          buf_len -= total_msg_len;
+        }
+      else
+        {
+          buf_len = 0;
+        }
     }
 
-  free (rbuf);
+cleanup:
+  free (buf);
 
 #ifdef is_unix
   close (csock);
@@ -1742,6 +1755,16 @@ output_res:
 	}
       else if (sv->typ == MCPC_SV_TCP)
 	{
+	  char headers[512];
+	  int headers_len = snprintf(headers, sizeof(headers),
+				     "HTTP/1.1 200 OK\r\n"
+				     "Content-Type: application/json\r\n"
+				     "Content-Length: %zu\r\n"
+				     "Access-Control-Allow-Origin: *\r\n"
+				     "\r\n",
+				     (size_t)sv->rpcres.len);
+	  mcpc_assert (headers_len > 0 && (size_t)headers_len < sizeof(headers), MCPC_EC_BUG);
+	  mcpc_assert (0 < send (csock, headers, headers_len, 0), MCPC_EC_BUG);
 	  mcpc_assert (0 < send (csock, sv->rpcres.ptr, sv->rpcres.len, 0), MCPC_EC_BUG);
 	  sv->rpcres.len = 0;
 	}

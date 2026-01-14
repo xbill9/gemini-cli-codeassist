@@ -11,7 +11,7 @@ This is a **C-based Model Context Protocol (MCP) server** named `mcp-https-c`, i
 *   **Language:** C (C17 Standard)
 *   **Library:** `mcpc` (embedded in `mcpc/` directory)
 *   **Build System:** `make`
-*   **Communication:** TCP (Port 8080) for MCP; `stderr` for logging.
+*   **Communication:** HTTP/1.1 over TCP (Port 8080) for MCP; `stderr` for logging.
 *   **Testing:** Python 3 (`test_server.py`)
 
 ## Project Structure
@@ -61,6 +61,6 @@ The `Makefile` supports the following targets:
 ./server
 ```
 
-*   **Input:** JSON-RPC 2.0 messages via TCP (Port 8080).
-*   **Output:** JSON-RPC 2.0 messages via TCP (Port 8080).
+*   **Input:** HTTP POST requests containing JSON-RPC 2.0 messages via TCP (Port 8080).
+*   **Output:** HTTP/1.1 200 OK responses containing JSON-RPC 2.0 messages.
 *   **Logs:** JSON formatted logs via `stderr`.
