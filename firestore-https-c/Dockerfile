@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     git \
     libpthread-stubs0-dev \
+    libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -18,6 +19,12 @@ RUN make release
 
 # Deploy stage
 FROM debian:bookworm-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libcurl4 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
