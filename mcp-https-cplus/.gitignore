@@ -1,0 +1,21 @@
+# Python artifacts
+__pycache__/
+*.pyc
+.venv/
+.env
+.pytest_cache/
+
+# C build artifacts
+*.o
+server
+*.a
+*.so
+*.d
+compile_commands.json
+.cache/
+
+# Editor and System files
+.vscode/
+.idea/
+*~
+.DS_Store

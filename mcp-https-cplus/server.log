@@ -1,0 +1,4 @@
+{"timestamp":"2026-01-14T05:19:39Z","level":"INFO","message":"Starting MCP HTTP server","data":{"host":"0.0.0.0","port":8080}}
+2026-01-14 00:19:39 [32m[INFO][0m Starting MCP server on 0.0.0.0:8080
+2026-01-14 00:19:39 [32m[INFO][0m Starting server in blocking mode
+2026-01-14 00:19:41 [32m[INFO][0m 127.0.0.1:47920 - "GET /sse HTTP/1.1" -1
