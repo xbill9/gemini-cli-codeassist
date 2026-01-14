@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+      "firestore-stdio-c": {
+        "command": "$HOME/gemini-cli-codeassist/firestore-stdio-c/server"
+        }
+      }
+    }
