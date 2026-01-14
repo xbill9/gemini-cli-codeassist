@@ -215,6 +215,7 @@ static int setup_tools(mcpc_server_t *server) {
 int main(void) {
   // Ensure stdout is unbuffered for reliable communication over stdio
   setvbuf(stdout, NULL, _IONBF, 0);
+  LOG_ERROR("Attempting to create server...");
 
   // Initialize Server (TCP on port 8080)
   mcpc_server_t *server = mcpc_server_new_tcp();
@@ -223,17 +224,22 @@ int main(void) {
     return EXIT_FAILURE;
   }
 
+  LOG_ERROR("Setting server name...");
+
   // Set Server Name
   mcpc_server_set_nament(server, "mcp-https-c");
 
+  LOG_ERROR("Enabling Tools...");
   // Enable Tool Capabilities
   mcpc_server_capa_enable_tool(server);
 
+  LOG_ERROR("Setting Up Tools...");
   // Setup Tools
   if (setup_tools(server) != 0) {
     mcpc_server_close(server);
     return EXIT_FAILURE;
   }
+  LOG_ERROR("Server Starting...");
 
   // Start Server Loop
   mcpc_server_start(server);
