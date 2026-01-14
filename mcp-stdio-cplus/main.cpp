@@ -16,7 +16,8 @@
 using json = mcp::json;
 
 // JSON Logging Helper
-void log_json(const std::string &level, const std::string &msg, const json &data = json::object()) {
+void log_json(const std::string &level, const std::string &msg,
+              const json &data = json::object()) {
   auto now = std::chrono::system_clock::now();
   auto now_c = std::chrono::system_clock::to_time_t(now);
   std::tm now_tm{};
@@ -106,7 +107,8 @@ private:
   }
 
   json handle_request(const mcp::request &req) {
-    log_json("INFO", "Received request", {{"method", req.method}, {"id", req.id}});
+    log_json("INFO", "Received request",
+             {{"method", req.method}, {"id", req.id}});
     try {
       if (req.method == "initialize") {
         log_json("INFO", "Initializing server...");
@@ -119,7 +121,8 @@ private:
       }
 
       if (!initialized_) {
-        log_json("WARN", "Request received before initialization", {{"method", req.method}});
+        log_json("WARN", "Request received before initialization",
+                 {{"method", req.method}});
         return mcp::response::create_error(req.id,
                                            mcp::error_code::server_error_start,
                                            "Server not initialized")
@@ -147,7 +150,8 @@ private:
           .to_json();
 
     } catch (const std::exception &e) {
-      log_json("ERROR", "Internal error handling request", {{"error", e.what()}});
+      log_json("ERROR", "Internal error handling request",
+               {{"error", e.what()}});
       return mcp::response::create_error(
                  req.id, mcp::error_code::internal_error, e.what())
           .to_json();
@@ -157,7 +161,8 @@ private:
   json handle_tool_call(const mcp::request &req) {
     if (!req.params.contains("name")) {
       log_json("WARN", "Tool call missing name parameter");
-      return mcp::response::create_error(req.id, mcp::error_code::invalid_params,
+      return mcp::response::create_error(req.id,
+                                         mcp::error_code::invalid_params,
                                          "Missing 'name' parameter")
           .to_json();
     }
@@ -182,11 +187,11 @@ private:
                  req.id, {{"content", content}, {"isError", false}})
           .to_json();
     } catch (const std::exception &e) {
-      log_json("ERROR", "Tool execution failed", {{"name", name}, {"error", e.what()}});
+      log_json("ERROR", "Tool execution failed",
+               {{"name", name}, {"error", e.what()}});
       return mcp::response::create_success(
-                 req.id,
-                 {{"content", {{{"type", "text"}, {"text", e.what()}}}},
-                  {"isError", true}})
+                 req.id, {{"content", {{{"type", "text"}, {"text", e.what()}}}},
+                          {"isError", true}})
           .to_json();
     }
   }
