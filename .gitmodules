@@ -1,0 +1,3 @@
+[submodule "mcp-stdio-cplus/cpp-mcp"]
+	path = mcp-stdio-cplus/cpp-mcp
+	url = https://github.com/hkr04/cpp-mcp
