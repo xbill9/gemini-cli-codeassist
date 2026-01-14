@@ -16,7 +16,7 @@
 using json = mcp::json;
 
 // JSON Logging Helper
-void log_info(const std::string &msg) {
+void log_json(const std::string &level, const std::string &msg, const json &data = json::object()) {
   auto now = std::chrono::system_clock::now();
   auto now_c = std::chrono::system_clock::to_time_t(now);
   std::tm now_tm{};
@@ -26,10 +26,12 @@ void log_info(const std::string &msg) {
   oss << std::put_time(&now_tm, "%Y-%m-%dT%H:%M:%SZ");
 
   json j;
-  j["asctime"] = oss.str();
-  j["name"] = "root";
-  j["levelname"] = "INFO";
+  j["timestamp"] = oss.str();
+  j["level"] = level;
   j["message"] = msg;
+  if (!data.empty()) {
+    j["data"] = data;
+  }
 
   std::cerr << j.dump() << std::endl;
 }
@@ -51,16 +53,19 @@ public:
   }
 
   void start() {
+    log_json("INFO", "Server starting...");
     std::string line;
     while (std::getline(std::cin, line)) {
       if (line.empty())
         continue;
 
       try {
+        log_json("DEBUG", "Received message", {{"content", line}});
         json j = json::parse(line);
 
         // Simple JSON-RPC validation
         if (!j.contains("jsonrpc") || j["jsonrpc"] != "2.0") {
+          log_json("WARN", "Invalid JSON-RPC version", {{"content", j}});
           continue;
         }
 
@@ -76,11 +81,12 @@ public:
           handle_notification(req);
         } else {
           json response = handle_request(req);
+          log_json("DEBUG", "Sending response", {{"content", response}});
           std::cout << response.dump() << std::endl;
         }
 
       } catch (const std::exception &e) {
-        log_info("Error processing line: " + std::string(e.what()));
+        log_json("ERROR", "Error processing line", {{"error", e.what()}});
       }
     }
   }
@@ -92,23 +98,28 @@ private:
   bool initialized_ = false;
 
   void handle_notification(const mcp::request &req) {
+    log_json("INFO", "Received notification", {{"method", req.method}});
     if (req.method == "notifications/initialized") {
       initialized_ = true;
-      log_info("Server initialized");
+      log_json("INFO", "Server initialized");
     }
   }
 
   json handle_request(const mcp::request &req) {
+    log_json("INFO", "Received request", {{"method", req.method}, {"id", req.id}});
     try {
       if (req.method == "initialize") {
+        log_json("INFO", "Initializing server...");
         return handle_initialize(req).to_json();
       }
 
       if (req.method == "ping") {
+        log_json("DEBUG", "Ping received");
         return mcp::response::create_success(req.id, json::object()).to_json();
       }
 
       if (!initialized_) {
+        log_json("WARN", "Request received before initialization", {{"method", req.method}});
         return mcp::response::create_error(req.id,
                                            mcp::error_code::server_error_start,
                                            "Server not initialized")
@@ -116,6 +127,7 @@ private:
       }
 
       if (req.method == "tools/list") {
+        log_json("INFO", "Listing tools");
         json tools_list = json::array();
         for (const auto &[name, entry] : tools_) {
           tools_list.push_back(entry.definition.to_json());
@@ -128,12 +140,14 @@ private:
         return handle_tool_call(req);
       }
 
+      log_json("WARN", "Method not found", {{"method", req.method}});
       return mcp::response::create_error(req.id,
                                          mcp::error_code::method_not_found,
                                          "Method not found: " + req.method)
           .to_json();
 
     } catch (const std::exception &e) {
+      log_json("ERROR", "Internal error handling request", {{"error", e.what()}});
       return mcp::response::create_error(
                  req.id, mcp::error_code::internal_error, e.what())
           .to_json();
@@ -142,6 +156,7 @@ private:
 
   json handle_tool_call(const mcp::request &req) {
     if (!req.params.contains("name")) {
+      log_json("WARN", "Tool call missing name parameter");
       return mcp::response::create_error(req.id, mcp::error_code::invalid_params,
                                          "Missing 'name' parameter")
           .to_json();
@@ -150,6 +165,7 @@ private:
     std::string name = req.params["name"];
     auto it = tools_.find(name);
     if (it == tools_.end()) {
+      log_json("WARN", "Tool not found", {{"name", name}});
       return mcp::response::create_error(req.id,
                                          mcp::error_code::method_not_found,
                                          "Tool not found: " + name)
@@ -157,13 +173,16 @@ private:
     }
 
     const json &args = req.params.value("arguments", json::object());
+    log_json("INFO", "Executing tool", {{"name", name}, {"arguments", args}});
 
     try {
       json content = it->second.handler(args, "stdio-session");
+      log_json("INFO", "Tool execution successful", {{"name", name}});
       return mcp::response::create_success(
                  req.id, {{"content", content}, {"isError", false}})
           .to_json();
     } catch (const std::exception &e) {
+      log_json("ERROR", "Tool execution failed", {{"name", name}, {"error", e.what()}});
       return mcp::response::create_success(
                  req.id,
                  {{"content", {{{"type", "text"}, {"text", e.what()}}}},
@@ -192,7 +211,7 @@ int main() {
           .with_string_param("param", "Greeting parameter")
           .build(),
       [](const json &args, const std::string & /* session_id */) -> json {
-        log_info("Executed greet tool");
+        log_json("INFO", "Executed greet tool");
         std::string param = args.value("param", "");
 
         return json::array({{{"type", "text"}, {"text", param}}});
