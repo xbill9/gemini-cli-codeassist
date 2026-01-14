@@ -4,7 +4,9 @@ This document provides context for the Gemini Code Assistant to understand the p
 
 ## Project Overview
 
-This is a **C-based Model Context Protocol (MCP) server** named `mcp-https-c`, implemented using the `mcpc` library. It exposes a single tool (`greet`) over standard input/output (stdio) and logs structured JSON to stderr.
+This is a **C-based Model Context Protocol (MCP) server** named `hello-https-c`, implemented using the `mcpc` library. It exposes a single tool (`greet`) over HTTP and logs structured JSON to stderr.
+
+Do not use stdio transport for this project
 
 ## Key Technologies
 
@@ -24,10 +26,25 @@ This is a **C-based Model Context Protocol (MCP) server** named `mcp-https-c`, i
 ## Implemented Tools
 
 ### `greet`
-*   **Description:** Get a greeting from a local stdio server.
+*   **Description:** Get a greeting from a local HTTP server.
 *   **Parameters:**
     *   `param` (string): Greeting parameter.
 *   **Implementation:** `greet_cb` function in `main.c`.
+
+### `get_system_info`
+*   **Description:** Get detailed system information (OS, Kernel, Arch).
+*   **Implementation:** `system_info_cb` function in `main.c`.
+
+### `get_server_info`
+*   **Description:** Get information about this MCP server.
+*   **Implementation:** `server_info_cb` function in `main.c`.
+
+### `get_current_time`
+*   **Description:** Get the current UTC time.
+*   **Implementation:** `current_time_cb` function in `main.c`.
+
+### `mcpc-info`
+*   **Description:** Built-in tool that returns information about the `mcpc` library.
 
 ## API Usage (mcpc)
 

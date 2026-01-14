@@ -136,7 +136,7 @@ static void server_info_cb(const mcpc_tool_t *tool, mcpc_ucbr_t *ucbr) {
   (void)tool;
   LOG_INFO("Executed get_server_info tool");
   mcpc_toolcall_result_add_text_printf8(
-      ucbr, "Server Name: mcp-https-c\nLanguage: C\n");
+      ucbr, "Server Name: hello-https-c\nLanguage: C\n");
 }
 
 // Tool: get_current_time
@@ -159,7 +159,7 @@ static void current_time_cb(const mcpc_tool_t *tool, mcpc_ucbr_t *ucbr) {
 static int setup_tools(mcpc_server_t *server) {
   // Define "greet" tool
   mcpc_tool_t *greet_tool =
-      mcpc_tool_new2("greet", "Get a greeting from a local stdio server.");
+      mcpc_tool_new2("greet", "Get a greeting from a local HTTP server.");
   if (!greet_tool) {
     LOG_ERROR("Failed to create tool");
     return -1;
@@ -213,8 +213,6 @@ static int setup_tools(mcpc_server_t *server) {
 }
 
 int main(void) {
-  // Ensure stdout is unbuffered for reliable communication over stdio
-  setvbuf(stdout, NULL, _IONBF, 0);
   LOG_ERROR("Attempting to create server...");
 
   // Initialize Server (TCP on port 8080)
@@ -227,7 +225,7 @@ int main(void) {
   LOG_ERROR("Setting server name...");
 
   // Set Server Name
-  mcpc_server_set_nament(server, "mcp-https-c");
+  mcpc_server_set_nament(server, "hello-https-c");
 
   LOG_ERROR("Enabling Tools...");
   // Enable Tool Capabilities

@@ -1192,7 +1192,7 @@ jsonrpc_return_errorv(struct jsonrpc_request* r,
     /* return; */
   mjson_printf(r->fn,
                r->fn_data,
-               "{\"id\":%.*s,\"error\":{\"code\":%d,\"message\":%Q",
+               "{\"jsonrpc\":\"2.0\",\"id\":%.*s,\"error\":{\"code\":%d,\"message\":%Q",
                r->id_len,
                r->id,
                code,

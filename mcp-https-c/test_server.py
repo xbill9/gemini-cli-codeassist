@@ -58,7 +58,6 @@ def test_server():
     }
 
     process = None
-    sock = None
 
     try:
         # Start server
@@ -72,29 +71,29 @@ def test_server():
         # Give it a moment to bind to port
         time.sleep(1)
 
-        # Connect via TCP
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(('127.0.0.1', 8080))
-
-        def send(msg):
+        def send_and_receive(msg):
+            # Connect via TCP for EACH request
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('127.0.0.1', 8080))
+            
             body = json.dumps(msg)
             req = (
                 f"POST / HTTP/1.1\r\n"
                 f"Host: 127.0.0.1:8080\r\n"
                 f"Content-Type: application/json\r\n"
                 f"Content-Length: {len(body)}\r\n"
+                f"Connection: close\r\n"
                 f"\r\n"
                 f"{body}"
             )
             sock.sendall(req.encode('utf-8'))
 
-        def receive():
             # Minimalistic HTTP receiver
             buffer = b""
             while True:
                 chunk = sock.recv(4096)
                 if not chunk:
-                    return None
+                    break
                 buffer += chunk
                 
                 # Find end of headers
@@ -111,24 +110,28 @@ def test_server():
                     if len(buffer) - body_start >= cl:
                         # We have the full body
                         body = buffer[body_start:body_start+cl]
+                        sock.close()
                         try:
                             return json.loads(body.decode('utf-8'))
                         except json.JSONDecodeError:
                             return None
+            sock.close()
             return None
 
         # 1. Initialize
-        send(init_req)
-        res = receive()
+        res = send_and_receive(init_req)
         if not res or "result" not in res:
             raise Exception(f"Initialize failed: {res}")
         print("✓ initialize")
 
-        send(initialized_notif)
+        send_and_receive(initialized_notif)
+        print("✓ notifications/initialized")
 
         # 2. List Tools
-        send(list_req)
-        res = receive()
+        res = send_and_receive(list_req)
+        if not res or "result" not in res:
+            raise Exception(f"List tools failed: {res}")
+        
         tools = [t['name'] for t in res.get('result', {}).get('tools', [])]
         expected_tools = ['greet', 'get_system_info', 'get_server_info', 'get_current_time', 'mcpc-info']
         for t in expected_tools:
@@ -137,32 +140,36 @@ def test_server():
         print("✓ tools/list")
 
         # 3. Call greet
-        send(call_greet)
-        res = receive()
+        res = send_and_receive(call_greet)
+        if not res or "result" not in res:
+            raise Exception(f"Call greet failed: {res}")
         text = res['result']['content'][0]['text']
         if text != "Gemini":
             raise Exception(f"Greet failed: {text}")
         print("✓ tools/call (greet)")
 
         # 4. Call get_system_info
-        send(call_sys)
-        res = receive()
+        res = send_and_receive(call_sys)
+        if not res or "result" not in res:
+            raise Exception(f"Call system info failed: {res}")
         text = res['result']['content'][0]['text']
         if "System Name:" not in text:
              raise Exception(f"System info failed: {text}")
         print("✓ tools/call (get_system_info)")
 
         # 5. Call get_server_info
-        send(call_srv)
-        res = receive()
+        res = send_and_receive(call_srv)
+        if not res or "result" not in res:
+            raise Exception(f"Call server info failed: {res}")
         text = res['result']['content'][0]['text']
-        if "mcp-https-c" not in text:
+        if "hello-https-c" not in text:
              raise Exception(f"Server info failed: {text}")
         print("✓ tools/call (get_server_info)")
 
         # 6. Call get_current_time
-        send(call_time)
-        res = receive()
+        res = send_and_receive(call_time)
+        if not res or "result" not in res:
+            raise Exception(f"Call current time failed: {res}")
         text = res['result']['content'][0]['text']
         # Simple check for date format or length
         if len(text) < 10:
@@ -170,8 +177,9 @@ def test_server():
         print("✓ tools/call (get_current_time)")
 
         # 7. Call mcpc-info
-        send(call_info)
-        res = receive()
+        res = send_and_receive(call_info)
+        if not res or "result" not in res:
+            raise Exception(f"Call mcpc-info failed: {res}")
         text = res['result']['content'][0]['text']
         if "mcpc library" not in text:
              raise Exception(f"Info failed: {text}")
@@ -183,8 +191,6 @@ def test_server():
         print(f"\nError: {e}")
         sys.exit(1)
     finally:
-        if sock:
-            sock.close()
         if process:
             process.terminate()
             try:

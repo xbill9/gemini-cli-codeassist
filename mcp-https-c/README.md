@@ -4,7 +4,7 @@ A simple Model Context Protocol (MCP) server implemented in C using the `mcpc` l
 
 ## Overview
 
-This project provides a basic MCP server named `mcp-https-c` that exposes a single tool: `greet`. It writes structured JSON logs to stderr, ensuring that the stdout stream remains clean for the MCP protocol JSON-RPC messages.
+This project provides a basic MCP server named `hello-https-c` that exposes a single tool: `greet`. It writes structured JSON logs to stderr, ensuring that the stdout stream remains clean for the MCP protocol JSON-RPC messages.
 
 ## Prerequisites
 
