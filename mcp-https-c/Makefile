@@ -49,4 +49,10 @@ clean:
 	rm -f server main.o
 	[ -d mcpc ] && $(MAKE) -C mcpc clean || true
 
+# Submit the build to Google Cloud Build
+deploy:
+	echo "Submitting build to Google Cloud Build..."
+	gcloud builds submit . --config cloudbuild.yaml
+
+
 .PHONY: all clean lint test check format debug release run

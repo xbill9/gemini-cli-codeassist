@@ -23,6 +23,7 @@
 
 #include "server.h"
 
+#include <stdlib.h>
 #include "ext_string.h"
 
 #include "alloc.h"
@@ -643,7 +644,9 @@ _new_tcp_listen (mcpc_sock_t *ssock)
   mcpc_assert (0 == setsockopt (tmpsock, level, optname, (const char *) &optval, sizeof (optval)), MCPC_EC_BUG);
 
   saddr.sin_family = AF_INET;
-  saddr.sin_port = htons (PORT);
+  const char *port_env = getenv ("PORT");
+  int port = port_env ? atoi (port_env) : PORT;
+  saddr.sin_port = htons (port);
 #if defined(is_unix)
   saddr.sin_addr.s_addr = htonl (INADDR_ANY);
 #elif defined(is_win)
@@ -814,7 +817,11 @@ _svimpl_tcp (mcpc_server_t *sv)
 
   mcpc_assert (MCPC_EC_0 == _new_tcp_listen (&ssock), MCPC_EC_BUG);
 
-  tulog_d ("Server listening on port %d...", PORT);
+#ifdef MCPC_DBG
+  const char *port_env = getenv ("PORT");
+  int port = port_env ? atoi (port_env) : PORT;
+  tulog_d ("Server listening on port %d...", port);
+#endif
 
   mcpc_sock_t csock;
   while (true)

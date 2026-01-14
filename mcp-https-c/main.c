@@ -215,7 +215,7 @@ static int setup_tools(mcpc_server_t *server) {
 int main(void) {
   LOG_ERROR("Attempting to create server...");
 
-  // Initialize Server (TCP on port 8080)
+  // Initialize Server (TCP on port 8080 or $PORT)
   mcpc_server_t *server = mcpc_server_new_tcp();
   if (!server) {
     LOG_ERROR("Failed to create server");
