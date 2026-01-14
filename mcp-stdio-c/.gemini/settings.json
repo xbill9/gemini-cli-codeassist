@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+      "mcp-stdio-c": {
+        "command": "$HOME/gemini-cli-codeassist/mcp-stdio-c/server"
+        }
+      }
+    }
