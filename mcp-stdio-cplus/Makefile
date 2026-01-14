@@ -14,10 +14,12 @@ release: CXXFLAGS = $(BASE_CXXFLAGS) -O3 -DNDEBUG
 release: clean server
 	strip server
 
+HEADERS = $(wildcard cpp-mcp/include/*.h) $(wildcard cpp-mcp/common/*.hpp)
+
 server: main.o
 	$(CXX) -o server main.o $(LDFLAGS)
 
-main.o: main.cpp
+main.o: main.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -c main.cpp
 
 clean:
