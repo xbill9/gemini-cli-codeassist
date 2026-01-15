@@ -4,17 +4,21 @@ SUBDIRS := backend-rust \
 	firestore-cli-rust \
 	firestore-client-rust \
 	firestore-cloudrun-rust \
+	firestore-https-c \
 	firestore-https-csharp \
 	firestore-https-flutter \
 	firestore-https-go \
 	firestore-https-java \
 	firestore-https-kotlin \
+	firestore-https-perl \
 	firestore-https-php \
 	firestore-https-python \
 	firestore-https-ruby \
 	firestore-https-rust \
 	firestore-https-swift \
 	firestore-https-ts \
+	firestore-stdio-c \
+	firestore-stdio-cplus \
 	firestore-stdio-csharp \
 	firestore-stdio-flutter \
 	firestore-stdio-go \
@@ -37,6 +41,8 @@ SUBDIRS := backend-rust \
 	mcp-cli-rust \
 	mcp-client-rust \
 	mcp-cloudrun-rust \
+	mcp-https-c \
+	mcp-https-cplus \
 	mcp-https-csharp \
 	mcp-https-flutter \
 	mcp-https-go \
@@ -50,6 +56,8 @@ SUBDIRS := backend-rust \
 	mcp-https-swift \
 	mcp-https-ts \
 	mcp-rust \
+	mcp-stdio-c \
+	mcp-stdio-cplus \
 	mcp-stdio-csharp \
 	mcp-stdio-flutter \
 	mcp-stdio-go \
