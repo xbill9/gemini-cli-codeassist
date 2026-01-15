@@ -1193,7 +1193,7 @@ jsonrpc_return_errorv(struct jsonrpc_request* r,
   mjson_printf(r->fn,
                r->fn_data,
                "{\"jsonrpc\":\"2.0\",\"id\":%.*s,\"error\":{\"code\":%d,\"message\":%Q",
-               r->id_len,
+               (int) r->id_len,
                r->id,
                code,
                message == NULL ? "" : message);
@@ -1226,7 +1226,7 @@ jsonrpc_return_successv(struct jsonrpc_request* r,
 {
   if (r->id_len == 0)
     return;
-  mjson_printf(r->fn, r->fn_data, "{\"jsonrpc\":\"2.0\",\"id\":%.*s,\"result\":", r->id_len, r->id);
+  mjson_printf(r->fn, r->fn_data, "{\"jsonrpc\":\"2.0\",\"id\":%.*s,\"result\":", (int) r->id_len, r->id);
   if (result_fmt != NULL) {
     mjson_vprintf(r->fn, r->fn_data, result_fmt, ap);
   } else {
@@ -1244,7 +1244,7 @@ jsonrpc_return_successv2(struct jsonrpc_request* r, bool add_endl,
 {
   if (r->id_len == 0)
     return; // TODO assert
-  mjson_printf(r->fn, r->fn_data, "{\"jsonrpc\":\"2.0\",\"id\":%.*s,\"result\":", r->id_len, r->id);
+  mjson_printf(r->fn, r->fn_data, "{\"jsonrpc\":\"2.0\",\"id\":%.*s,\"result\":", (int) r->id_len, r->id);
   if (result_fmt != NULL) {
     mjson_vprintf(r->fn, r->fn_data, result_fmt, ap);
   } else {
@@ -1308,7 +1308,7 @@ jsonrpc_ctx_process(struct jsonrpc_ctx* ctx,
     mjson_printf(fn,
                  fn_data,
                  "{\"error\":{\"code\":-32700,\"message\":%.*Q}}\n",
-                 len,
+                 (int) len,
                  buf);
     return;
   }

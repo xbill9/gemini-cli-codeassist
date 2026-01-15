@@ -131,6 +131,7 @@ struct mcpc_server
   const mcpc_rscpool_t *rscpool;
   struct mjson_fixedbuf rpcres;
   const mcpc_connpool_t *connpool;
+  mcpc_init_stat_t client_init;
 #if defined(is_unix)
   pthread_mutex_t lock;
 #elif defined(is_win)
@@ -202,6 +203,8 @@ int mcpc_conn_getfd (mcpc_conn_t * conn);
 
 // TODO private
 mcpc_errcode_t mcpc_connpool_addref (mcpc_connpool_t * connpool, mcpc_conn_t * conn);
+
+mcpc_errcode_t mcpc_connpool_remove_by_sock (mcpc_connpool_t * connpool, mcpc_sock_t sock);
 
 mcpc_conn_t *mcpc_connpool_getconn (const mcpc_connpool_t * connpool, const mcpc_connpool_size_t idx);
 

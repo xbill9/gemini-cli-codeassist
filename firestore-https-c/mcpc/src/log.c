@@ -26,6 +26,9 @@ LogLevel glv = Debug;
 void
 lvlog (LogLevel lv, const char *meta, FILE *stream, const char *format, ...)
 {
+  if (stream == NULL)
+    return;
+
   if (lv > glv)
     return;
 
@@ -41,6 +44,7 @@ lvlog (LogLevel lv, const char *meta, FILE *stream, const char *format, ...)
   vfprintf (stream, format, args);
   fprintf (stream, "\n");
   fflush (stream);
-  fclose (stream);
+  if (stream != stdout && stream != stderr)
+    fclose (stream);
   va_end (args);
 }

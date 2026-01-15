@@ -57,9 +57,9 @@ serlz_tool_inputschema_properties_prop (retbuf_t rtbf, const mcpc_toolprop_t *tp
 
   if (!first)
     rtbuf_printf_mjfmt (rtbf, u8c1 (","));
-  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "title", name_len, name);
+  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "title", (int) name_len, name);
   rtbuf_printf_mjfmt (rtbf, u8c1 (","));
-  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "description", desc_len, desc);
+  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "description", (int) desc_len, desc);
 
   rtbuf_printf_mjfmt (rtbf, u8c1 ("}"));
   return 0;
@@ -82,7 +82,7 @@ serlz_tool_inputschema_properties (retbuf_t rtbf, const mcpc_toolproppool_t *tpp
 	      const char8_t *name = nullptr;
 	      bug_if (mcpc_toolprop_getref_name (tprop, &name, &name_len));
 
-	      rtbuf_printf_mjfmt (rtbf, u8c1 ("%.*Q:"), name_len, name);
+	      rtbuf_printf_mjfmt (rtbf, u8c1 ("%.*Q:"), (int) name_len, name);
 	      serlz_tool_inputschema_properties_prop (rtbf, tprop);
 	      if (i != len_tppool - 1)
 		rtbuf_printf_mjfmt (rtbf, u8c1 (","));
@@ -116,9 +116,9 @@ serlz_tool (retbuf_t rtbf, const mcpc_tool_t *tool)
   bug_if_nz (mcpc_toolprop_getref_desc (tool, &desc, &desc_len));
 
   rtbuf_printf_mjfmt (rtbf, u8c1 ("{"));
-  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "name", name_len, name);
+  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "name", (int) name_len, name);
   rtbuf_printf_mjfmt (rtbf, u8c1 (","));
-  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "description", desc_len, desc);
+  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "description", (int) desc_len, desc);
   rtbuf_printf_mjfmt (rtbf, u8c1 (","));
   rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:"), "inputSchema");
   serlz_tool_inputschema (rtbf, tool);
@@ -167,9 +167,9 @@ serlz_prmptarg (retbuf_t rtbf, const mcpc_prmptarg_t *prmptarg)
 
   rtbuf_printf_mjfmt (rtbf, u8c1 ("{"));
 
-  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "name", name_len, name);
+  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "name", (int) name_len, name);
   rtbuf_printf_mjfmt (rtbf, u8c1 (","));
-  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "description", desc_len, desc);
+  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "description", (int) desc_len, desc);
   rtbuf_printf_mjfmt (rtbf, u8c1 (","));
   rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%B"), "required", required);
 
@@ -186,9 +186,9 @@ serlz_prmpt (retbuf_t rtbf, const mcpc_prmpt_t *prmpt)
   bug_if_nz (mcpc_prmptarg_getref_desc (prmpt, &desc, &desc_len));
 
   rtbuf_printf_mjfmt (rtbf, u8c1 ("{"));
-  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "name", name_len, name);
+  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "name", (int) name_len, name);
   rtbuf_printf_mjfmt (rtbf, u8c1 (","));
-  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "description", desc_len, desc);
+  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "description", (int) desc_len, desc);
   rtbuf_printf_mjfmt (rtbf, u8c1 (","));
   rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:"), "arguments");
 
@@ -259,14 +259,14 @@ serlz_rsc (retbuf_t rtbf, const mcpc_rsc_t *rsc)
   // uri is ID, hence first
   if (serlz_uri)
     {
-      rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "uri", ref_uri_len, (const char *) ref_uri);
+      rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "uri", (int) ref_uri_len, (const char *) ref_uri);
     }
 
   if (serlz_name)
     {
       if (serlz_uri)
 	rtbuf_printf_mjfmt (rtbf, u8c1 (","));
-      rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "name", ref_name_len, ref_name);
+      rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "name", (int) ref_name_len, ref_name);
     }
 
   if (serlz_mime)
@@ -333,9 +333,9 @@ uint8_t
 serlz_serverInfo (retbuf_t rtbf, const mcpc_server_t *sv)
 {
   rtbuf_printf_mjfmt (rtbf, u8c1 ("{"));
-  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "name", sv->name_len, sv->name);
+  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "name", (int) sv->name_len, sv->name);
   rtbuf_printf_mjfmt (rtbf, u8c1 (","));
-  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "version", sv->ver_len, sv->ver);
+  rtbuf_printf_mjfmt (rtbf, u8c1 ("%Q:%.*Q"), "version", (int) sv->ver_len, sv->ver);
   rtbuf_printf_mjfmt (rtbf, u8c1 ("}"));
   return 0;
 }
@@ -450,7 +450,7 @@ serlz_ucbrchd_tool_callres (retbuf_t rtbf, const mcpc_ucbrchd_t *ucbrchd)
       const char8_t *s = nullptr;
       size_t s_len = 0;
       mcpc_ucbrchd_getref_u8str (ucbrchd, &s, &s_len);
-      rtbuf_printf_mjfmt (rtbf, u8c1 ("%.*Q"), s_len, (const char *) s);
+      rtbuf_printf_mjfmt (rtbf, u8c1 ("%.*Q"), (int) s_len, (const char *) s);
     }
 
   rtbuf_printf_mjfmt (rtbf, u8c1 ("}"));
@@ -486,7 +486,7 @@ serlz_ucbrchd_prmpt_callres (retbuf_t rtbf, const mcpc_ucbrchd_t *ucbrchd)
       const char8_t *s = nullptr;
       size_t s_len = 0;
       mcpc_ucbrchd_getref_u8str (ucbrchd, &s, &s_len);
-      rtbuf_printf_mjfmt (rtbf, u8c1 ("%.*Q"), s_len, (const char *) s);
+      rtbuf_printf_mjfmt (rtbf, u8c1 ("%.*Q"), (int) s_len, (const char *) s);
     }
 
   rtbuf_printf_mjfmt (rtbf, u8c1 ("}"));
@@ -595,7 +595,7 @@ serlz_complt (retbuf_t rtbf, const mcpc_complt_t *complt)
       bug_if_nullptr (sbuf);
       bug_if_zero (sbuf_len);
 
-      rtbuf_printf_mjfmt (rtbf, u8c1 ("%.*Q"), sbuf_len, sbuf);
+      rtbuf_printf_mjfmt (rtbf, u8c1 ("%.*Q"), (int) sbuf_len, sbuf);
       first = false;
     }
 
