@@ -90,37 +90,6 @@ static int exec_cmd_output(const char *cmd, char *buf, size_t size) {
   return 0;
 }
 
-static int get_project_id(char *buf, size_t size) {
-  static char cached_project_id[128] = {0};
-  if (cached_project_id[0] != '\0') {
-    strncpy(buf, cached_project_id, size);
-    return 0;
-  }
-  int ret = exec_cmd_output("gcloud config get-value project", buf, size);
-  if (ret == 0) {
-    strncpy(cached_project_id, buf, sizeof(cached_project_id));
-  }
-  return ret;
-}
-
-static int get_access_token(char *buf, size_t size) {
-  static char cached_token[4096] = {0};
-  static time_t last_fetch_time = 0;
-  time_t now = time(NULL);
-
-  if (cached_token[0] != '\0' && (now - last_fetch_time) < 3000) {
-    strncpy(buf, cached_token, size);
-    return 0;
-  }
-
-  int ret = exec_cmd_output("gcloud auth print-access-token", buf, size);
-  if (ret == 0) {
-    strncpy(cached_token, buf, sizeof(cached_token));
-    last_fetch_time = now;
-  }
-  return ret;
-}
-
 struct string_buf {
   char *ptr;
   size_t len;
@@ -148,6 +117,91 @@ static size_t write_func(void *ptr, size_t size, size_t nmemb, struct string_buf
   s->len = new_len;
   return size * nmemb;
 }
+
+static int get_project_id(char *buf, size_t size) {
+  static char cached_project_id[128] = {0};
+  if (cached_project_id[0] != '\0') {
+    strncpy(buf, cached_project_id, size);
+    return 0;
+  }
+  
+  // Try environment variables first
+  const char *env_pid = getenv("GOOGLE_CLOUD_PROJECT");
+  if (!env_pid) env_pid = getenv("PROJECT_ID");
+  if (env_pid) {
+      strncpy(cached_project_id, env_pid, sizeof(cached_project_id));
+      strncpy(buf, cached_project_id, size);
+      return 0;
+  }
+
+  int ret = exec_cmd_output("gcloud config get-value project", buf, size);
+  if (ret == 0) {
+    strncpy(cached_project_id, buf, sizeof(cached_project_id));
+  }
+  return ret;
+}
+
+static int get_metadata_token(char *buf, size_t size) {
+  CURL *curl;
+  CURLcode res;
+  struct string_buf s;
+  init_string_buf(&s);
+
+  curl = curl_easy_init();
+  if (!curl) { free(s.ptr); return -1; }
+
+  struct curl_slist *headers = NULL;
+  headers = curl_slist_append(headers, "Metadata-Flavor: Google");
+
+  curl_easy_setopt(curl, CURLOPT_URL, "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token");
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_func);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
+  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 2L); // Short timeout
+
+  res = curl_easy_perform(curl);
+  long response_code;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+  
+  curl_easy_cleanup(curl);
+  curl_slist_free_all(headers);
+
+  int ret = -1;
+  if (res == CURLE_OK && response_code == 200) {
+      if (mjson_get_string(s.ptr, s.len, "$.access_token", buf, size) > 0) {
+          ret = 0;
+      }
+  }
+  free(s.ptr);
+  return ret;
+}
+
+static int get_access_token(char *buf, size_t size) {
+  static char cached_token[4096] = {0};
+  static time_t last_fetch_time = 0;
+  time_t now = time(NULL);
+
+  if (cached_token[0] != '\0' && (now - last_fetch_time) < 3000) {
+    strncpy(buf, cached_token, size);
+    return 0;
+  }
+
+  // Try gcloud first (local dev)
+  int ret = exec_cmd_output("gcloud auth print-access-token", buf, size);
+  
+  // If gcloud fails, try Metadata Server (Cloud Run)
+  if (ret != 0) {
+      ret = get_metadata_token(buf, size);
+  }
+
+  if (ret == 0) {
+    strncpy(cached_token, buf, sizeof(cached_token));
+    last_fetch_time = now;
+  }
+  return ret;
+}
+
+
 
 static int perform_firestore_request(const char *method, const char *path_suffix, 
                                      const char *json_body, char **response) {

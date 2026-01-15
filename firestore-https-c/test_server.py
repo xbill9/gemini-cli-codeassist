@@ -71,18 +71,17 @@ def test_server():
         # Give it a moment to bind to port
         time.sleep(1)
 
+        # Connect via TCP ONCE
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(('127.0.0.1', 8080))
+
         def send_and_receive(msg):
-            # Connect via TCP for EACH request
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(('127.0.0.1', 8080))
-            
             body = json.dumps(msg)
             req = (
                 f"POST / HTTP/1.1\r\n"
                 f"Host: 127.0.0.1:8080\r\n"
                 f"Content-Type: application/json\r\n"
                 f"Content-Length: {len(body)}\r\n"
-                f"Connection: close\r\n"
                 f"\r\n"
                 f"{body}"
             )
@@ -110,12 +109,10 @@ def test_server():
                     if len(buffer) - body_start >= cl:
                         # We have the full body
                         body = buffer[body_start:body_start+cl]
-                        sock.close()
                         try:
                             return json.loads(body.decode('utf-8'))
                         except json.JSONDecodeError:
                             return None
-            sock.close()
             return None
 
         # 1. Initialize
@@ -188,9 +185,12 @@ def test_server():
         print("✓ tools/call (mcpc-info)")
 
         print("\nAll tests passed!")
+        sock.close()
 
     except Exception as e:
         print(f"\nError: {e}")
+        if 'sock' in locals():
+            sock.close()
         sys.exit(1)
     finally:
         if process:

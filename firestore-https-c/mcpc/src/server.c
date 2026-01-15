@@ -36,6 +36,9 @@
 #include "ucbr.h"
 #include "serlz.h"
 
+mcpc_conn_t *
+mcpc_connpool_find_by_sock (const mcpc_connpool_t *connpool, mcpc_sock_t sock);
+
 #define BUFCAP_INIT_JSONREQ 1024
 #define CH_SPC 0x20
 #define CH_LF 0x0a
@@ -264,7 +267,6 @@ mcpc_server_new (mcpc_server_type_t typ, mcpc_toolpool_t *toolpool, u32_t vabeg,
   sv->rpcres = _new_mjson_fixedbuf ();
   sv->connpool = mcpc_alloc (sizeof (mcpc_connpool_t));
   _connpool_init ((mcpc_connpool_t *) sv->connpool);
-  sv->client_init = MCPC_INIT_NONE;
 
 #if defined(is_unix)
   pthread_mutex_init (&sv->lock, NULL);
@@ -775,6 +777,28 @@ _wait_conn (void *args)
 cleanup:
   free (buf);
 
+#if defined(is_unix)
+  pthread_mutex_lock (&sv->lock);
+#elif defined(is_win)
+  WaitForSingleObject (sv->lock, INFINITE);
+#endif
+
+  mcpc_conn_t *conn = mcpc_connpool_find_by_sock(sv->connpool, csock);
+  if (conn) {
+      conn->client_init = MCPC_INIT_NONE;
+      #if defined(is_unix)
+        conn->fd = -1;
+      #elif is_win
+        conn->fd = INVALID_SOCKET;
+      #endif
+  }
+
+#if defined(is_unix)
+  pthread_mutex_unlock (&sv->lock);
+#elif defined(is_win)
+  ReleaseMutex (sv->lock);
+#endif
+
 #ifdef is_unix
   close (csock);
 #endif
@@ -985,6 +1009,7 @@ mcpc_conn_new (mcpc_conn_type_t typ, void *back)
     }
   conn->cname = nullptr;
   conn->cname_len = 0;
+  conn->client_init = MCPC_INIT_NONE;
   conn->nex = nullptr;
 
   return conn;
@@ -1104,7 +1129,7 @@ _handle_initbeg (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t csock
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "connection not found", NULL);
       goto output_res;
     }
-  if (sv->client_init == MCPC_INIT_SUCC)
+  if (conn->client_init == MCPC_INIT_SUCC)
     {
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "conn already initialized", NULL);
       goto output_res;
@@ -1157,7 +1182,7 @@ _handle_initbeg (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t csock
   jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", buftpool_len, buftpool);
   free (buftpool);		// TODO intn_free
 
-  sv->client_init = MCPC_INIT_BEG;
+  conn->client_init = MCPC_INIT_BEG;
 
 output_res:
   return;
@@ -1173,13 +1198,13 @@ _handle_initdone (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t csoc
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "connection not found", NULL);
       goto output_res;
     }
-  if (sv->client_init != MCPC_INIT_BEG)
+  if (conn->client_init != MCPC_INIT_BEG)
     {
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "client not begin init", NULL);
       goto output_res;
     }
 
-  sv->client_init = MCPC_INIT_SUCC;
+  conn->client_init = MCPC_INIT_SUCC;
   *noreply = true;
 
 output_res:
@@ -1196,11 +1221,13 @@ _handle_tools_list (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t cs
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "connection not found", NULL);
       goto output_res;
     }
-  if (sv->client_init != MCPC_INIT_SUCC)
+  /*
+  if (conn->client_init != MCPC_INIT_SUCC)
     {
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "client not initialized", NULL);
       goto output_res;
     }
+  */
 
   char *buftpool = nullptr;
   size_t buftpool_len = 0;
@@ -1233,11 +1260,13 @@ _handle_prmpt_list (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t cs
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "connection not found", NULL);
       goto output_res;
     }
-  if (sv->client_init != MCPC_INIT_SUCC)
+  /*
+  if (conn->client_init != MCPC_INIT_SUCC)
     {
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "client not initialized", NULL);
       goto output_res;
     }
+  */
 
   char *buftpool = nullptr;
   size_t buftpool_len = 0;
@@ -1265,11 +1294,13 @@ _handle_lsrsc (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t csock)
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "connection not found", NULL);
       goto output_res;
     }
-  if (sv->client_init != MCPC_INIT_SUCC)
+  /*
+  if (conn->client_init != MCPC_INIT_SUCC)
     {
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "client not initialized", NULL);
       goto output_res;
     }
+  */
 
   char *buftpool = nullptr;
   size_t buftpool_len = 0;
@@ -1296,11 +1327,13 @@ _handle_tools_call (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t cs
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "connection not found", NULL);
       goto output_res;
     }
-  if (sv->client_init != MCPC_INIT_SUCC)
+  /*
+  if (conn->client_init != MCPC_INIT_SUCC)
     {
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "client not initialized", NULL);
       goto output_res;
     }
+  */
 
   char8_t *callname = nullptr;	// TODO  suff?
   size_t callname_len = 0;
@@ -1416,11 +1449,13 @@ _handle_prmpt_call (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t cs
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "connection not found", NULL);
       goto output_res;
     }
-  if (sv->client_init != MCPC_INIT_SUCC)
+  /*
+  if (conn->client_init != MCPC_INIT_SUCC)
     {
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "client not initialized", NULL);
       goto output_res;
     }
+  */
 
   char8_t *callname = nullptr;
   size_t callname_len = 0;
@@ -1513,11 +1548,13 @@ _handle_complt_complt (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "connection not found", NULL);
       goto output_res;
     }
-  if (sv->client_init != MCPC_INIT_SUCC)
+  /*
+  if (conn->client_init != MCPC_INIT_SUCC)
     {
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "client not initialized", NULL);
       goto output_res;
     }
+  */
 
 
   // ref.type

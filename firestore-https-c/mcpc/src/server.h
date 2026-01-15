@@ -93,6 +93,7 @@ struct mcpc_conn
   };
   const ch8_t *cname;
   u8_t cname_len;
+  mcpc_init_stat_t client_init;
   mcpc_conn_t *nex;
 };
 
@@ -130,7 +131,6 @@ struct mcpc_server
   const mcpc_rscpool_t *rscpool;
   struct mjson_fixedbuf rpcres;
   const mcpc_connpool_t *connpool;
-  mcpc_init_stat_t client_init;
 #if defined(is_unix)
   pthread_mutex_t lock;
 #elif defined(is_win)
