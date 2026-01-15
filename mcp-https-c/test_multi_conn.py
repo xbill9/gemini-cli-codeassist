@@ -112,14 +112,26 @@ def test_multi_conn():
         send_and_receive(initialized_notif)
         print("✓ notifications/initialized")
 
-        # 3. List Tools on SECOND connection
-        print("Listing tools on Connection 2...")
-        res = send_and_receive(list_req)
+        # 3. Initialize and List on SECOND connection (using persistent connection)
+        print("Initializing on Connection 2...")
+        sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock2.connect(('127.0.0.1', 8080))
+        
+        res = send_and_receive(init_req, existing_sock=sock2)
         if not res or "result" not in res:
-             # If it fails with "client not initialized", we'll see it here
-            raise Exception(f"List tools failed: {res}")
+            raise Exception(f"Initialize failed on Connection 2: {res}")
+        print("✓ initialize (on Connection 2)")
+
+        send_and_receive(initialized_notif, existing_sock=sock2)
+        print("✓ notifications/initialized (on Connection 2)")
+
+        print("Listing tools on Connection 2...")
+        res = send_and_receive(list_req, existing_sock=sock2)
+        if not res or "result" not in res:
+            raise Exception(f"List tools failed on Connection 2: {res}")
         
         print("✓ tools/list (on Connection 2)")
+        sock2.close()
         print("\nMulti-connection test passed!")
 
     except Exception as e:

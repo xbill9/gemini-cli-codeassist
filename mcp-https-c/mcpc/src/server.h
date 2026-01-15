@@ -204,6 +204,8 @@ int mcpc_conn_getfd (mcpc_conn_t * conn);
 // TODO private
 mcpc_errcode_t mcpc_connpool_addref (mcpc_connpool_t * connpool, mcpc_conn_t * conn);
 
+mcpc_errcode_t mcpc_connpool_remove_by_sock (mcpc_connpool_t * connpool, mcpc_sock_t sock);
+
 mcpc_conn_t *mcpc_connpool_getconn (const mcpc_connpool_t * connpool, const mcpc_connpool_size_t idx);
 
 #endif
