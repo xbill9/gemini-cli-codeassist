@@ -573,6 +573,101 @@ static void current_time_cb(const mcpc_tool_t *tool, mcpc_ucbr_t *ucbr) {
   mcpc_toolcall_result_add_text_printf8(ucbr, "%s", get_current_timestamp());
 }
 
+static void inventory_report_cb(const mcpc_tool_t *tool, mcpc_ucbr_t *ucbr) {
+    (void)tool;
+    char *response = NULL;
+    if (perform_firestore_request("GET", "/inventory", NULL, &response) != 0) {
+        mcpc_toolcall_result_add_errmsg_printf8(ucbr, "Failed to fetch products");
+        return;
+    }
+
+    struct string_buf result;
+    init_string_buf(&result);
+    
+    const char *header = "INVENTORY REPORT\n----------------------------------------------------------------------\n";
+    write_func((void *)header, strlen(header), 1, &result);
+    const char *cols =   "Name                                     | Price   | Qty   | ID\n";
+    write_func((void *)cols, strlen(cols), 1, &result);
+    const char *sep =    "----------------------------------------------------------------------\n";
+    write_func((void *)sep, strlen(sep), 1, &result);
+
+    const char *docs;
+    int docs_len;
+    if (mjson_find(response, strlen(response), "$.documents", &docs, &docs_len) == MJSON_TOK_ARRAY) {
+        int k_off, k_len, v_off, v_len, v_type;
+        int offset = 0;
+        while ((offset = mjson_next(docs, docs_len, offset, &k_off, &k_len, &v_off, &v_len, &v_type)) != 0) {
+            char *prod_json = document_to_product_json(docs + v_off, v_len);
+            if (prod_json) {
+                char name[128] = {0};
+                char id[128] = {0};
+                double price = 0;
+                int quantity = 0;
+                
+                mjson_get_string(prod_json, strlen(prod_json), "$.name", name, sizeof(name));
+                mjson_get_string(prod_json, strlen(prod_json), "$.id", id, sizeof(id));
+                mjson_get_number(prod_json, strlen(prod_json), "$.price", &price);
+                double quantity_d = 0;
+                mjson_get_number(prod_json, strlen(prod_json), "$.quantity", &quantity_d);
+                quantity = (int)quantity_d;
+                
+                char line[512];
+                snprintf(line, sizeof(line), "%-40.40s | $%6.2f | %-5d | %s\n", name, price, quantity, id);
+                write_func((void *)line, strlen(line), 1, &result);
+                
+                free(prod_json);
+            }
+        }
+    }
+    write_func((void *)sep, strlen(sep), 1, &result);
+    
+    mcpc_toolcall_result_add_text_printf8(ucbr, "%s", result.ptr);
+    free(result.ptr);
+    free(response);
+}
+
+static void generate_menu_cb(const mcpc_tool_t *tool, mcpc_ucbr_t *ucbr) {
+    (void)tool;
+    char *response = NULL;
+    if (perform_firestore_request("GET", "/inventory", NULL, &response) != 0) {
+        mcpc_toolcall_result_add_errmsg_printf8(ucbr, "Failed to fetch products");
+        return;
+    }
+
+    struct string_buf result;
+    init_string_buf(&result);
+    
+    const char *header = "TODAY'S MENU\n============\n\n";
+    write_func((void *)header, strlen(header), 1, &result);
+
+    const char *docs;
+    int docs_len;
+    if (mjson_find(response, strlen(response), "$.documents", &docs, &docs_len) == MJSON_TOK_ARRAY) {
+        int k_off, k_len, v_off, v_len, v_type;
+        int offset = 0;
+        while ((offset = mjson_next(docs, docs_len, offset, &k_off, &k_len, &v_off, &v_len, &v_type)) != 0) {
+            char *prod_json = document_to_product_json(docs + v_off, v_len);
+            if (prod_json) {
+                char name[128] = {0};
+                double price = 0;
+                
+                mjson_get_string(prod_json, strlen(prod_json), "$.name", name, sizeof(name));
+                mjson_get_number(prod_json, strlen(prod_json), "$.price", &price);
+                
+                char line[256];
+                snprintf(line, sizeof(line), "%-30s ........... $%5.2f\n", name, price);
+                write_func((void *)line, strlen(line), 1, &result);
+                
+                free(prod_json);
+            }
+        }
+    }
+    
+    mcpc_toolcall_result_add_text_printf8(ucbr, "%s", result.ptr);
+    free(result.ptr);
+    free(response);
+}
+
 static int setup_tools(mcpc_server_t *server) {
   mcpc_tool_t *greet_tool = mcpc_tool_new2("greet", "Get a greeting from a local stdio server.");
   if (!greet_tool) return -1;
@@ -632,6 +727,14 @@ static int setup_tools(mcpc_server_t *server) {
   mcpc_tool_t *time_tool = mcpc_tool_new2("get_current_time", "Get the current UTC time.");
   mcpc_tool_set_call_cb(time_tool, current_time_cb);
   mcpc_server_add_tool(server, time_tool);
+
+  mcpc_tool_t *inv_rep_tool = mcpc_tool_new2("inventory_report", "Prints a detailed inventory report.");
+  mcpc_tool_set_call_cb(inv_rep_tool, inventory_report_cb);
+  mcpc_server_add_tool(server, inv_rep_tool);
+
+  mcpc_tool_t *menu_tool = mcpc_tool_new2("generate_menu", "Generates a menu from the inventory.");
+  mcpc_tool_set_call_cb(menu_tool, generate_menu_cb);
+  mcpc_server_add_tool(server, menu_tool);
 
   return 0;
 }
