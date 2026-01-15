@@ -46,7 +46,7 @@ format:
 	clang-format -i main.c
 
 clean:
-	rm -f server main.o
+	rm -f server main.o *.log
 	[ -d mcpc ] && $(MAKE) -C mcpc clean || true
 
 # Submit the build to Google Cloud Build

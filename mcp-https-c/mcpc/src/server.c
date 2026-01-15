@@ -966,6 +966,7 @@ mcpc_conn_new (mcpc_conn_type_t typ, void *back)
 {
   mcpc_conn_t *conn = mcpc_alloc (sizeof (mcpc_conn_t));
   conn->typ = typ;
+  conn->client_init = MCPC_INIT_NONE;
 
   if (false)
     ;
@@ -1154,10 +1155,11 @@ _handle_initbeg (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t csock
   mcpc_assert (buftpool != nullptr, MCPC_EC_BUG);
   mcpc_assert (buftpool_len > 0, MCPC_EC_BUG);
   ensure_buf_suffi (&sv->rpcres, buftpool_cap + 256);
-  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", buftpool_len, buftpool);
+  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", (int) buftpool_len, buftpool);
   free (buftpool);		// TODO intn_free
 
   sv->client_init = MCPC_INIT_BEG;
+  conn->client_init = MCPC_INIT_BEG;
 
 output_res:
   return;
@@ -1180,6 +1182,7 @@ _handle_initdone (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t csoc
     }
 
   sv->client_init = MCPC_INIT_SUCC;
+  conn->client_init = MCPC_INIT_SUCC;
   *noreply = true;
 
 output_res:
@@ -1211,7 +1214,7 @@ _handle_tools_list (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t cs
   mcpc_assert (buftpool != nullptr, MCPC_EC_BUG);
   mcpc_assert (buftpool_len > 0, MCPC_EC_BUG);
   ensure_buf_suffi (&sv->rpcres, buftpool_cap + 256);
-  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", buftpool_len, buftpool);
+  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", (int) buftpool_len, buftpool);
   free (buftpool);		// TODO intn_free
 
 output_res:
@@ -1248,7 +1251,7 @@ _handle_prmpt_list (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t cs
   mcpc_assert (buftpool != nullptr, MCPC_EC_BUG);
   mcpc_assert (buftpool_len > 0, MCPC_EC_BUG);
   ensure_buf_suffi (&sv->rpcres, buftpool_cap + 256);
-  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", buftpool_len, buftpool);
+  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", (int) buftpool_len, buftpool);
   free (buftpool);		// TODO intn_free
 
 output_res:
@@ -1280,7 +1283,7 @@ _handle_lsrsc (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t csock)
   mcpc_assert (buftpool != nullptr, MCPC_EC_BUG);
   mcpc_assert (buftpool_len > 0, MCPC_EC_BUG);
   ensure_buf_suffi (&sv->rpcres, buftpool_cap + 256);
-  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", buftpool_len, buftpool);
+  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", (int) buftpool_len, buftpool);
   free (buftpool);		// TODO intn_free
 
 output_res:
@@ -1392,7 +1395,7 @@ _handle_tools_call (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t cs
   mcpc_assert (buftpool_len > 0, MCPC_EC_BUG);
 
   ensure_buf_suffi (&sv->rpcres, buftpool_cap + 256);
-  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", buftpool_len, buftpool);
+  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", (int) buftpool_len, buftpool);
 
   mcpc_ucbr_free (ucbr);
   free (buftpool);		// TODO intn_free
@@ -1488,7 +1491,7 @@ _handle_prmpt_call (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t cs
   mcpc_assert (buftpool_len > 0, MCPC_EC_BUG);
 
   ensure_buf_suffi (&sv->rpcres, buftpool_cap + 256);
-  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", buftpool_len, buftpool);
+  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", (int) buftpool_len, buftpool);
 
   mcpc_ucbr_free (ucbr);
   free (buftpool);		// TODO intn_free
@@ -1578,18 +1581,17 @@ _handle_complt_complt (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t
       const mcpc_prmpt_t *tgt_prmpt = mcpc_prmptpool_getbyname (sv->prmptpool, compref_name, compref_name_len);
       if (tgt_prmpt == nullptr)
 	{
-	  jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "prompt not found", "%.*Q", compref_name_len, compref_name);
-	  return;
-	}
-
-      const mcpc_prmptarg_t *tgt_prmptarg = mcpc_prmpt_getbyname_prmptarg (tgt_prmpt, comparg_name, comparg_name_len);
-      if (tgt_prmptarg == nullptr)
-	{
-	  jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "promptarg not found", "%.*Q", comparg_name_len,
-				comparg_name);
-	  return;
-	}
-
+	        jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "prompt not found", "%.*Q", (int) compref_name_len, compref_name);
+	        return;
+	      }
+	  
+	    const mcpc_prmptarg_t *tgt_prmptarg = mcpc_prmpt_getbyname_prmptarg (tgt_prmpt, comparg_name, comparg_name_len);
+	    if (tgt_prmptarg == nullptr)
+	      {
+	        jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "promptarg not found", "%.*Q", (int) comparg_name_len,
+	  			    comparg_name);
+	        return;
+	      }
       complt = mcpc_complt_new_prmptarg (tgt_prmpt, comparg_name, comparg_name_len, comparg_val, comparg_val_len);
     }
   else if (askfor_resc)
@@ -1624,7 +1626,7 @@ _handle_complt_complt (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t
 
     ensure_buf_suffi (&sv->rpcres, buftpool_cap + 256);
 
-    jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", buftpool_len, buftpool);
+    jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", (int) buftpool_len, buftpool);
 
     free (buftpool);		// TODO intn_free
 
@@ -1657,8 +1659,8 @@ handle_inone (mcpc_server_t *sv, const char *const rbuf, size_t nread, mcpc_sock
 #endif
 
   bool noreply = false;
-  tuflog_d ("rbuf:%.*s", nread, rbuf);
-  struct jsonrpc_request r;
+  tuflog_d ("rbuf:%.*s", (int) nread, rbuf);
+  struct jsonrpc_request r = {0};
   r.ctx = &jsonrpc_default_context;
   r.frame = rbuf;
   r.frame_len = (int) nread;
@@ -1676,7 +1678,8 @@ handle_inone (mcpc_server_t *sv, const char *const rbuf, size_t nread, mcpc_sock
   int32_t methodname_q_len = 0;
   if (mjson_find (rbuf, (int) nread, "$.method", (const char **) &methodname_q, &methodname_q_len) != MJSON_TOK_STRING)
     {
-      mjson_printf (r.fn, r.fn_data, "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32700,\"message\":%.*Q}}\n", nread, rbuf);
+      ensure_buf_suffi (&sv->rpcres, (int) nread + 256);
+      mjson_printf (r.fn, r.fn_data, "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32700,\"message\":%.*Q}}\n", (int) nread, rbuf);
       goto output_res;
     }
   if (methodname_q == nullptr || methodname_q_len == 0)
@@ -1763,8 +1766,8 @@ output_res:
       else if (sv->typ == MCPC_SV_IOSTRM)
 	{
 	  // TODO use provided strm
-	  tuflog_d ("sv->rpcres:%.*s", sv->rpcres.len, sv->rpcres.ptr);
-	  int pres = fprintf (stdout, "%.*s", sv->rpcres.len, sv->rpcres.ptr);
+	  tuflog_d ("sv->rpcres:%.*s", (int) sv->rpcres.len, sv->rpcres.ptr);
+	  int pres = fprintf (stdout, "%.*s", (int) sv->rpcres.len, sv->rpcres.ptr);
 	  mcpc_assert (pres >= 0, MCPC_EC_BUG);
 	  fflush (stdout);
 	  sv->rpcres.len = 0;

@@ -22,7 +22,7 @@
 #include "errcode.h"
 
 #include <stdlib.h>
-// #include <stdio.h>
+#include <stdio.h>
 
 mcpc_errcode_t mcpc_ec = MCPC_EC_0;
 
@@ -33,6 +33,7 @@ void mcpc_assert(const bool cond, const mcpc_errcode_t ec)
         return;
     }
     mcpc_ec = ec;
+    fprintf(stderr, "ASSERTION FAILED: ec=%d\n", ec);
     abort();
     // fprintf(stderr,"!!!\n");
     // exit((int)ec);

@@ -93,6 +93,7 @@ struct mcpc_conn
   };
   const ch8_t *cname;
   u8_t cname_len;
+  mcpc_init_stat_t client_init;
   mcpc_conn_t *nex;
 };
 
