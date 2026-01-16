@@ -22,3 +22,11 @@ main = hspec $ do
       it "handles invalid sum input" $ do
         result <- handleMyTool (Sum "1,a,3")
         result `shouldBe` ContentText "Error: Invalid input. Please provide a comma-separated list of integers."
+
+      it "returns server info" $ do
+        result <- handleMyTool GetServerInfo
+        result `shouldBe` ContentText "Server: mcp-stdio-haskell\nVersion: 0.1.0\nInstructions: A simple Haskell MCP server"
+
+      it "calculates fibonacci sequence" $ do
+        result <- handleMyTool (Fibonacci 5)
+        result `shouldBe` ContentText "[0,1,1,2,3]"

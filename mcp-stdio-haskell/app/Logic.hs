@@ -19,7 +19,10 @@ import Data.Time (getCurrentTime)
 import Types
 
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import Text.Read (readMaybe)
+import System.Info (os, arch, compilerName, compilerVersion)
+import Data.Version (showVersion)
 
 -- Helper for JSON logging to stderr
 logJson :: Text -> Text -> IO ()
@@ -51,6 +54,29 @@ handleMyTool (Sum v) = do
   case sequence maybeNums of
     Just nums -> pure $ ContentText $ T.pack (show (sum nums))
     Nothing   -> pure $ ContentText "Error: Invalid input. Please provide a comma-separated list of integers."
+handleMyTool GetHaskellSystemInfo = do
+  logInfo "Getting system info"
+  let info = object
+        [ "os" .= os
+        , "arch" .= arch
+        , "compiler" .= compilerName
+        , "compiler_version" .= showVersion compilerVersion
+        ]
+  -- Convert JSON ByteString to Text
+  pure $ ContentText $ TE.decodeUtf8 $ BSL.toStrict $ encode info
+handleMyTool GetServerInfo = do
+  logInfo "Getting server info"
+  pure $ ContentText "Server: mcp-stdio-haskell\nVersion: 0.1.0\nInstructions: A simple Haskell MCP server"
+handleMyTool (Fibonacci n) = do
+  logInfo $ "Generating " <> T.pack (show n) <> " Fibonacci numbers"
+  if n < 0 then
+    pure $ ContentText "Error: Count must be non-negative"
+  else do
+    let fibs = take n fibSequence
+    pure $ ContentText $ T.pack $ show fibs
+
+fibSequence :: [Integer]
+fibSequence = 0 : 1 : zipWith (+) fibSequence (tail fibSequence)
 
 -- 3. Use deriveToolHandlerWithDescription to generate the tool handlers.
 myToolHandlers :: (IO [ToolDefinition], ToolCallHandler IO)
