@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "mcp-stdio-haskell": {
+      "command": "$HOME/gemini-cli-codeassist/mcp-stdio-haskell/dist-newstyle/build/x86_64-linux/ghc-9.14.1/mcp-stdio-haskell-0.1.0.0/x/mcp-stdio-haskell/build/mcp-stdio-haskell/mcp-stdio-haskell"
+    }
+  }
+}
