@@ -29,7 +29,8 @@ executable mcp-https-haskell
     ghc-options:      -threaded -rtsopts -with-rtsopts=-N
     build-depends:    base >= 4.16 && < 5,
                       mcp-server,
-                      mcp-https-haskell
+                      mcp-https-haskell,
+                      text
     hs-source-dirs:   app
     default-language: GHC2024
 

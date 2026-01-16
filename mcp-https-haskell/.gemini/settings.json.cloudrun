@@ -1,0 +1,8 @@
+ {
+    "mcpServers": {
+    "hello-cloudrun-python": {
+      "httpUrl": "https://mcp-https-haskell-$PROJECT_NUMBER.us-central1.run.app/mcp"
+    }
+  }
+}
+

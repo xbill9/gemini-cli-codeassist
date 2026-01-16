@@ -4,6 +4,10 @@ module Main where
 
 import MCP.Server
 import Logic (myToolHandlers, logInfo)
+import System.Environment (lookupEnv)
+import Data.Maybe (fromMaybe)
+import Text.Read (readMaybe)
+import qualified Data.Text as T
 
 -- Empty prompt handlers
 promptHandlers :: (IO [PromptDefinition], PromptGetHandler IO)
@@ -15,11 +19,13 @@ resourceHandlers = (pure [], \_ -> pure $ Left $ ResourceNotFound "No resources 
 
 main :: IO ()
 main = do
-  logInfo "Starting Haskell MCP Server (HTTP)..."
-  runMcpServerHttpWithConfig config serverInfo handlers
+  portEnv <- lookupEnv "PORT"
+  let port = fromMaybe 8080 (portEnv >>= readMaybe)
+  logInfo $ "Starting Haskell MCP Server (HTTP) on port " <> T.pack (show port) <> "..."
+  runMcpServerHttpWithConfig (config port) serverInfo handlers
   where
-    config = defaultHttpConfig
-      { httpPort = 8080
+    config p = defaultHttpConfig
+      { httpPort = p
       , httpHost = "0.0.0.0"
       , httpVerbose = True
       }

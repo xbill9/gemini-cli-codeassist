@@ -29,6 +29,18 @@ clean:
 	@echo "Cleaning up..."
 	cabal clean
 
+# Target to build for release
+release:
+	@echo "Building for release..."
+	cabal install --install-method=copy --installdir=./bin --allow-newer
+
+# Submit the build to Google Cloud Build
+deploy:
+	echo "Submitting build to Google Cloud Build..."
+	gcloud builds submit . --config cloudbuild.yaml
+
+
+
 # Help target
 help:
 	@echo "Available targets:"
