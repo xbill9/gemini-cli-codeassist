@@ -58,7 +58,7 @@ executable mcp-stdio-haskell
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules:    Types
+    other-modules:    Types, Logic
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -76,3 +76,20 @@ executable mcp-stdio-haskell
 
     -- Base language which the package is written in.
     default-language: GHC2024
+
+test-suite mcp-stdio-haskell-test
+    import:           warnings
+    default-language: GHC2024
+    -- other-extensions:
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test, app
+    main-is:          Spec.hs
+    other-modules:    Types, Logic
+    build-depends:
+        base >= 4.16 && < 5,
+        mcp-server,
+        aeson,
+        text,
+        time,
+        bytestring,
+        hspec
