@@ -1,0 +1,3 @@
+[submodule "cpp-mcp"]
+	path = cpp-mcp
+	url = https://github.com/xbill9/cpp-mcp
