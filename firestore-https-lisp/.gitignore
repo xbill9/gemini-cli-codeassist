@@ -1,0 +1,23 @@
+# Common Lisp
+*.fasl
+*.dx64fsl
+*.lib
+*.mem
+*.x86f
+*.sparcf
+*.fas
+
+# Temporary files
+*~
+*.swp
+*.bak
+.DS_Store
+
+# Logs
+*.log
+
+# Project specific
+mcp-server
+quicklisp/
+dists/
+tmp/

@@ -1,0 +1,6 @@
+(load (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname)))
+(require :sb-introspect)
+(ql:quickload :clack-sse)
+(let ((source (sb-introspect:find-definition-source (symbol-function 'clack-sse:serve-sse))))
+  (format t "Source: ~A~%" (sb-introspect:definition-source-pathname source)))
+(uiop:quit)
