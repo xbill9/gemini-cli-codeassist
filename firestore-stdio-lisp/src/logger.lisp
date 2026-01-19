@@ -1,14 +1,4 @@
-(defpackage :firestore-stdio-lisp.logger
-  (:use :cl)
-  (:import-from :local-time)
-  (:import-from :yason)
-  (:import-from :alexandria)
-  (:export :log-info
-           :log-error
-           :log-debug
-           :log-json))
-
-(in-package :firestore-stdio-lisp.logger)
+(in-package :mcp-server)
 
 (defun current-timestamp-string ()
   (local-time:format-timestring nil (local-time:now)
@@ -31,9 +21,6 @@
 
 (defun log-info (message &optional context)
   (log-json "INFO" message context))
-
-(defun log-error (message &optional context)
-  (log-json "ERROR" message context))
 
 (defun log-debug (message &optional context)
   (log-json "DEBUG" message context))

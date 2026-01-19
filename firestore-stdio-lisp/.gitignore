@@ -16,7 +16,10 @@
 # Logs
 *.log
 
-firestore-stdio-lisp
+# Project specific
+mcp-server
 quicklisp/
 dists/
 tmp/
+
+mcp-server

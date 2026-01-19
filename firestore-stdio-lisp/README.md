@@ -35,7 +35,7 @@ You can build a standalone binary using the Makefile:
 
 ```bash
 make build
-./firestore-stdio-lisp
+./mcp-server
 ```
 
 Or just run it directly:
@@ -51,7 +51,7 @@ If you are adding this to an MCP client config (e.g., `claude_desktop_config.jso
 {
   "mcpServers": {
     "lisp-hello-world": {
-      "command": "/absolute/path/to/firestore-stdio-lisp/firestore-stdio-lisp",
+      "command": "/absolute/path/to/firestore-stdio-lisp/mcp-server",
       "args": []
     }
   }

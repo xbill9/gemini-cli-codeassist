@@ -1,4 +1,4 @@
-(load (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname)))
+(load "setup.lisp")
 (asdf:load-asd (merge-pathnames "firestore-stdio-lisp.asd" (uiop:getcwd)))
 (ql:quickload :firestore-stdio-lisp :silent t)
 

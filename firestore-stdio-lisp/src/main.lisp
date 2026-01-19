@@ -1,4 +1,4 @@
-(in-package :firestore-stdio-lisp)
+(in-package :mcp-server)
 
 ;;; Monkey Patches for 40ants-mcp and openrpc-server to ensure MCP compliance
 
@@ -78,7 +78,7 @@
     result))
 
 
-(in-package :firestore-stdio-lisp)
+(in-package :mcp-server)
 
 ;;; Custom API Definition to separate user tools from protocol methods
 (openrpc-server:define-api (user-tools :title "User Tools"))
@@ -100,6 +100,7 @@
   (list (make-instance '40ants-mcp/content/text:text-content
                        :text (get-greeting param))))
 
+;; Sample tool requested by user
 (define-tool (user-tools add) (a b)
   (:summary "Adds two numbers and returns the result.")
   (:param a integer "First number to add.")
@@ -108,70 +109,6 @@
   (list (make-instance '40ants-mcp/content/text:text-content
                       :text (format nil "The sum of ~A and ~A is: ~A"
                                   a b (+ a b)))))
-
-(define-tool (user-tools get_root) ()
-  (:summary "Get a greeting from the Cymbal Superstore Inventory API.")
-  (:result (serapeum:soft-list-of 40ants-mcp/content/text:text-content))
-  (list (make-instance '40ants-mcp/content/text:text-content
-                       :text "🍎 Hello! This is the Cymbal Superstore Inventory API.")))
-
-(define-tool (user-tools check_db) ()
-  (:summary "Checks if the inventory database is running.")
-  (:result (serapeum:soft-list-of 40ants-mcp/content/text:text-content))
-  (list (make-instance '40ants-mcp/content/text:text-content
-                       :text (format nil "Database running: ~A"
-                                     (firestore-stdio-lisp.inventory:db-running-p)))))
-
-(define-tool (user-tools seed) ()
-  (:summary "Seed the inventory database with products.")
-  (:result (serapeum:soft-list-of 40ants-mcp/content/text:text-content))
-  (if (not (firestore-stdio-lisp.inventory:db-running-p))
-      (progn
-        ;; Try to initialize if not running, similar to how TS code checks but also init logic
-        (firestore-stdio-lisp.inventory:ensure-db-running)
-        (if (not (firestore-stdio-lisp.inventory:db-running-p))
-            (error "Inventory database is not running.")
-            (progn
-              (firestore-stdio-lisp.inventory:seed-database)
-              (list (make-instance '40ants-mcp/content/text:text-content
-                                   :text "Database seeded successfully.")))))
-      (progn
-        (firestore-stdio-lisp.inventory:seed-database)
-        (list (make-instance '40ants-mcp/content/text:text-content
-                             :text "Database seeded successfully.")))))
-
-(define-tool (user-tools reset) ()
-  (:summary "Clears all products from the inventory database.")
-  (:result (serapeum:soft-list-of 40ants-mcp/content/text:text-content))
-  (if (not (firestore-stdio-lisp.inventory:db-running-p))
-       (error "Inventory database is not running.")
-       (progn
-         (firestore-stdio-lisp.inventory:reset-database)
-         (list (make-instance '40ants-mcp/content/text:text-content
-                              :text "Database reset successfully.")))))
-
-(define-tool (user-tools get_products) ()
-  (:summary "Get a list of all products from the inventory database")
-  (:result (serapeum:soft-list-of 40ants-mcp/content/text:text-content))
-  (if (not (firestore-stdio-lisp.inventory:db-running-p))
-      (error "Inventory database is not running.")
-      (let ((products (firestore-stdio-lisp.inventory:get-all-products)))
-        (list (make-instance '40ants-mcp/content/text:text-content
-                             :text (with-output-to-string (s)
-                                     (yason:encode products s)))))))
-
-(define-tool (user-tools get_product_by_id) (id)
-  (:summary "Get a single product from the inventory database by its ID")
-  (:param id string "The ID of the product to get")
-  (:result (serapeum:soft-list-of 40ants-mcp/content/text:text-content))
-  (if (not (firestore-stdio-lisp.inventory:db-running-p))
-      (error "Inventory database is not running.")
-      (let ((product (firestore-stdio-lisp.inventory:get-product-by-id id)))
-        (if product
-            (list (make-instance '40ants-mcp/content/text:text-content
-                                 :text (with-output-to-string (s)
-                                         (yason:encode product s))))
-            (error "Product not found.")))))
 
 ;;; Main Entry Point
 
@@ -190,9 +127,6 @@
                                 (log-json "WARN" (format nil "~A" c))
                                 (muffle-warning c))))
         (log-info "Starting MCP server...")
-        ;; Initialize Firestore
-        (firestore-stdio-lisp.inventory:ensure-db-running)
-
         ;; Start the server using stdio transport, passing ONLY user-tools
         ;; This ensures tools/list only returns tools from user-tools API.
         ;; Protocol methods (initialize, etc.) are implicitly handled by the server instance.

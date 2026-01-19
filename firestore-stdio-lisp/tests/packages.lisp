@@ -1,2 +1,2 @@
-(defpackage :firestore-stdio-lisp-tests
-  (:use :cl :rove :firestore-stdio-lisp))
+(defpackage :mcp-server-tests
+  (:use :cl :rove :mcp-server))

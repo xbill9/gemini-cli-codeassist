@@ -1,8 +1,8 @@
-(load (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname)))
+(load "setup.lisp")
 (asdf:load-asd (merge-pathnames "firestore-stdio-lisp.asd" (uiop:getcwd)))
 (ql:quickload :firestore-stdio-lisp :silent t)
 
-(in-package :firestore-stdio-lisp)
+(in-package :mcp-server)
 
 ;; Try to find where tools are stored.
 ;; Based on logs: 40ANTS-MCP/SERVER/DEFINITION::TOOLS-COLLECTIONS

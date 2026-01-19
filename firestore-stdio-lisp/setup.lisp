@@ -1,5 +1,3 @@
-#!/usr/bin/sbcl --script
-
 (in-package :cl-user)
 
 (require :asdf)

@@ -1,4 +1,4 @@
-(in-package :firestore-stdio-lisp-tests)
+(in-package :mcp-server-tests)
 
 (deftest test-greeting
   (testing "should return a valid greeting"

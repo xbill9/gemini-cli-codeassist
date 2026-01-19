@@ -8,20 +8,16 @@
                :yason
                :local-time
                :alexandria
-               :uiop
-               :dexador
-               :cl-ppcre)
+               :uiop)
   :pathname "src"
   :serial t
-  :components ((:file "logger")
-               (:file "packages")
-               (:file "firestore")
-               (:file "inventory")
+  :components ((:file "packages")
+               (:file "logger")
                (:file "main"))
   :in-order-to ((asdf:test-op (asdf:test-op "firestore-stdio-lisp/tests")))
   :build-operation "program-op"
-  :build-pathname "../firestore-stdio-lisp"
-  :entry-point "firestore-stdio-lisp:main")
+  :build-pathname "../mcp-server"
+  :entry-point "mcp-server:main")
 
 (asdf:defsystem "firestore-stdio-lisp/tests"
   :depends-on ("firestore-stdio-lisp"

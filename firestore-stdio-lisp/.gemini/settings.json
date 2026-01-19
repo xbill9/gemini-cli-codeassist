@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "mcp-stdio-lisp": {
-	     "command": "$HOME/gemini-cli-codeassist/firestore-stdio-lisp/firestore-stdio-lisp"
+    "firestore-stdio-lisp": {
+	     "command": "$HOME/gemini-cli-codeassist/firestore-stdio-lisp/mcp-server"
     }
   }
 }

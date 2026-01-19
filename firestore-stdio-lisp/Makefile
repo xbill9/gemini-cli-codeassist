@@ -1,6 +1,6 @@
 # Makefile for firestore-stdio-lisp
 
-APP_NAME = firestore-stdio-lisp
+APP_NAME = mcp-server
 LISP = sbcl
 LISP_FLAGS = --noinform --disable-ldb --disable-debugger
 
@@ -23,7 +23,7 @@ run:
 		--load $(HOME)/quicklisp/setup.lisp \
 		--load firestore-stdio-lisp.asd \
 		--eval '(let ((*standard-output* *error-output*)) (ql:quickload :firestore-stdio-lisp))' \
-		--eval '(firestore-stdio-lisp:main)' \ \
+		--eval '(mcp-server:main)' \
 		--quit
 
 # Target to run tests
@@ -46,7 +46,7 @@ debug:
 		--load $(HOME)/quicklisp/setup.lisp \
 		--load firestore-stdio-lisp.asd \
 		--eval '(let ((*standard-output* *error-output*)) (ql:quickload :firestore-stdio-lisp))' \
-		--eval '(firestore-stdio-lisp:main)' \
+		--eval '(mcp-server:main)'
 
 clean:
 	@echo "Cleaning up..."
