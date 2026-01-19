@@ -1,0 +1,6 @@
+(load (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname)))
+(require :sb-introspect)
+(ql:quickload :40ants-mcp)
+(let ((source (sb-introspect:find-definition-source (find-class '40ants-mcp/http-transport::http-transport))))
+  (format t "Source: ~A~%" (sb-introspect:definition-source-pathname source)))
+(uiop:quit)

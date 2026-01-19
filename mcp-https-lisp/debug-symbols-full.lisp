@@ -1,0 +1,6 @@
+(load (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname)))
+(ql:quickload :40ants-mcp :silent t)
+(do-symbols (s (find-package :40ants-mcp/server/definition))
+  (when (or (boundp s) (fboundp s))
+    (format t "Symbol: ~A Bound: ~A Fbound: ~A~%" s (boundp s) (fboundp s))))
+(uiop:quit)
