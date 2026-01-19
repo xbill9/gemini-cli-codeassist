@@ -26,6 +26,7 @@ common common-options
 executable firestore-https-haskell
     import:           common-options
     main-is:          Main.hs
+    ghc-options:      -threaded -rtsopts -with-rtsopts=-N
     build-depends:
         base >= 4.17 && < 5,
         firestore-https-haskell,
@@ -33,7 +34,15 @@ executable firestore-https-haskell
         aeson,
         text,
         servant-server,
-        warp
+        warp,
+        mtl,
+        gogol,
+        gogol-core,
+        gogol-firestore,
+        lens,
+        resourcet,
+        time,
+        random
     hs-source-dirs:   app
 
 library
@@ -50,9 +59,14 @@ library
         http-types,
         containers,
         gogol,
+        gogol-core,
         gogol-firestore,
         lens,
-        mcp-server
+        resourcet,
+        mcp-server,
+        random,
+        unordered-containers,
+        transformers
     hs-source-dirs:   src
 
 test-suite firestore-https-haskell-test
@@ -60,10 +74,20 @@ test-suite firestore-https-haskell-test
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          Spec.hs
+    ghc-options:      -threaded -rtsopts -with-rtsopts=-N
     other-modules:    LogicSpec
     build-depends:
         base >= 4.17 && < 5,
         firestore-https-haskell,
         hspec,
-        hspec-discover
+        hspec-discover,
+        text,
+        mcp-server,
+        aeson,
+        gogol,
+        gogol-core,
+        gogol-firestore,
+        lens,
+        resourcet,
+        time
     build-tool-depends: hspec-discover:hspec-discover
