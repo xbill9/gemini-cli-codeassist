@@ -1,0 +1,4 @@
+packages: .
+          deps/mcp-server
+
+allow-newer: all

@@ -1,0 +1,47 @@
+# Haskell / Cabal artifacts
+bin/
+dist-newstyle/
+.ghc.environment.*
+cabal.project.local
+cabal.project.local~
+cabal.project.res
+*.hi
+*.o
+*.dyn_hi
+*.dyn_o
+*.p_hi
+*.p_o
+*.chi
+*.chs.h
+*.a
+*.so
+*.d
+server
+
+# Stack
+.stack-work/
+
+# HIE (Haskell IDE Engine)
+.hie/
+
+# Cabal sandboxes
+.cabal-sandbox/
+cabal.sandbox.config
+
+# Logs and temporary test files
+*.log
+test_call.json
+test_sum.json
+
+# Editor and System files
+.vscode/
+.idea/
+*~
+.DS_Store
+
+# Python artifacts
+__pycache__/
+*.pyc
+.venv/
+.env
+.pytest_cache/

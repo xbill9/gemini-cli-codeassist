@@ -1,0 +1,69 @@
+cabal-version:      3.0
+name:               firestore-https-haskell
+version:            0.1.0.0
+synopsis:           A Haskell-based MCP server for Firestore
+-- description:
+license:            MIT
+-- license-file:       LICENSE
+author:             Gemini CLI
+maintainer:         gemini-cli@google.com
+-- copyright:
+category:           Development
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common common-options
+    ghc-options: -Wall
+    default-language: GHC2021
+    default-extensions:
+        OverloadedStrings
+        DeriveGeneric
+        DeriveAnyClass
+        DataKinds
+        TypeOperators
+
+executable firestore-https-haskell
+    import:           common-options
+    main-is:          Main.hs
+    build-depends:
+        base >= 4.17 && < 5,
+        firestore-https-haskell,
+        mcp-server,
+        aeson,
+        text,
+        servant-server,
+        warp
+    hs-source-dirs:   app
+
+library
+    import:           common-options
+    exposed-modules:  Types, Logic
+    build-depends:
+        base >= 4.17 && < 5,
+        aeson,
+        text,
+        bytestring,
+        time,
+        http-client,
+        http-client-tls,
+        http-types,
+        containers,
+        gogol,
+        gogol-firestore,
+        lens,
+        mcp-server
+    hs-source-dirs:   src
+
+test-suite firestore-https-haskell-test
+    import:           common-options
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Spec.hs
+    other-modules:    LogicSpec
+    build-depends:
+        base >= 4.17 && < 5,
+        firestore-https-haskell,
+        hspec,
+        hspec-discover
+    build-tool-depends: hspec-discover:hspec-discover
