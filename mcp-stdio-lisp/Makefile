@@ -15,12 +15,7 @@ deps:
 # Target to build the binary
 build:
 	@echo "Building $(APP_NAME)..."
-	@$(LISP) $(LISP_FLAGS) \
-		--load $(HOME)/quicklisp/setup.lisp \
-		--load mcp-stdio-lisp.asd \
-		--eval '(ql:quickload :mcp-stdio-lisp)' \
-		--eval '(asdf:make :mcp-stdio-lisp)' \
-		--quit
+	@$(LISP) $(LISP_FLAGS) --load build.lisp
 
 # Target to run the application (dev mode)
 run:

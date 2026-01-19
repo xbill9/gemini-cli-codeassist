@@ -21,3 +21,5 @@ mcp-server
 quicklisp/
 dists/
 tmp/
+
+mcp-server
