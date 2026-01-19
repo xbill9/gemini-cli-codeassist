@@ -1,7 +1,7 @@
  {
     "mcpServers": {
-    "hello-cloudrun-haskell": {
-      "httpUrl": "https://mcp-https-haskell-$PROJECT_NUMBER.us-central1.run.app/mcp"
+    "firestore-cloudrun-haskell": {
+      "httpUrl": "https://firestore-https-haskell-$PROJECT_NUMBER.us-central1.run.app/mcp"
     }
   }
 }
