@@ -25,7 +25,4 @@ steps:
 timeout: 1800s
 
 substitutions:
-  _REGION: us-central1
   _SERVICE_NAME: firestore-https-haskell
-  _REPOSITORY: cloud-run-source-deploy
-
