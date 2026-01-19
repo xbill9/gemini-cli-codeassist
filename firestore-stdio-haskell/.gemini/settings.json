@@ -1,7 +1,8 @@
 {
   "mcpServers": {
     "firestore-stdio-haskell": {
-      "command": "$HOME/gemini-cli-codeassist/firestore-stdio-haskell/dist-newstyle/build/x86_64-linux/ghc-9.14.1/mcp-stdio-haskell-0.1.0.0/x/firestore-stdio-haskell/build/firestore-stdio-haskell/firestore-stdio-haskell"
+      "command": "cabal",
+      "args": ["run", "firestore-stdio-haskell", "--allow-newer", "--", "--stdio"]
     }
   }
 }

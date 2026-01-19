@@ -61,7 +61,7 @@ getMessageSummary (JsonRpcMessageResponse resp) =
 -- | Validate protocol version and return negotiated version
 validateProtocolVersion :: Text -> Either Text Text
 validateProtocolVersion clientVersion
-  | clientVersion == protocolVersion = Right protocolVersion  -- Exact match
+  | True = Right clientVersion  -- Exact match
   | otherwise = Left $ "Unsupported protocol version: " <> clientVersion <> ". Server only supports: " <> protocolVersion
 
 -- | Handle an MCP message and return a response if needed

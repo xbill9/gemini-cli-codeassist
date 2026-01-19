@@ -24,7 +24,7 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import qualified Data.ByteString.Char8 as BS
 import System.IO (stderr)
-import Data.Time (UTCTime, getCurrentTime, addUTCTime, diffUTCTime)
+import Data.Time (UTCTime(..), getCurrentTime, addUTCTime, diffUTCTime)
 import Types
 
 import Text.Read (readMaybe)
@@ -38,6 +38,7 @@ import Control.Applicative ((<|>))
 import Control.Monad (forM_, when, void)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Resource (runResourceT)
+import Control.Exception (try, SomeException)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as Map
 import Data.Maybe (fromMaybe, listToMaybe)
@@ -68,6 +69,8 @@ logError = logJson "ERROR"
 getFirestoreEnv :: IO (Env '[Firestore.Datastore'FullControl])
 getFirestoreEnv = do
   logger <- newLogger Error stderr
+  logInfo "Discovering Google Application Default Credentials..."
+  -- newEnv discovers ADC by default.
   newEnv <&> (envLogger .~ logger)
 
 collectionPath :: Text -> Text
@@ -79,8 +82,8 @@ getProjectId = do
   case mProj of
     Just p -> pure $ T.pack p
     Nothing -> do
-      logError "GOOGLE_CLOUD_PROJECT environment variable not set."
-      pure "unknown-project"
+      logError "GOOGLE_CLOUD_PROJECT environment variable not set. Using fallback: comglitn"
+      pure "comglitn"
 
 -- | Convert a Firestore Document to our Product type
 docToProduct :: Firestore.Document -> Maybe Product
@@ -144,7 +147,12 @@ productToFields p = Map.fromList
     mkStr s = (Firestore.newValue :: Firestore.Value) { Firestore.stringValue = Just s }
     mkDouble d = (Firestore.newValue :: Firestore.Value) { Firestore.doubleValue = Just d }
     mkInt i = (Firestore.newValue :: Firestore.Value) { Firestore.integerValue = Just (fromIntegral i) }
-    mkTime t = (Firestore.newValue :: Firestore.Value) { Firestore.timestampValue = Just (GTime.DateTime t) }
+    mkTime t = (Firestore.newValue :: Firestore.Value) { Firestore.timestampValue = Just (GTime.DateTime (truncateSubseconds t)) }
+
+truncateSubseconds :: UTCTime -> UTCTime
+truncateSubseconds t = 
+  let s = realToFrac (floor (realToFrac (utctDayTime t) :: Double) :: Integer)
+  in t { utctDayTime = s }
 
 -- | Empty TH splice
 $(return [])
@@ -190,48 +198,56 @@ handleMyTool (Fibonacci n) = do
 handleMyTool GetProducts = do
   logInfo "GetProducts called"
   projId <- getProjectId
-  env <- getFirestoreEnv
+  res <- try $ do
+    env <- getFirestoreEnv
+    let parent = "projects/" <> projId <> "/databases/(default)/documents"
+    let req = Firestore.newFireStoreProjectsDatabasesDocumentsList "inventory" parent
+    runResourceT $ send env req
   
-  let parent = "projects/" <> projId <> "/databases/(default)/documents"
-  let req = Firestore.newFireStoreProjectsDatabasesDocumentsList parent "inventory"
-
-  result <- runResourceT $ send env req
-  
-  -- result is ListDocumentsResponse
-  -- result.documents :: Maybe [Document]
-  let docs = fromMaybe [] result.documents
-  let products = map docToProduct docs
-  let validProducts = [p | Just p <- products]
-  
-  pure $ ContentText $ TE.decodeUtf8 $ BSL.toStrict $ encode validProducts
+  case res of
+    Left (e :: SomeException) -> do
+      logError $ "GetProducts error: " <> T.pack (show e)
+      pure $ ContentText $ "Error fetching products: " <> T.pack (show e)
+    Right result -> do
+      let docs = fromMaybe [] result.documents
+      let products = map docToProduct docs
+      let validProducts = [p | Just p <- products]
+      pure $ ContentText $ TE.decodeUtf8 $ BSL.toStrict $ encode validProducts
 
 handleMyTool (GetProductById pid) = do
   logInfo $ "GetProductById called for " <> pid
   projId <- getProjectId
-  env <- getFirestoreEnv
-  
-  let resourceName = "projects/" <> projId <> "/databases/(default)/documents/inventory/" <> pid
-  let req = Firestore.newFireStoreProjectsDatabasesDocumentsGet resourceName
-  
-  -- Catch 404? runGoogle throws exception on 404.
-  -- We should probably try catch it, but for now let it fail (MCP handles errors).
-  result <- runResourceT $ send env req
-  
-  case docToProduct result of
-    Just p -> pure $ ContentText $ TE.decodeUtf8 $ BSL.toStrict $ encode p
-    Nothing -> pure $ ContentText "Error: Could not parse document"
+  res <- try $ do
+    env <- getFirestoreEnv
+    let resourceName = "projects/" <> projId <> "/databases/(default)/documents/inventory/" <> pid
+    let req = Firestore.newFireStoreProjectsDatabasesDocumentsGet resourceName
+    runResourceT $ send env req
+
+  case res of
+    Left (e :: SomeException) -> do
+      logError $ "GetProductById error: " <> T.pack (show e)
+      pure $ ContentText $ "Error fetching product " <> pid <> ": " <> T.pack (show e)
+    Right result -> 
+      case docToProduct result of
+        Just p -> pure $ ContentText $ TE.decodeUtf8 $ BSL.toStrict $ encode p
+        Nothing -> pure $ ContentText "Error: Could not parse document"
 
 handleMyTool CheckDb = do
   logInfo "CheckDb called"
   projId <- getProjectId
-  env <- getFirestoreEnv
-  let parent = "projects/" <> projId <> "/databases/(default)/documents"
+  res <- try $ do
+    env <- getFirestoreEnv
+    let parent = "projects/" <> projId <> "/databases/(default)/documents"
+    let req = (Firestore.newFireStoreProjectsDatabasesDocumentsList "inventory" parent :: Firestore.FireStoreProjectsDatabasesDocumentsList) { Firestore.pageSize = Just 1 }
+    _ <- runResourceT $ send env req
+    pure ()
   
-  let req = (Firestore.newFireStoreProjectsDatabasesDocumentsList parent "inventory" :: Firestore.FireStoreProjectsDatabasesDocumentsList) { Firestore.pageSize = Just 1 }
-  
-  _ <- runResourceT $ send env req
-  
-  pure $ ContentText "Database running: true"
+  case res of
+    Left (e :: SomeException) -> do
+      logError $ "CheckDb error: " <> T.pack (show e)
+      pure $ ContentText $ "Database running: false (Error: " <> T.pack (show e) <> ")"
+    Right _ -> 
+      pure $ ContentText "Database running: true"
 
 handleMyTool GetRoot = do
   pure $ ContentText "Apple Hello! This is the Cymbal Superstore Inventory API."
@@ -239,80 +255,90 @@ handleMyTool GetRoot = do
 handleMyTool Reset = do
   logInfo "Reset called"
   projId <- getProjectId
-  env <- getFirestoreEnv
+  res <- try $ do
+    env <- getFirestoreEnv
+    let parent = "projects/" <> projId <> "/databases/(default)/documents"
+    let listReq = Firestore.newFireStoreProjectsDatabasesDocumentsList "inventory" parent
+    
+    result <- runResourceT $ send env listReq
+    let docs = fromMaybe [] result.documents
+    
+    forM_ docs $ \doc -> do
+      case doc.name of
+        Just name -> do
+          let delReq = Firestore.newFireStoreProjectsDatabasesDocumentsDelete name
+          void $ runResourceT $ send env delReq
+        Nothing -> pure ()
   
-  let parent = "projects/" <> projId <> "/databases/(default)/documents"
-  let listReq = Firestore.newFireStoreProjectsDatabasesDocumentsList parent "inventory"
-  
-  result <- runResourceT $ send env listReq
-  let docs = fromMaybe [] result.documents
-  
-  forM_ docs $ \doc -> do
-    case doc.name of
-      Just name -> do
-        let delReq = Firestore.newFireStoreProjectsDatabasesDocumentsDelete name
-        void $ runResourceT $ send env delReq
-      Nothing -> pure ()
-      
-  pure $ ContentText "Database reset successfully."
+  case res of
+    Left (e :: SomeException) -> do
+      logError $ "Reset error: " <> T.pack (show e)
+      pure $ ContentText $ "Error resetting database: " <> T.pack (show e)
+    Right _ -> 
+      pure $ ContentText "Database reset successfully."
 
 handleMyTool Seed = do
   logInfo "Seed called"
   projId <- getProjectId
-  env <- getFirestoreEnv
-  
-  now <- getCurrentTime
-  
-  let oldProducts = 
-        [ "Apples", "Bananas", "Milk", "Whole Wheat Bread", "Eggs", "Cheddar Cheese"
-        , "Whole Chicken", "Rice", "Black Beans", "Bottled Water", "Apple Juice"
-        , "Cola", "Coffee Beans", "Green Tea", "Watermelon", "Broccoli"
-        , "Jasmine Rice", "Yogurt", "Beef", "Shrimp", "Walnuts"
-        , "Sunflower Seeds", "Fresh Basil", "Cinnamon"
-        ]
-        
-  forM_ oldProducts $ \name -> do
-    price <- randomRIO (1, 10) :: IO Double
-    qty <- randomRIO (1, 500) :: IO Int
-    let img = "product-images/" <> T.toLower (T.replace " " "" name) <> ".png"
+  res <- try $ do
+    env <- getFirestoreEnv
+    now <- getCurrentTime
     
-    randTime <- randomRIO (0, 31536000) :: IO Double
-    let ts = addUTCTime (realToFrac $ negate (randTime + 7776000)) now
-    
-    let p = Product Nothing name price qty img ts now
-    addOrUpdateFirestore env projId p
+    let oldProducts = 
+          [ "Apples", "Bananas", "Milk", "Whole Wheat Bread", "Eggs", "Cheddar Cheese"
+          , "Whole Chicken", "Rice", "Black Beans", "Bottled Water", "Apple Juice"
+          , "Cola", "Coffee Beans", "Green Tea", "Watermelon", "Broccoli"
+          , "Jasmine Rice", "Yogurt", "Beef", "Shrimp", "Walnuts"
+          , "Sunflower Seeds", "Fresh Basil", "Cinnamon"
+          ]
+          
+    forM_ oldProducts $ \name -> do
+      price <- randomRIO (1, 10) :: IO Double
+      qty <- randomRIO (1, 500) :: IO Int
+      let img = "product-images/" <> T.toLower (T.replace " " "" name) <> ".png"
+      
+      randTime <- randomRIO (0, 31536000) :: IO Double
+      let ts = addUTCTime (realToFrac $ negate (randTime + 7776000)) now
+      
+      let p = Product Nothing name price qty img ts now
+      addOrUpdateFirestore env projId p
 
-  let recentProducts = 
-        [ "Parmesan Crisps", "Pineapple Kombucha", "Maple Almond Butter"
-        , "Mint Chocolate Cookies", "White Chocolate Caramel Corn", "Acai Smoothie Packs"
-        , "Smores Cereal", "Peanut Butter and Jelly Cups"
-        ]
+    let recentProducts = 
+          [ "Parmesan Crisps", "Pineapple Kombucha", "Maple Almond Butter"
+          , "Mint Chocolate Cookies", "White Chocolate Caramel Corn", "Acai Smoothie Packs"
+          , "Smores Cereal", "Peanut Butter and Jelly Cups"
+          ]
 
-  forM_ recentProducts $ \name -> do
-    price <- randomRIO (1, 10) :: IO Double
-    qty <- randomRIO (1, 100) :: IO Int
-    let img = "product-images/" <> T.toLower (T.replace " " "" name) <> ".png"
-    
-    randTime <- randomRIO (0, 518400) :: IO Double
-    let ts = addUTCTime (realToFrac $ negate randTime) now
-    
-    let p = Product Nothing name price qty img ts now
-    addOrUpdateFirestore env projId p
+    forM_ recentProducts $ \name -> do
+      price <- randomRIO (1, 10) :: IO Double
+      qty <- randomRIO (1, 100) :: IO Int
+      let img = "product-images/" <> T.toLower (T.replace " " "" name) <> ".png"
+      
+      randTime <- randomRIO (0, 518400) :: IO Double
+      let ts = addUTCTime (realToFrac $ negate randTime) now
+      
+      let p = Product Nothing name price qty img ts now
+      addOrUpdateFirestore env projId p
 
-  let recentProductsOutOfStock = ["Wasabi Party Mix", "Jalapeno Seasoning"]
-  
-  forM_ recentProductsOutOfStock $ \name -> do
-    price <- randomRIO (1, 10) :: IO Double
-    let qty = 0
-    let img = "product-images/" <> T.toLower (T.replace " " "" name) <> ".png"
+    let recentProductsOutOfStock = ["Wasabi Party Mix", "Jalapeno Seasoning"]
     
-    randTime <- randomRIO (0, 518400) :: IO Double
-    let ts = addUTCTime (realToFrac $ negate randTime) now
-    
-    let p = Product Nothing name price qty img ts now
-    addOrUpdateFirestore env projId p
+    forM_ recentProductsOutOfStock $ \name -> do
+      price <- randomRIO (1, 10) :: IO Double
+      let qty = 0
+      let img = "product-images/" <> T.toLower (T.replace " " "" name) <> ".png"
+      
+      randTime <- randomRIO (0, 518400) :: IO Double
+      let ts = addUTCTime (realToFrac $ negate randTime) now
+      
+      let p = Product Nothing name price qty img ts now
+      addOrUpdateFirestore env projId p
 
-  pure $ ContentText "Database seeded successfully."
+  case res of
+    Left (e :: SomeException) -> do
+      logError $ "Seed error: " <> T.pack (show e)
+      pure $ ContentText $ "Error seeding database: " <> T.pack (show e)
+    Right _ -> 
+      pure $ ContentText "Database seeded successfully."
 
 
 -- Helper to Add or Update based on Name
@@ -320,33 +346,19 @@ handleMyTool Seed = do
 addOrUpdateFirestore env projId prod = do
   let parent = "projects/" <> projId <> "/databases/(default)/documents"
   
-  -- Construct StructuredQuery
+  -- Use list instead of runQuery to avoid parsing issues with RunQueryResponse
+  let listReq = Firestore.newFireStoreProjectsDatabasesDocumentsList "inventory" parent
+  result <- runResourceT $ send env listReq
   
-  let fieldRef = (Firestore.newFieldReference :: Firestore.FieldReference) { Firestore.fieldPath = Just "name" }
-  let valStr = (Firestore.newValue :: Firestore.Value) { Firestore.stringValue = Just (prodName prod) }
-  
-  let fieldFilt = (Firestore.newFieldFilter :: Firestore.FieldFilter)
-        { Firestore.field = Just fieldRef
-        , Firestore.op = Just Firestore.FieldFilter_Op_Equal
-        , Firestore.value = Just valStr 
-        }
-        
-  let filt = (Firestore.newFilter :: Firestore.Filter) { Firestore.fieldFilter = Just fieldFilt }
-  
-  let colSel = (Firestore.newCollectionSelector :: Firestore.CollectionSelector) { Firestore.collectionId = Just "inventory" }
-  
-  let sq = (Firestore.newStructuredQuery :: Firestore.StructuredQuery)
-        { Firestore.where' = Just filt
-        , Firestore.from = Just [colSel]
-        }
-
-  let runQ = Firestore.newFireStoreProjectsDatabasesDocumentsRunQuery 
-        parent
-        ((Firestore.newRunQueryRequest :: Firestore.RunQueryRequest) { Firestore.structuredQuery = Just sq }) 
-  
-  result <- runResourceT $ send env runQ
-  
-  let existingDocs = [d | r <- [result], Just d <- [r.document]] -- Safe for singular.
+  let docs = fromMaybe [] result.documents
+  let existingDocs = filter (\d -> 
+        case d.fields of
+          Just (Firestore.Document_Fields fieldsMap) -> 
+            case Map.lookup "name" fieldsMap of
+              Just v -> v.stringValue == Just (prodName prod)
+              Nothing -> False
+          Nothing -> False
+        ) docs
   
   if null existingDocs then do
     logInfo $ "Adding new product: " <> prodName prod
@@ -355,7 +367,7 @@ addOrUpdateFirestore env projId prod = do
     let dFields = Firestore.newDocument_Fields fieldsMap
     let doc = (Firestore.newDocument :: Firestore.Document) { Firestore.fields = Just dFields }
     
-    let createReq = Firestore.newFireStoreProjectsDatabasesDocumentsCreateDocument parent "inventory" doc
+    let createReq = Firestore.newFireStoreProjectsDatabasesDocumentsCreateDocument "inventory" parent doc
     void $ runResourceT $ send env createReq
   else do
     logInfo $ "Updating product: " <> prodName prod

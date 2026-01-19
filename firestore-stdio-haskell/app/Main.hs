@@ -6,17 +6,13 @@ module Main where
 
 import MCP.Server
 import Logic
+import Control.Exception (handle, SomeException)
+import System.IO (stderr, hPutStrLn)
 
 -- Empty prompt handlers
-promptHandlers :: (IO [PromptDefinition], PromptGetHandler IO)
-promptHandlers = (pure [], \_ _ -> pure $ Left $ InvalidRequest "No prompts available")
-
--- Empty resource handlers
-resourceHandlers :: (IO [ResourceDefinition], ResourceReadHandler IO)
-resourceHandlers = (pure [], \_ -> pure $ Left $ ResourceNotFound "No resources available")
-
+-- ... (rest of the code)
 main :: IO ()
-main = do
+main = handle (\(e :: SomeException) -> hPutStrLn stderr $ "FATAL ERROR: " ++ show e) $ do
   logInfo "Starting Haskell MCP Server..."
   runMcpServerStdio serverInfo handlers
   where
@@ -30,3 +26,9 @@ main = do
       , resources = Just resourceHandlers
       , tools = Just myToolHandlers
       }
+    -- Empty prompt handlers
+    promptHandlers :: (IO [PromptDefinition], PromptGetHandler IO)
+    promptHandlers = (pure [], \_ _ -> pure $ Left $ InvalidRequest "No prompts available")
+    -- Empty resource handlers
+    resourceHandlers :: (IO [ResourceDefinition], ResourceReadHandler IO)
+    resourceHandlers = (pure [], \_ -> pure $ Left $ ResourceNotFound "No resources available")

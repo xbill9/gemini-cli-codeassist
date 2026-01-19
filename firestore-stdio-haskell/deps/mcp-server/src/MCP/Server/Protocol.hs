@@ -43,7 +43,7 @@ import           GHC.Generics     (Generic)
 import           MCP.Server.Types
 
 protocolVersion :: Text
-protocolVersion = "2025-11-25"
+protocolVersion = "2024-11-05"
 
 
 -- | Initialize request

@@ -5,6 +5,7 @@ module Main where
 import Test.Hspec
 import Logic
 import Types
+import qualified Data.Text as T
 import MCP.Server (Content(..))
 
 main :: IO ()
@@ -30,3 +31,17 @@ main = hspec $ do
       it "calculates fibonacci sequence" $ do
         result <- handleMyTool (Fibonacci 5)
         result `shouldBe` ContentText "[0,1,1,2,3]"
+
+      it "checks database connection" $ do
+        result <- handleMyTool CheckDb
+        result `shouldBe` ContentText "Database running: true"
+
+      it "seeds the database" $ do
+        result <- handleMyTool Seed
+        result `shouldBe` ContentText "Database seeded successfully."
+
+      it "gets products" $ do
+        result <- handleMyTool GetProducts
+        case result of
+          ContentText txt -> txt `shouldSatisfy` (\t -> "[" `T.isPrefixOf` t && "]" `T.isSuffixOf` t)
+          _ -> expectationFailure "Expected ContentText (JSON array)"
