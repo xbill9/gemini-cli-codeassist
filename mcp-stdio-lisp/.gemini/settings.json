@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "mcp-stdio-lisp": {
+      "command": "sbcl",
+      "args": [
+        "--noinform",
+        "--disable-ldb",
+        "--disable-debugger",
+        "--load",
+        "/home/xbill/quicklisp/setup.lisp",
+        "--load",
+        "/home/xbill/gemini-cli-codeassist/mcp-stdio-lisp/mcp-stdio-lisp.asd",
+        "--eval",
+        "(let ((*standard-output* *error-output*)) (ql:quickload :mcp-stdio-lisp))",
+        "--eval",
+        "(mcp-server:main)",
+        "--quit"
+      ]
+    }
+  }
+}

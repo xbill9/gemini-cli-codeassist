@@ -5,3 +5,6 @@
 [submodule "mcp-https-cplus/cpp-mcp"]
 	path = mcp-https-cplus/cpp-mcp
 	url = https://github.com/xbill9/cpp-mcp
+[submodule "firestore-stdio-cplus/firebase-cpp-sdk"]
+	path = firestore-stdio-cplus/firebase-cpp-sdk
+	url = https://github.com/xbill9/firebase-cpp-sdk.git
