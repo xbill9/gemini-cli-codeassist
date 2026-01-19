@@ -8,8 +8,10 @@ SUBDIRS := backend-rust \
 	firestore-https-csharp \
 	firestore-https-flutter \
 	firestore-https-go \
+	firestore-https-haskell \
 	firestore-https-java \
 	firestore-https-kotlin \
+	firestore-https-lisp \
 	firestore-https-perl \
 	firestore-https-php \
 	firestore-https-python \
@@ -22,8 +24,10 @@ SUBDIRS := backend-rust \
 	firestore-stdio-csharp \
 	firestore-stdio-flutter \
 	firestore-stdio-go \
+	firestore-stdio-haskell \
 	firestore-stdio-java \
 	firestore-stdio-kotlin \
+	firestore-stdio-lisp \
 	firestore-stdio-perl \
 	firestore-stdio-php \
 	firestore-stdio-python \
@@ -46,8 +50,10 @@ SUBDIRS := backend-rust \
 	mcp-https-csharp \
 	mcp-https-flutter \
 	mcp-https-go \
+	mcp-https-haskell \
 	mcp-https-java \
 	mcp-https-kotlin \
+	mcp-https-lisp \
 	mcp-https-perl \
 	mcp-https-php \
 	mcp-https-python \
@@ -61,8 +67,10 @@ SUBDIRS := backend-rust \
 	mcp-stdio-csharp \
 	mcp-stdio-flutter \
 	mcp-stdio-go \
+	mcp-stdio-haskell \
 	mcp-stdio-java \
 	mcp-stdio-kotlin \
+	mcp-stdio-lisp \
 	mcp-stdio-perl \
 	mcp-stdio-php \
 	mcp-stdio-python \
