@@ -22,6 +22,13 @@ RUN make deps && make build
 # Deploy stage
 FROM debian:bookworm-slim
 
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
+    libpthread-stubs0-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Copy the binary from the build stage

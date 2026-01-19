@@ -19,8 +19,9 @@ build:
 		--load $(HOME)/quicklisp/setup.lisp \
 		--load mcp-https-lisp.asd \
 		--eval '(ql:quickload :mcp-https-lisp)' \
-		--eval '(asdf:make :mcp-https-lisp)' \
-		--quit
+		--eval '(sb-ext:save-lisp-and-die "$(APP_NAME)" :executable t :toplevel (quote mcp-server:main))'
+	@if [ ! -s $(APP_NAME) ]; then echo "Error: $(APP_NAME) is empty or not created"; exit 1; fi
+	@chmod +x $(APP_NAME)
 
 # Target to run the application (dev mode)
 run:

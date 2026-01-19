@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "hello-cloudrun-kotlin": {
-      "url": "https://mcp-https-kotlin-1056842563084.us-central1.run.app/sse"
+    "mcp-cloudrun-lisp": {
+      "url": "https://mcp-https-lisp-1056842563084.us-central1.run.app/mcp"
     }
   }
 }
