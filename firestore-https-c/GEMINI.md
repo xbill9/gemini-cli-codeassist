@@ -23,6 +23,18 @@ Do not use stdio transport for this project
 *   `test_server.py`: Python script for integration testing the compiled server.
 *   `mcpc/`: The `mcpc` library source code (submodule).
 
+## Product Schema
+
+The products are stored in the `inventory` collection in Firestore with the following fields:
+
+*   **id:** Document ID (String).
+*   **name:** Product name (String).
+*   **price:** Product price (Double).
+*   **quantity:** Product quantity (Integer).
+*   **imgfile:** Path or URL to the product image (String).
+*   **timestamp:** Last updated timestamp (Timestamp).
+*   **actualdateadded:** Original creation timestamp (Timestamp).
+
 ## Implemented Tools
 
 ### `list_products`
@@ -31,32 +43,45 @@ Do not use stdio transport for this project
 
 ### `get_product`
 *   **Description:** Get a product by ID.
-*   **Parameters:** `id` (string).
+*   **Parameters:**
+    *   `id` (string): The Firestore document ID.
 *   **Implementation:** `get_product_cb` in `main.c`.
 
 ### `add_product`
 *   **Description:** Add a new product to the inventory.
-*   **Parameters:** `name`, `price`, `quantity`, `imgfile`.
+*   **Parameters:**
+    *   `name` (string): Product name.
+    *   `price` (string): Product price (converted to double).
+    *   `quantity` (string): Product quantity (converted to integer).
+    *   `imgfile` (string): Image filename or URL.
 *   **Implementation:** `add_product_cb` in `main.c`.
 
 ### `update_product`
 *   **Description:** Update an existing product.
-*   **Parameters:** `id`, `name`, `price`, `quantity`, `imgfile`.
+*   **Parameters:**
+    *   `id` (string): The Firestore document ID.
+    *   `name` (string): New product name.
+    *   `price` (string): New product price.
+    *   `quantity` (string): New product quantity.
+    *   `imgfile` (string): New image filename or URL.
 *   **Implementation:** `update_product_cb` in `main.c`.
 
 ### `delete_product`
 *   **Description:** Delete a product by ID.
-*   **Parameters:** `id`.
+*   **Parameters:**
+    *   `id` (string): The Firestore document ID.
 *   **Implementation:** `delete_product_cb` in `main.c`.
 
 ### `find_products`
-*   **Description:** Find products by name.
-*   **Parameters:** `name`.
+*   **Description:** Find products by exact name match.
+*   **Parameters:**
+    *   `name` (string): The name to search for.
 *   **Implementation:** `find_products_cb` in `main.c`.
 
 ### `batch_delete`
 *   **Description:** Delete multiple products by ID.
-*   **Parameters:** `ids` (comma-separated).
+*   **Parameters:**
+    *   `ids` (string): Comma-separated list of document IDs.
 *   **Implementation:** `batch_delete_cb` in `main.c`.
 
 ### `greet`
