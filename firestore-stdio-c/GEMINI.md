@@ -10,24 +10,37 @@ This is a **C-based Model Context Protocol (MCP) server** named `firestore-stdio
 
 *   **Language:** C (C17 Standard)
 *   **Library:** `mcpc` (embedded in `mcpc/` directory)
+*   **Networking:** `libcurl` for Firestore API requests.
+*   **JSON Handling:** `mjson` (embedded in `mcpc/src/mjson.h`).
 *   **Build System:** `make`
 *   **Communication:** Standard Input/Output (stdio) for MCP; `stderr` for logging.
 *   **Testing:** Python 3 (`test_server.py`)
 
 ## Project Structure
 
-*   `main.c`: The entry point. Initializes the `mcpc` server, defines the `greet` tool, and handles the event loop.
+*   `main.c`: The entry point. Initializes the `mcpc` server, defines all tools (Firestore inventory and system info), and handles the event loop.
 *   `Makefile`: Build configuration with targets for building, linting, testing, and formatting.
 *   `test_server.py`: Python script for integration testing the compiled server.
 *   `mcpc/`: The `mcpc` library source code (submodule).
 
 ## Implemented Tools
 
-### `greet`
-*   **Description:** Get a greeting from a local stdio server.
-*   **Parameters:**
-    *   `param` (string): Greeting parameter.
-*   **Implementation:** `greet_cb` function in `main.c`.
+### General Tools
+*   `greet`: Get a greeting from the server.
+*   `get_system_info`: Get OS and machine details.
+*   `get_server_info`: Get info about this server instance.
+*   `get_current_time`: Get current UTC time.
+
+### Firestore Inventory Tools
+*   `list_products`: List all documents in the `inventory` collection.
+*   `get_product`: Fetch a specific product by ID.
+*   `add_product`: Create a new product document.
+*   `update_product`: Update an existing product document.
+*   `delete_product`: Remove a product by ID.
+*   `find_products`: Query products by name.
+*   `batch_delete`: Commit multiple deletes in one request.
+*   `inventory_report`: Generate a formatted text report of the inventory.
+*   `generate_menu`: Generate a menu-style list of products and prices.
 
 ## API Usage (mcpc)
 

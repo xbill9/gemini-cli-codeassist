@@ -10,6 +10,8 @@ This project provides a basic MCP server named `firestore-stdio-c` that exposes 
 
 -   **C Compiler** (GCC, Clang, etc.) supporting C17.
 -   **Make**
+-   **libcurl** (development headers)
+-   **gcloud CLI** (configured and authenticated for Firestore access)
 
 ## Installation
 
@@ -42,7 +44,7 @@ If you are adding this to an MCP client config (e.g., `claude_desktop_config.jso
 ```json
 {
   "mcpServers": {
-    "c-hello-world": {
+    "firestore-stdio-c": {
       "command": "/absolute/path/to/firestore-stdio-c/server",
       "args": []
     }
@@ -58,9 +60,22 @@ If you are adding this to an MCP client config (e.g., `claude_desktop_config.jso
 - **Description:** Get a greeting from the local server.
 - **Parameters:**
     - `param` (string): The text or name to echo back.
-- **Returns:** The string passed in `param` as a greeting.
 
-## Development
+### Firestore Inventory Tools
+- `list_products`: List all products in the inventory.
+- `get_product`: Get a product by ID (parameter: `id`).
+- `add_product`: Add a new product (parameters: `name`, `price`, `quantity`, `imgfile`).
+- `update_product`: Update an existing product (parameters: `id`, `name`, `price`, `quantity`, `imgfile`).
+- `delete_product`: Delete a product by ID (parameter: `id`).
+- `find_products`: Find products by name (parameter: `name`).
+- `batch_delete`: Delete multiple products by ID (parameter: `ids`, comma separated).
+- `inventory_report`: Prints a detailed inventory report.
+- `generate_menu`: Generates a menu from the inventory.
+
+### System Tools
+- `get_system_info`: Get detailed system information (OS, version, etc.).
+- `get_server_info`: Get information about this MCP server.
+- `get_current_time`: Get the current UTC time.
 
 The project includes a `Makefile` to simplify common development tasks.
 
