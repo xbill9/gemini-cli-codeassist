@@ -1,0 +1,22 @@
+# Common Lisp
+*.fasl
+*.dx64fsl
+*.lib
+*.mem
+*.x86f
+*.sparcf
+*.fas
+
+# Temporary files
+*~
+*.swp
+*.bak
+.DS_Store
+
+# Logs
+*.log
+
+firestore-stdio-lisp
+quicklisp/
+dists/
+tmp/
