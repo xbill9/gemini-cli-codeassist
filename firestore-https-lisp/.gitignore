@@ -6,12 +6,15 @@
 *.x86f
 *.sparcf
 *.fas
+*.dfsl
+*.pfsl
 
 # Temporary files
 *~
 *.swp
 *.bak
 .DS_Store
+.ipynb_checkpoints/
 
 # Logs
 *.log
@@ -21,3 +24,5 @@ mcp-server
 quicklisp/
 dists/
 tmp/
+.gemini/tmp/
+local-projects/

@@ -1,6 +1,6 @@
 (load (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname)))
-(asdf:load-asd (merge-pathnames "firestore-https-lisp.asd" (uiop:getcwd)))
-(ql:quickload :firestore-https-lisp :silent t)
+(asdf:load-asd (merge-pathnames "mcp-https-lisp.asd" (uiop:getcwd)))
+(ql:quickload :mcp-https-lisp :silent t)
 
 (in-package :mcp-server)
 

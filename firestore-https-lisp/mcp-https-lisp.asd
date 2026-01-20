@@ -1,4 +1,4 @@
-(asdf:defsystem "firestore-https-lisp"
+(asdf:defsystem "mcp-https-lisp"
   :description "A Common Lisp MCP https server."
   :version "1.0.0"
   :author "Gemini"
@@ -9,20 +9,21 @@
                :local-time
                :alexandria
                :uiop
-               :dexador)
+               :dexador
+               :quri)
   :pathname "src"
   :serial t
   :components ((:file "packages")
                (:file "logger")
                (:file "firestore")
                (:file "main"))
-  :in-order-to ((asdf:test-op (asdf:test-op "firestore-https-lisp/tests")))
+  :in-order-to ((asdf:test-op (asdf:test-op "mcp-https-lisp/tests")))
   :build-operation "program-op"
   :build-pathname "../mcp-server"
   :entry-point "mcp-server:main")
 
-(asdf:defsystem "firestore-https-lisp/tests"
-  :depends-on ("firestore-https-lisp"
+(asdf:defsystem "mcp-https-lisp/tests"
+  :depends-on ("mcp-https-lisp"
                "rove")
   :components ((:module "tests"
                 :components

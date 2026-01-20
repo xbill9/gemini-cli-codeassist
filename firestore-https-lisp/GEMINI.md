@@ -4,37 +4,46 @@ This document provides context for the Gemini Code Assistant to understand the p
 
 ## Project Overview
 
-This is a **Common Lisp based Model Context Protocol (MCP) server**. It is designed to expose tools over **HTTPS (using Server-Sent Events - SSE)** for integration with MCP clients (such as Claude Desktop or Gemini clients), utilizing the `40ants/mcp` system.
+This is a **Common Lisp based Model Context Protocol (MCP) server** that integrates with **Google Cloud Firestore**. It exposes tools to manage a "Cymbal Superstore Inventory" database over **HTTPS (using Server-Sent Events - SSE)** for integration with MCP clients (such as Claude Desktop or Gemini clients), utilizing the `40ants/mcp` system.
 
-The server currently implements the following tools:
-*   `greet`: A simple Hello World tool.
-*   `add`: A basic arithmetic tool to demonstrate multiple tool support.
+The server implements tools for inventory management, including listing products, seeding the database, and basic utilities.
 
 ## Key Technologies
 
-*   **Language:** Common Lisp
+*   **Language:** Common Lisp (SBCL)
 *   **Library:** `40ants/mcp`
-    *   Repository: https://github.com/40ants/mcp
+*   **Database:** Google Cloud Firestore
 *   **Transport:** HTTP/SSE (Server-Sent Events)
+*   **Authentication:** Google Application Default Credentials (ADC)
 *   **Package Manager:** Quicklisp / Ultralisp
+
+## Tools
+
+The server exposes the following tools via the `user-tools` API:
+
+*   **`greet`**: A simple Hello World tool.
+*   **`get_products`**: Fetches all products from the Firestore inventory collection.
+*   **`get_product_by_id`**: Fetches a single product by its ID.
+*   **`seed`**: Seeds the inventory database with sample products.
+*   **`reset`**: Clears all products from the inventory database.
+*   **`get_root`**: Returns a welcome message from the Cymbal Superstore Inventory API.
+*   **`check_db`**: Verifies if the Firestore database is reachable.
+*   **`add`**: A basic arithmetic tool.
 
 ## Development Setup
 
 1.  **Prerequisites:**
     *   A Common Lisp implementation (e.g., SBCL).
     *   Quicklisp installed.
-    *   (Optional) Roswell for script management.
+    *   Google Cloud SDK (`gcloud`) configured for authentication (if running locally).
+    *   `GOOGLE_CLOUD_PROJECT` environment variable set.
 
 2.  **Install Dependencies:**
-    You will likely need to install the `40ants-mcp` system.
-    ```lisp
-    (ql:quickload :40ants-mcp)
+    ```bash
+    make deps
     ```
-    *Note: The project uses a Makefile to manage dependencies and build.*
 
 ## Running the Server
-
-The server is configured to run using the `HTTP` transport with SSE.
 
 ### Using Make (Preferred)
 
@@ -44,24 +53,10 @@ make build  # Build the binary 'mcp-server'
 ./mcp-server
 ```
 
-Or run directly:
-
-```bash
-make run
-```
-
 ### Configuration
 
 *   **Port:** Default is `8080`. Override with `PORT` environment variable.
-    ```bash
-    PORT=3000 ./mcp-server
-    ```
-*   **Binding:** Binds to `0.0.0.0` (all interfaces).
+*   **Project ID:** Uses `GOOGLE_CLOUD_PROJECT` or metadata service.
 *   **Endpoints:**
     *   `GET /` or `/mcp`: SSE endpoint for events.
     *   `POST /` or `/mcp`: Endpoint for JSON-RPC requests.
-
-## Developer Resources
-
-*   **40ants/mcp GitHub:** [https://github.com/40ants/mcp](https://github.com/40ants/mcp)
-*   **Common Lisp HyperSpec:** [http://www.lispworks.com/documentation/HyperSpec/Front/index.htm](http://www.lispworks.com/documentation/HyperSpec/Front/index.htm)

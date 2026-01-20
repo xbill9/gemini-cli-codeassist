@@ -1,15 +1,17 @@
-# MCP HTTPS Common Lisp Server
+# MCP HTTPS Firestore Lisp Server
 
-A simple Model Context Protocol (MCP) server implemented in Common Lisp. This server is designed to communicate over HTTPS (using SSE) and serves as a foundational example for Lisp-based MCP integrations.
+A Model Context Protocol (MCP) server implemented in Common Lisp that integrates with Google Cloud Firestore. This server exposes an inventory management API for the "Cymbal Superstore" and communicates over HTTPS (using SSE).
 
 ## Overview
 
-This project provides a basic MCP server named `mcp-server` that exposes several tools. It uses the `40ants-mcp` library for the protocol implementation.
+This project provides an MCP server named `mcp-server` that allows LLMs to interact with a Firestore-backed inventory system. It uses the `40ants-mcp` library and is designed for easy deployment to platforms like Google Cloud Run.
 
 ## Prerequisites
 
 - **SBCL** (Steel Bank Common Lisp).
-- **Quicklisp**: The project uses Quicklisp to manage dependencies.
+- **Quicklisp**: Managed via `make deps`.
+- **Google Cloud Project**: A Firestore database in native mode.
+- **Authentication**: Google Application Default Credentials (ADC) should be configured.
 
 ## Installation
 
@@ -20,82 +22,63 @@ This project provides a basic MCP server named `mcp-server` that exposes several
     ```
 
 2.  **Install Dependencies:**
-    Run the setup script to install Quicklisp (if missing) and all required dependencies.
     ```bash
     make deps
     ```
 
 ## Usage
 
-This server is designed to be executed as an HTTP server, listening for SSE connections.
-
 ### Building and Running
 
-You can build a standalone binary using the Makefile:
+Build the standalone binary:
 
 ```bash
 make build
 ./mcp-server
 ```
 
-By default, it listens on port 8080 and binds to 0.0.0.0 (all interfaces), making it suitable for deployment environments like Cloud Run. You can change the port using the `PORT` environment variable:
+By default, it listens on port 8080. You can override this:
 
 ```bash
 PORT=3000 ./mcp-server
 ```
 
-Or run it directly with `make run`:
-```bash
-make run
-```
-(Note: `make run` uses the default port 8080).
+### Environment Variables
 
-### Configuration for MCP Clients
-
-To connect an MCP client (like Claude Desktop) to this server, you would typically use an SSE transport configuration if supported, or use a bridge.
-
-If your client supports SSE directly:
-
-```json
-{
-  "mcpServers": {
-    "lisp-https-mcp": {
-      "url": "http://localhost:8080/mcp",
-      "transport": "sse"
-    }
-  }
-}
-```
+- `PORT`: The port to listen on (default: 8080).
+- `GOOGLE_CLOUD_PROJECT`: The GCP Project ID (optional if running on GCP).
 
 ## Tools
 
 ### `greet`
-- **Description:** Get a greeting.
-- **Parameters:**
-    - `param` (string): The name or text to greet.
-- **Returns:** The string passed in `param`.
+- **Description:** Get a simple greeting.
+- **Parameters:** `param` (string).
+
+### `get_products`
+- **Description:** Returns a JSON list of all products in the inventory.
+
+### `get_product_by_id`
+- **Description:** Returns a JSON object for a specific product.
+- **Parameters:** `id` (string).
+
+### `seed`
+- **Description:** Populates the Firestore `inventory` collection with sample data.
+
+### `reset`
+- **Description:** Deletes all documents in the `inventory` collection.
+
+### `get_root`
+- **Description:** Returns a welcome message from the API.
+
+### `check_db`
+- **Description:** Checks if the Firestore connection is working.
 
 ### `add`
-- **Description:** Adds two numbers and returns the result.
-- **Parameters:**
-    - `a` (integer): First number to add.
-    - `b` (integer): Second number to add.
-- **Returns:** A string "The sum of <A> and <B> is: <RESULT>".
+- **Description:** Adds two numbers.
+- **Parameters:** `a` (integer), `b` (integer).
 
 ## Development
 
-The project is structured as a standard Common Lisp system using ASDF.
-
-- **`firestore-https-lisp.asd`**: System definition.
-- **`src/`**: Source code.
-    - **`packages.lisp`**: Package definition.
-    - **`logger.lisp`**: JSON logging utilities.
-    - **`main.lisp`**: Entry point and tool definitions.
-
-### Commands
-
-- **Build binary:** `make build`
-- **Run binary:** `make run`
-- **Run tests:** `make test`
-- **Debug mode:** `make debug`
-- **Clean artifacts:** `make clean`
+- **`src/main.lisp`**: Server setup and tool definitions.
+- **`src/firestore.lisp`**: Firestore REST API integration logic.
+- **`src/logger.lisp`**: JSON logging for Cloud Run compatibility.

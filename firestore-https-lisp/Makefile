@@ -1,4 +1,4 @@
-# Makefile for firestore-https-lisp
+# Makefile for mcp-https-lisp
 
 APP_NAME = mcp-server
 LISP = sbcl
@@ -17,8 +17,8 @@ build:
 	@echo "Building $(APP_NAME)..."
 	@$(LISP) $(LISP_FLAGS) \
 		--load $(HOME)/quicklisp/setup.lisp \
-		--load firestore-https-lisp.asd \
-		--eval '(ql:quickload :firestore-https-lisp)' \
+		--load mcp-https-lisp.asd \
+		--eval '(ql:quickload :mcp-https-lisp)' \
 		--eval '(sb-ext:save-lisp-and-die "$(APP_NAME)" :executable t :toplevel (quote mcp-server:main))'
 	@if [ ! -s $(APP_NAME) ]; then echo "Error: $(APP_NAME) is empty or not created"; exit 1; fi
 	@chmod +x $(APP_NAME)
@@ -27,8 +27,8 @@ build:
 run:
 	@$(LISP) $(LISP_FLAGS) \
 		--load $(HOME)/quicklisp/setup.lisp \
-		--load firestore-https-lisp.asd \
-		--eval '(let ((*standard-output* *error-output*)) (ql:quickload :firestore-https-lisp))' \
+		--load mcp-https-lisp.asd \
+		--eval '(let ((*standard-output* *error-output*)) (ql:quickload :mcp-https-lisp))' \
 		--eval '(mcp-server:main)' \
 		--quit
 
@@ -36,9 +36,9 @@ run:
 test:
 	@$(LISP) $(LISP_FLAGS) \
 		--load $(HOME)/quicklisp/setup.lisp \
-		--load firestore-https-lisp.asd \
-		--eval '(let ((*standard-output* *error-output*)) (ql:quickload :firestore-https-lisp/tests))' \
-		--eval '(asdf:test-system :firestore-https-lisp)' \
+		--load mcp-https-lisp.asd \
+		--eval '(let ((*standard-output* *error-output*)) (ql:quickload :mcp-https-lisp/tests))' \
+		--eval '(asdf:test-system :mcp-https-lisp)' \
 		--quit
 
 # Target to run diagnostics and debug
@@ -50,8 +50,8 @@ debug:
 	@echo "Running $(APP_NAME) in debug mode..."
 	@$(LISP) \
 		--load $(HOME)/quicklisp/setup.lisp \
-		--load firestore-https-lisp.asd \
-		--eval '(let ((*standard-output* *error-output*)) (ql:quickload :firestore-https-lisp))' \
+		--load mcp-https-lisp.asd \
+		--eval '(let ((*standard-output* *error-output*)) (ql:quickload :mcp-https-lisp))' \
 		--eval '(mcp-server:main)'
 
 clean:
