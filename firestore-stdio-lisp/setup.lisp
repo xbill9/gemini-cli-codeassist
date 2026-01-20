@@ -28,6 +28,6 @@
 ;; Ensure dependencies are installed
 ;; Load jsonrpc first to ensure we get the version compatible with 40ants-mcp from Ultralisp
 (ql:quickload :jsonrpc :silent nil)
-(ql:quickload '(:40ants-mcp :serapeum :yason :local-time) :silent nil)
+(ql:quickload '(:40ants-mcp :serapeum :yason :local-time :dexador) :silent nil)
 
 (format t "Dependencies installed successfully.~%")

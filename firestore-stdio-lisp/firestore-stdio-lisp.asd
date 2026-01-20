@@ -8,11 +8,13 @@
                :yason
                :local-time
                :alexandria
-               :uiop)
+               :uiop
+               :dexador)
   :pathname "src"
   :serial t
   :components ((:file "packages")
                (:file "logger")
+               (:file "firestore")
                (:file "main"))
   :in-order-to ((asdf:test-op (asdf:test-op "firestore-stdio-lisp/tests")))
   :build-operation "program-op"
