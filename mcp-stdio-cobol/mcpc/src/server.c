@@ -1108,10 +1108,11 @@ _handle_initbeg (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t csock
   const size_t buftpool_cap = 1024;
   buftpool = mcpc_alloc (buftpool_cap);
   retbuf_t rtbf = { buftpool_cap, buftpool, &buftpool_len };
-  mcpc_assert (!serlz_initres (rtbf, sv), MCPC_EC_BUG);
   mcpc_assert (buftpool != nullptr, MCPC_EC_BUG);
   mcpc_assert (buftpool_len > 0, MCPC_EC_BUG);
-  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", buftpool_len, buftpool);
+
+  ensure_buf_suffi (&sv->rpcres, buftpool_cap);
+  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", (int) buftpool_len, buftpool);
   free (buftpool);		// TODO intn_free
 
   conn->client_init = MCPC_INIT_BEG;
@@ -1164,10 +1165,11 @@ _handle_tools_list (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t cs
   const size_t buftpool_cap = 1024;
   buftpool = mcpc_alloc (buftpool_cap);
   retbuf_t rtbf = { buftpool_cap, buftpool, &buftpool_len };
-  mcpc_assert (!serlz_toolpool (rtbf, sv->toolpool), MCPC_EC_BUG);
   mcpc_assert (buftpool != nullptr, MCPC_EC_BUG);
   mcpc_assert (buftpool_len > 0, MCPC_EC_BUG);
-  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", buftpool_len, buftpool);
+
+  ensure_buf_suffi (&sv->rpcres, buftpool_cap);
+  jsonrpc_return_success2 (r, mcpc_sock_invalid (csock), "%.*s", (int) buftpool_len, buftpool);
   free (buftpool);		// TODO intn_free
 
 output_res:
