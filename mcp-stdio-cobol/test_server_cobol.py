@@ -69,6 +69,12 @@ def test_greet():
         greet_response = json.loads(line)
         print("Greet response received:", json.dumps(greet_response, indent=2))
 
+        # Check stderr
+        process.stdin.close()
+        stderr_content = process.stderr.read()
+        print("Stderr content:")
+        print(stderr_content)
+
         # Verify response
         result = greet_response.get("result", {})
         content = result.get("content", [])
