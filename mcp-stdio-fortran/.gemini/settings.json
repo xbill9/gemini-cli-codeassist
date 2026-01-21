@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+      "mcp-stdio-fortran": {
+        "command": "$HOME/gemini-cli-codeassist/mcp-stdio-fortran/server-fortran"
+        }
+      }
+    }
