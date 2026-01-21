@@ -3,15 +3,22 @@
 #include <time.h>
 #include "mcpc/mcpc.h"
 
-FILE* get_stdin() {
+/* Prototypes to satisfy -Wmissing-prototypes */
+FILE* get_stdin(void);
+FILE* get_stdout(void);
+void set_stdout_unbuffered(void);
+void helper_add_text_result(mcpc_ucbr_t *ucbr, const char *text);
+void log_info_c(const char *msg);
+
+FILE* get_stdin(void) {
     return stdin;
 }
 
-FILE* get_stdout() {
+FILE* get_stdout(void) {
     return stdout;
 }
 
-void set_stdout_unbuffered() {
+void set_stdout_unbuffered(void) {
     setvbuf(stdout, NULL, _IONBF, 0);
 }
 

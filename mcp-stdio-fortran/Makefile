@@ -41,10 +41,10 @@ mcpc/src/libmcpc.a: | mcpc
 lint:
 	$(CC) $(LINT_FLAGS) c_helpers.c
 
-test-fortran: server-fortran
+test: server-fortran
 	python3 test_server_fortran.py
 
-check: lint test-fortran
+check: lint test
 
 format:
 	clang-format -i c_helpers.c
