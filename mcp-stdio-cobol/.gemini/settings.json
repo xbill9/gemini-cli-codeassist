@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+      "mcp-stdio-cobol": {
+        "command": "$HOME/gemini-cli-codeassist/mcp-stdio-cobol/server-cobol"
+        }
+      }
+    }
