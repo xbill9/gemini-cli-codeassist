@@ -39,6 +39,7 @@ mcpc/src/libmcpc.a: | mcpc
 
 lint:
 	$(CC) $(LINT_FLAGS) c_helpers.c
+	$(CC) $(LINT_FLAGS) cob_helpers.c
 
 test: server-cobol
 	python3 test_server_cobol.py

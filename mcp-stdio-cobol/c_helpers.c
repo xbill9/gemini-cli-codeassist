@@ -95,5 +95,6 @@ void log_info_c(const char *msg) {
   fflush(stderr);
 }
 
-void *keep_mcpc_server_ref = (void*)mcpc_server_new_iostrm;
-void *keep_mcpc_tool_ref = (void*)mcpc_tool_new2;
+typedef void (*void_func_ptr)(void);
+void_func_ptr keep_mcpc_server_ref = (void_func_ptr)mcpc_server_new_iostrm;
+void_func_ptr keep_mcpc_tool_ref = (void_func_ptr)mcpc_tool_new2;

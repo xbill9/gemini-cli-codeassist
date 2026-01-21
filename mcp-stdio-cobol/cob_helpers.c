@@ -2,6 +2,8 @@
 #include <libcob.h>
 #include "mcpc/mcpc.h"
 
+void greet_cb_wrapper(void *tool, void *ucbr);
+
 /* Wrapper for COBOL callback to handle argument passing safely */
 void greet_cb_wrapper(void *tool, void *ucbr) {
     void *args[2];
