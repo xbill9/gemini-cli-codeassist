@@ -1,0 +1,28 @@
+steps:
+  # Build the application image
+  - name: "gcr.io/cloud-builders/docker"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        docker build \
+        -t gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest . && \
+        docker push gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest
+
+  # Deploy to cloud run US
+  - name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        gcloud run deploy ${_SERVICE_NAME} \
+        --image gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest \
+        --region us-central1 --platform managed \
+        --allow-unauthenticated \
+        --set-env-vars GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=us-central1,PROJECT_ID=$PROJECT_ID \
+        --clear-secrets
+
+timeout: 800s
+
+substitutions:
+  _SERVICE_NAME: mcp-https-cobol
