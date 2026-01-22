@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+    "mcp-cloudrun-fortran": {
+	       "httpUrl": "https://mcp-https-fortran-$PROJECT_NUMBER.us-central1.run.app"
+    }
+  }
+}
