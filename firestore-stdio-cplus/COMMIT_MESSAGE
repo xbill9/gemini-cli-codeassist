@@ -1,0 +1,6 @@
+refactor: Ensure all logging is in JSON format
+
+- Updated `cpp-mcp/include/mcp_logger.h` to output logs in JSON format to stderr.
+- Replaced ANSI color codes and text formatting with structured JSON fields: `timestamp` (ISO 8601), `level`, and `message`.
+- Ensured consistency with `main.cpp`'s existing JSON logging.
+- Verified that `main.cpp` already uses JSON logging for application-level logs.
