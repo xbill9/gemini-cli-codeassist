@@ -18,7 +18,7 @@
 
 int main() {
   try {
-    std::cerr << "Starting main..." << std::endl;
+    log_json("INFO", "Starting main...");
     // Read port from environment variable, default to 8080
     int port = 8080;
     const char *port_env = std::getenv("PORT");
@@ -31,10 +31,10 @@ int main() {
       }
     }
 
-    std::cerr << "Initializing FirestoreClient..." << std::endl;
+    log_json("INFO", "Initializing FirestoreClient...");
     // Initialize Firestore Client
     auto db = std::make_shared<FirestoreClient>();
-    std::cerr << "Calling db->initialize()..." << std::endl;
+    log_json("INFO", "Calling db->initialize()...");
     bool db_running = db->initialize();
 
     if (db_running) {
@@ -43,13 +43,13 @@ int main() {
       log_json("ERROR", "Error connecting to Firestore.");
     }
 
-    std::cerr << "Configuring MCP server..." << std::endl;
+    log_json("INFO", "Configuring MCP server...");
     // Create and configure server
     mcp::server::configuration srv_conf;
     srv_conf.host = "0.0.0.0";
     srv_conf.port = port;
 
-    std::cerr << "Creating mcp::server instance..." << std::endl;
+    log_json("INFO", "Creating mcp::server instance...");
     mcp::server server(srv_conf);
     server.set_server_info("mcp-https-cplus", "1.0.0");
 

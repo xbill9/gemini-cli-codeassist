@@ -50,38 +50,36 @@ FirestoreClient::FirestoreClient() {}
 
 bool FirestoreClient::initialize() {
   try {
-    std::cerr << "FirestoreClient::initialize(): calling get_project_id()"
-              << std::endl;
+    log_json("INFO", "FirestoreClient::initialize(): calling get_project_id()");
     project_id_ = get_project_id();
-    std::cerr << "project_id_: " << project_id_ << std::endl;
+    log_json("INFO", "project_id_", {{"project_id", project_id_}});
     if (project_id_.empty()) {
       log_json("ERROR", "GOOGLE_CLOUD_PROJECT environment variable not set.");
       return false;
     }
 
-    std::cerr << "FirestoreClient::initialize(): calling get_access_token()"
-              << std::endl;
+    log_json("INFO",
+             "FirestoreClient::initialize(): calling get_access_token()");
     access_token_ = get_access_token();
-    std::cerr << "access_token_ length: " << access_token_.length()
-              << std::endl;
+    log_json("INFO", "access_token_ length",
+             {{"length", (long)access_token_.length()}});
     if (access_token_.empty()) {
       log_json("ERROR", "Failed to obtain access token.");
       return false;
     }
 
     // Test connection
-    std::cerr << "FirestoreClient::initialize(): testing connection to "
-                 "firestore.googleapis.com"
-              << std::endl;
+    log_json("INFO", "FirestoreClient::initialize(): testing connection to "
+                     "firestore.googleapis.com");
     httplib::Client cli("https://firestore.googleapis.com");
     cli.set_bearer_token_auth(access_token_);
     std::string path = "/v1/projects/" + project_id_ +
                        "/databases/(default)/documents/inventory?pageSize=1";
 
-    std::cerr << "FirestoreClient::initialize(): calling cli.Get(" << path
-              << ")" << std::endl;
+    log_json("INFO", "FirestoreClient::initialize(): calling cli.Get",
+             {{"path", path}});
     auto res = cli.Get(path.c_str());
-    std::cerr << "FirestoreClient::initialize(): cli.Get returned" << std::endl;
+    log_json("INFO", "FirestoreClient::initialize(): cli.Get returned");
     if (res && res->status == 200) {
       initialized_ = true;
       return true;
@@ -112,19 +110,18 @@ std::string FirestoreClient::get_access_token() {
   // Try Metadata Server first (Cloud Run / GCE)
   // Using a short timeout
   try {
-    std::cerr << "get_access_token(): creating httplib::Client for metadata"
-              << std::endl;
+    log_json("INFO",
+             "get_access_token(): creating httplib::Client for metadata");
     httplib::Client cli("http://metadata.google.internal");
-    std::cerr << "get_access_token(): setting timeouts" << std::endl;
+    log_json("INFO", "get_access_token(): setting timeouts");
     cli.set_connection_timeout(1); // 1 second timeout
     cli.set_read_timeout(1);
 
     httplib::Headers headers = {{"Metadata-Flavor", "Google"}};
-    std::cerr << "get_access_token(): calling cli.Get() for metadata"
-              << std::endl;
+    log_json("INFO", "get_access_token(): calling cli.Get() for metadata");
     auto res = cli.Get(
         "/computeMetadata/v1/instance/service-accounts/default/token", headers);
-    std::cerr << "get_access_token(): cli.Get() returned" << std::endl;
+    log_json("INFO", "get_access_token(): cli.Get() returned");
 
     if (res && res->status == 200) {
       try {
@@ -134,17 +131,17 @@ std::string FirestoreClient::get_access_token() {
       }
     }
   } catch (const std::exception &e) {
-    std::cerr << "get_access_token(): exception during metadata check: "
-              << e.what() << std::endl;
+    log_json("WARNING", "get_access_token(): exception during metadata check",
+             {{"error", e.what()}});
   } catch (...) {
-    std::cerr << "get_access_token(): unknown exception during metadata check"
-              << std::endl;
+    log_json("WARNING",
+             "get_access_token(): unknown exception during metadata check");
   }
 
   // Fallback to gcloud
-  std::cerr
-      << "get_access_token(): falling back to gcloud auth print-access-token"
-      << std::endl;
+  log_json(
+      "INFO",
+      "get_access_token(): falling back to gcloud auth print-access-token");
   return exec("gcloud auth print-access-token 2>/dev/null");
 }
 

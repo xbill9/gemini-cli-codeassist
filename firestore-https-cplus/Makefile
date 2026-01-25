@@ -4,7 +4,7 @@ CXXFLAGS = $(BASE_CXXFLAGS) -O2
 MCP_LIB = cpp-mcp/build/src/libmcp.a
 LDFLAGS = $(MCP_LIB) -lpthread -lssl -lcrypto
 
-all: submodule-update server
+all: server
 
 # Debug build: includes debug info, no optimization
 debug: CXXFLAGS = $(BASE_CXXFLAGS) -g -O0 -DDEBUG

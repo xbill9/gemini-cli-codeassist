@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "mcp-https-cplus": {
+    "firestore-https-cplus": {
       "url": "http://127.0.0.1:8080/sse"
     }
   }
