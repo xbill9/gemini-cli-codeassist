@@ -31,8 +31,19 @@ This project provides a basic MCP server named `firestore-stdio-cplus` that expo
 
 This server is designed to be executed by an MCP client (like Claude Desktop or a Gemini-powered IDE extension) that handles the stdio communication.
 
+### Environment Configuration
+
+To successfully connect to Firestore, you must configure the following environment variables:
+
+1.  **Project ID (Required):**
+    *   `GOOGLE_CLOUD_PROJECT` OR `FIREBASE_PROJECT_ID`: Set this to your Google Cloud or Firebase project ID.
+2.  **Authentication (Optional but recommended):**
+    *   `FIRESTORE_ACCESS_TOKEN`: A valid OAuth 2.0 access token.
+    *   *Fallback:* If `FIRESTORE_ACCESS_TOKEN` is not set, the server attempts to run `gcloud auth print-access-token` to fetch credentials. Ensure the `gcloud` CLI is installed and authenticated (`gcloud auth login`) in the environment where the server runs.
+
 To run the server manually (starts listening on stdio):
 ```bash
+export GOOGLE_CLOUD_PROJECT=my-project-id
 ./server
 ```
 

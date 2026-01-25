@@ -11,5 +11,5 @@ add_subdirectory(cpp-mcp)
 include_directories(cpp-mcp/include)
 include_directories(cpp-mcp/common)
 
-add_executable(server main.cpp)
+add_executable(server main.cpp firestore_client.cpp)
 target_link_libraries(server mcp)

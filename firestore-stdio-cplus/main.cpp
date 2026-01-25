@@ -19,6 +19,7 @@
 #include "json.hpp"
 #include "mcp_message.h"
 #include "mcp_tool.h"
+#include "firestore_client.hpp"
 
 using json = nlohmann::json;
 
@@ -66,7 +67,11 @@ std::string GetAccessToken() {
     token += buffer;
   }
   pclose(pipe);
-  token.erase(token.find_last_not_of(" \n\r\t") + 1);
+  if (!token.empty()) {
+    size_t last = token.find_last_not_of(" \n\r\t");
+    if (last != std::string::npos)
+        token = token.substr(0, last + 1);
+  }
 
   if (token.empty()) {
     log_json("WARN", "gcloud returned empty token");
@@ -92,260 +97,14 @@ std::string GetProjectId() {
       pid += buffer;
     }
     pclose(pipe);
-    pid.erase(pid.find_last_not_of(" \n\r\t") + 1);
+    if (!pid.empty()) {
+        size_t last = pid.find_last_not_of(" \n\r\t");
+        if (last != std::string::npos)
+            pid = pid.substr(0, last + 1);
+    }
   }
   return pid;
 }
-
-// Firestore REST Helpers
-namespace Firestore {
-
-// Convert Simple JSON to Firestore Value
-json ToValue(const json &j) {
-  if (j.is_null())
-    return {{"nullValue", nullptr}};
-  if (j.is_boolean())
-    return {{"booleanValue", j.get<bool>()}};
-  if (j.is_number_integer())
-    return {{"integerValue", std::to_string(j.get<long long>())}};
-  if (j.is_number_float())
-    return {{"doubleValue", j.get<double>()}};
-  if (j.is_string())
-    return {{"stringValue", j.get<std::string>()}};
-  if (j.is_array()) {
-    json arr = json::array();
-    for (const auto &el : j)
-      arr.push_back(ToValue(el));
-    return {{"arrayValue", {{"values", arr}}}};
-  }
-  if (j.is_object()) {
-    // Special case for Timestamp if encoded as object in our logic
-    if (j.contains("type") && j["type"] == "timestamp" && j.contains("value")) {
-      return {{"timestampValue", j["value"]}};
-    }
-
-    json fields = json::object();
-    for (auto &[key, val] : j.items()) {
-      fields[key] = ToValue(val);
-    }
-    return {{"mapValue", {{"fields", fields}}}};
-  }
-  return {{"nullValue", nullptr}};
-}
-
-// Convert Firestore Value to Simple JSON
-json FromValue(const json &v) {
-  if (v.contains("nullValue"))
-    return nullptr;
-  if (v.contains("booleanValue"))
-    return v["booleanValue"];
-  if (v.contains("integerValue"))
-    return std::stoll(v["integerValue"].get<std::string>());
-  if (v.contains("doubleValue"))
-    return v["doubleValue"];
-  if (v.contains("stringValue"))
-    return v["stringValue"];
-  if (v.contains("timestampValue"))
-    return v["timestampValue"];
-  if (v.contains("mapValue")) {
-    json obj = json::object();
-    if (v["mapValue"].contains("fields")) {
-      for (auto &[key, val] : v["mapValue"]["fields"].items()) {
-        obj[key] = FromValue(val);
-      }
-    }
-    return obj;
-  }
-  if (v.contains("arrayValue")) {
-    json arr = json::array();
-    if (v["arrayValue"].contains("values")) {
-      for (const auto &el : v["arrayValue"]["values"]) {
-        arr.push_back(FromValue(el));
-      }
-    }
-    return arr;
-  }
-  return nullptr;
-}
-
-// Parse Document
-json ParseDocument(const json &doc) {
-  if (!doc.contains("name"))
-    return json::object(); // invalid
-  json obj = json::object();
-
-  // Extract ID from name
-  std::string name = doc["name"];
-  size_t lastSlash = name.find_last_of('/');
-  if (lastSlash != std::string::npos) {
-    obj["id"] = name.substr(lastSlash + 1);
-  }
-
-  if (doc.contains("fields")) {
-    for (auto &[key, val] : doc["fields"].items()) {
-      obj[key] = FromValue(val);
-    }
-  }
-  return obj;
-}
-
-class Client {
-public:
-  Client(const std::string &project)
-      : project_(project), cli_("https://firestore.googleapis.com") {
-    cli_.set_connection_timeout(10);
-    cli_.set_read_timeout(10);
-  }
-
-  void SetToken(const std::string &token) { token_ = token; }
-
-  bool CheckConnection() {
-    // Try getting database metadata as a ping
-    auto res =
-        cli_.Get(("/v1/projects/" + project_ + "/databases/(default)").c_str(),
-                 GetHeaders());
-    return res && res->status == 200;
-  }
-
-  json ListDocuments(const std::string &collection) {
-    std::string path = "/v1/projects/" + project_ +
-                       "/databases/(default)/documents/" + collection;
-    auto res = cli_.Get(path.c_str(), GetHeaders());
-    if (!res || res->status != 200) {
-      throw std::runtime_error(
-          "Failed to list documents: " +
-          (res ? std::to_string(res->status) : "Connection Error"));
-    }
-    json j = json::parse(res->body);
-    json results = json::array();
-    if (j.contains("documents")) {
-      for (const auto &doc : j["documents"]) {
-        results.push_back(ParseDocument(doc));
-      }
-    }
-    return results;
-  }
-
-  json GetDocument(const std::string &collection, const std::string &id) {
-    std::string path = "/v1/projects/" + project_ +
-                       "/databases/(default)/documents/" + collection + "/" +
-                       id;
-    auto res = cli_.Get(path.c_str(), GetHeaders());
-    if (!res)
-      throw std::runtime_error("Connection error");
-    if (res->status == 404)
-      throw std::runtime_error("Document not found");
-    if (res->status != 200)
-      throw std::runtime_error("Error getting document: " +
-                               std::to_string(res->status));
-
-    return ParseDocument(json::parse(res->body));
-  }
-
-  void AddDocument(const std::string &collection, const json &data,
-                   const std::string &id = "") {
-    std::string path = "/v1/projects/" + project_ +
-                       "/databases/(default)/documents/" + collection;
-    std::string params = "";
-    if (!id.empty()) {
-      params = "?documentId=" + id;
-    }
-
-    json doc;
-    json fields = json::object();
-    for (auto &[key, val] : data.items()) {
-      fields[key] = ToValue(val);
-    }
-    doc["fields"] = fields;
-
-    auto res = cli_.Post((path + params).c_str(), GetHeaders(), doc.dump(),
-                         "application/json");
-    if (!res || res->status != 200) {
-      throw std::runtime_error("Failed to add document: " +
-                               (res ? res->body : "Connection Error"));
-    }
-  }
-
-  void UpdateDocument(const std::string &collection, const std::string &id,
-                      const json &data) {
-    std::string path = "/v1/projects/" + project_ +
-                       "/databases/(default)/documents/" + collection + "/" +
-                       id;
-    // Use PATCH
-    json doc;
-    json fields = json::object();
-    for (auto &[key, val] : data.items()) {
-      fields[key] = ToValue(val);
-    }
-    doc["fields"] = fields;
-
-    auto res =
-        cli_.Patch(path.c_str(), GetHeaders(), doc.dump(), "application/json");
-    if (!res || res->status != 200) {
-      throw std::runtime_error("Failed to update document: " +
-                               (res ? res->body : "Connection Error"));
-    }
-  }
-
-  void DeleteDocument(const std::string &collection, const std::string &id) {
-    std::string path = "/v1/projects/" + project_ +
-                       "/databases/(default)/documents/" + collection + "/" +
-                       id;
-    auto res = cli_.Delete(path.c_str(), GetHeaders());
-    if (!res || res->status != 200) {
-      throw std::runtime_error(
-          "Failed to delete document: " +
-          (res ? std::to_string(res->status) : "Connection Error"));
-    }
-  }
-
-  // Returns list of documents (simplified) that match the query
-  json RunQuery(const std::string &collection, const std::string &field,
-                const std::string &value) {
-    std::string path =
-        "/v1/projects/" + project_ + "/databases/(default)/documents:runQuery";
-    json query = {{"structuredQuery",
-                   {{"from", {{{"collectionId", collection}}}},
-                    {"where",
-                     {{"fieldFilter",
-                       {{"field", {{"fieldPath", field}}},
-                        {"op", "EQUAL"},
-                        {"value", {{"stringValue", value}}}}}}}}}};
-
-    auto res =
-        cli_.Post(path.c_str(), GetHeaders(), query.dump(), "application/json");
-    if (!res || res->status != 200) {
-      throw std::runtime_error("Query failed: " +
-                               (res ? res->body : "Connection Error"));
-    }
-
-    json response = json::parse(res->body);
-    json results = json::array();
-    if (response.is_array()) {
-      for (const auto &item : response) {
-        if (item.contains("document")) {
-          results.push_back(ParseDocument(item["document"]));
-        }
-      }
-    }
-    return results;
-  }
-
-private:
-  std::string project_;
-  std::string token_;
-  httplib::Client cli_;
-
-  httplib::Headers GetHeaders() {
-    httplib::Headers headers;
-    if (!token_.empty()) {
-      headers.emplace("Authorization", "Bearer " + token_);
-    }
-    return headers;
-  }
-};
-
-} // namespace Firestore
 
 // Server State
 bool db_running = false;
@@ -467,9 +226,7 @@ public:
         continue;
 
       try {
-        log_json("DEBUG", "Received message",
-                 {{"content",
-                   line}}); // Corrected: Added missing closing brace and comma
+        log_json("DEBUG", "Received message", {{"content", line}});
         json j = json::parse(line);
 
         if (!j.contains("jsonrpc") || j["jsonrpc"] != "2.0") {
@@ -487,18 +244,12 @@ public:
           handle_notification(req);
         } else {
           json response = handle_request(req);
-          log_json(
-              "DEBUG", "Sending response",
-              {{"content",
-                response}}); // Corrected: Added missing closing brace and comma
+          log_json("DEBUG", "Sending response", {{"content", response}});
           std::cout << response.dump() << std::endl;
         }
 
       } catch (const std::exception &e) {
-        log_json(
-            "ERROR", "Error processing line",
-            {{"error",
-              e.what()}}); // Corrected: Added missing closing brace and comma
+        log_json("ERROR", "Error processing line", {{"error", e.what()}});
       }
     }
   }
@@ -617,8 +368,12 @@ int main() {
   server.register_tool(
       mcp::tool_builder("greet").with_string_param("param", "Name").build(),
       [](const json &args, const std::string &) -> json {
-        return json::array(
-            {{{"type", "text"}, {"text", args.value("param", "")}}});
+        json content = json::array();
+        json msg;
+        msg["type"] = "text";
+        msg["text"] = args.value("param", "");
+        content.push_back(msg);
+        return content;
       });
 
   server.register_tool(
@@ -629,7 +384,12 @@ int main() {
       [](const json &args, const std::string &) -> json {
         std::string str = args.value("input", "");
         std::reverse(str.begin(), str.end());
-        return json::array({{{"type", "text"}, {"text", str}}});
+        json content = json::array();
+        json msg;
+        msg["type"] = "text";
+        msg["text"] = str;
+        content.push_back(msg);
+        return content;
       });
 
   server.register_tool(
@@ -640,7 +400,12 @@ int main() {
         if (!db_running)
           throw std::runtime_error("DB not connected");
         auto products = db_client->ListDocuments("inventory");
-        return json::array({{{"type", "text"}, {"text", products.dump(2)}}});
+        json content = json::array();
+        json msg;
+        msg["type"] = "text";
+        msg["text"] = products.dump(2);
+        content.push_back(msg);
+        return content;
       });
 
   server.register_tool(
@@ -652,7 +417,12 @@ int main() {
           throw std::runtime_error("DB not connected");
         auto product =
             db_client->GetDocument("inventory", args.value("id", ""));
-        return json::array({{{"type", "text"}, {"text", product.dump(2)}}});
+        json content = json::array();
+        json msg;
+        msg["type"] = "text";
+        msg["text"] = product.dump(2);
+        content.push_back(msg);
+        return content;
       });
 
   server.register_tool(
@@ -661,7 +431,12 @@ int main() {
         if (!db_running)
           throw std::runtime_error("DB not connected");
         InitFirestoreCollection();
-        return json::array({{{"type", "text"}, {"text", "Seeded"}}});
+        json content = json::array();
+        json msg;
+        msg["type"] = "text";
+        msg["text"] = "Seeded";
+        content.push_back(msg);
+        return content;
       });
 
   server.register_tool(
@@ -670,24 +445,162 @@ int main() {
         if (!db_running)
           throw std::runtime_error("DB not connected");
         CleanFirestoreCollection();
-        return json::array({{{"type", "text"}, {"text", "Reset"}}});
+        json content = json::array();
+        json msg;
+        msg["type"] = "text";
+        msg["text"] = "Reset";
+        content.push_back(msg);
+        return content;
       });
 
   server.register_tool(
       mcp::tool_builder("check_db").build(),
       [](const json &, const std::string &) -> json {
-        return json::array(
-            {{{"type", "text"},
-              {"text", db_running ? "Connected" : "Not connected"}}});
+         json content = json::array();
+         json msg;
+         msg["type"] = "text";
+         msg["text"] = db_running ? "Connected" : "Not connected";
+         content.push_back(msg);
+         return content;
       });
 
   server.register_tool(
       mcp::tool_builder("get_root").build(),
       [](const json &, const std::string &) -> json {
-        return json::array(
-            {{{"type", "text"},
-              {"text",
-               "🍎 Hello! This is the Cymbal Superstore Inventory API."}}});
+        json content = json::array();
+        json msg;
+        msg["type"] = "text";
+        msg["text"] = "🍎 Hello! This is the Cymbal Superstore Inventory API.";
+        content.push_back(msg);
+        return content;
+      });
+
+  server.register_tool(
+      mcp::tool_builder("delete_product")
+          .with_description("Delete a product by ID")
+          .with_string_param("id", "Product ID")
+          .build(),
+      [](const json &args, const std::string &) -> json {
+        if (!db_running)
+          throw std::runtime_error("DB not connected");
+        std::string id = args.value("id", "");
+        if (id.empty()) throw std::runtime_error("ID is required");
+        db_client->DeleteDocument("inventory", id);
+        json content = json::array();
+        json msg;
+        msg["type"] = "text";
+        msg["text"] = "Deleted product " + id;
+        content.push_back(msg);
+        return content;
+      });
+
+  server.register_tool(
+      mcp::tool_builder("update_product")
+          .with_description("Update a product. Data must be a JSON string.")
+          .with_string_param("id", "Product ID")
+          .with_string_param("data", "JSON string of fields to update")
+          .build(),
+      [](const json &args, const std::string &) -> json {
+        if (!db_running)
+          throw std::runtime_error("DB not connected");
+        std::string id = args.value("id", "");
+        std::string dataStr = args.value("data", "");
+        if (id.empty()) throw std::runtime_error("ID is required");
+        if (dataStr.empty()) throw std::runtime_error("Data is required");
+        
+        json data = json::parse(dataStr);
+        db_client->UpdateDocument("inventory", id, data);
+        json content = json::array();
+        json msg;
+        msg["type"] = "text";
+        msg["text"] = "Updated product " + id;
+        content.push_back(msg);
+        return content;
+      });
+
+  server.register_tool(
+      mcp::tool_builder("inventory_report")
+          .with_description("Generates a full inventory report")
+          .build(),
+      [](const json &, const std::string &) -> json {
+        if (!db_running)
+          throw std::runtime_error("DB not connected");
+        auto products = db_client->ListDocuments("inventory");
+        std::ostringstream report;
+        report << "INVENTORY REPORT\n";
+        report << "================\n";
+        report << std::left << std::setw(30) << "Name"
+               << std::setw(10) << "Qty"
+               << std::setw(10) << "Price" << "\n";
+        report << "--------------------------------------------------\n";
+
+        for (const auto &p : products) {
+            std::string name = p.value("name", "Unknown");
+            int quantity = p.value("quantity", 0);
+            int price = p.value("price", 0);
+            report << std::left << std::setw(30) << name
+                   << std::setw(10) << quantity
+                   << std::setw(10) << price << "\n";
+        }
+
+        json content = json::array();
+        json msg;
+        msg["type"] = "text";
+        msg["text"] = report.str();
+        content.push_back(msg);
+        return content;
+      });
+
+  server.register_tool(
+      mcp::tool_builder("recommend_menu")
+          .with_description("Recommends a menu for Keith")
+          .build(),
+      [](const json &, const std::string &) -> json {
+        if (!db_running)
+          throw std::runtime_error("DB not connected");
+        auto products = db_client->ListDocuments("inventory");
+        
+        std::vector<std::string> cheese;
+        std::vector<std::string> main;
+        std::vector<std::string> dessert;
+
+        for (const auto &p : products) {
+            std::string name = p.value("name", "");
+            std::string lowerName = name;
+            std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+            
+            if (lowerName.find("cheese") != std::string::npos || lowerName.find("crisp") != std::string::npos) {
+                cheese.push_back(name);
+            } else if (lowerName.find("chicken") != std::string::npos || lowerName.find("beef") != std::string::npos || lowerName.find("rice") != std::string::npos || lowerName.find("bread") != std::string::npos) {
+                main.push_back(name);
+            } else if (lowerName.find("apple") != std::string::npos || lowerName.find("banana") != std::string::npos || lowerName.find("yogurt") != std::string::npos || lowerName.find("fruit") != std::string::npos) {
+                dessert.push_back(name);
+            }
+        }
+
+        std::ostringstream menu;
+        menu << "KEITH'S SPECIAL MENU\n";
+        menu << "====================\n\n";
+        
+        menu << "Appetizers (The Cheesy Goodness):\n";
+        if (cheese.empty()) menu << "  (Sadly, no cheese today...)\n";
+        for (const auto &s : cheese) menu << "  - " << s << "\n";
+        
+        menu << "\nMain Course (Hearty Bites):\n";
+        if (main.empty()) menu << "  (Nothing substantial found)\n";
+        for (const auto &s : main) menu << "  - " << s << "\n";
+
+        menu << "\nDessert (Sweet Finishes):\n";
+        if (dessert.empty()) menu << "  (No sweets? Keith is sad.)\n";
+        for (const auto &s : dessert) menu << "  - " << s << "\n";
+
+        json content = json::array();
+        json msg;
+        msg["type"] = "text";
+        msg["text"] = menu.str();
+        content.push_back(msg);
+        return content;
       });
 
   server.start();

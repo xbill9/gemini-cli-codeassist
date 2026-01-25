@@ -13,6 +13,12 @@ server
 *.d
 compile_commands.json
 .cache/
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+Makefile
 
 # Editor and System files
 .vscode/
