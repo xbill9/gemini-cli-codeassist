@@ -4,13 +4,22 @@ APP_NAME = mcp-server
 LISP = sbcl
 LISP_FLAGS = --noinform --disable-ldb --disable-debugger
 
-.PHONY: all deps run build clean
+.PHONY: all deps run build clean lint
 
 all: build
 
 # Target to install dependencies
 deps:
 	@./setup.lisp
+
+# Target to run linter
+lint:
+	@$(LISP) $(LISP_FLAGS) \
+		--load $(HOME)/quicklisp/setup.lisp \
+		--load mcp-https-lisp.asd \
+		--eval '(ql:quickload :sblint)' \
+		--eval '(sblint/run-lint:run-lint-asd #p"mcp-https-lisp.asd")' \
+		--quit
 
 # Target to build the binary
 build:

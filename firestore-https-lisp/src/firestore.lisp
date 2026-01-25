@@ -60,8 +60,13 @@
         (project-id (or *firestore-project-id* (setf *firestore-project-id* (get-google-project-id)))))
     (unless project-id (error "Project ID not found"))
     (unless token (error "Access token not found"))
-    (let ((url (format nil "https://firestore.googleapis.com/v1/projects/~A/databases/(default)/documents~A"
-                       project-id path)))
+    (let* ((base-url (format nil "https://firestore.googleapis.com/v1/projects/~A/databases/(default)/documents~A"
+                            project-id path))
+           (url (if params
+                    (let ((uri (quri:uri base-url)))
+                      (setf (quri:uri-query-params uri) params)
+                      (quri:render-uri uri))
+                    base-url)))
       (log-debug "Sending Firestore request" (serapeum:dict "method" method "url" url))
       (handler-case
           (let ((response
