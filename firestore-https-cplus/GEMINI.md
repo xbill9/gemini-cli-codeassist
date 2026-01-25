@@ -4,66 +4,80 @@ This document provides context for the Gemini Code Assistant to understand the p
 
 ## Project Overview
 
-This is a **C++ based Model Context Protocol (MCP) server** named `mcp-https-cplus`, implemented using the `cpp-mcp` library. It exposes a single tool (`greet`) over HTTP/SSE (listening on `0.0.0.0:8080`) and logs structured JSON to stderr.
+This is a **C++ based Model Context Protocol (MCP) server** named `mcp-https-cplus`, implemented using the `cpp-mcp` library. It exposes tools to manage a product inventory stored in **Google Cloud Firestore**. It communicates over HTTP/SSE (listening on `0.0.0.0:8080`) and logs structured JSON to stderr.
 
 ## Key Technologies
 
 *   **Language:** C++ (C++17 Standard)
 *   **Library:** `cpp-mcp` (embedded in `cpp-mcp/` directory)
+*   **Database:** Google Cloud Firestore (via REST API using `httplib`)
 *   **Build System:** `make`
 *   **Communication:** HTTP/SSE (port 8080) for MCP; `stderr` for logging.
-*   **Testing:** Python 3 (`test_server.py`)
+*   **Testing:** Python 3 (`test_server.py`, `test_firestore.py`)
+*   **Deployment:** Google Cloud Build (`cloudbuild.yaml`)
 
 Do Not use stdio transport for this project
 
 ## Project Structure
 
-*   `main.cpp`: The entry point. Uses `mcp::server` to handle the MCP protocol over HTTP/SSE. It supports:
-    *   `initialize`: Sets up the connection.
-    *   `notifications/initialized`: Transitions the server to initialized state.
-    *   `ping`: Standard connectivity check.
-    *   `tools/list`: Lists registered tools.
-    *   `tools/call`: Executes a tool.
-*   `Makefile`: Build configuration with targets for building, testing, and cleaning.
-*   `test_server.py`: Python script for integration testing the compiled server.
+*   `main.cpp`: The entry point. Configures the `mcp::server` and registers tools.
+*   `firestore_client.hpp/cpp`: A custom Firestore client handling authentication (Metadata server or `gcloud`) and REST API calls.
+*   `logger.hpp`: Logging utility for structured JSON logging.
+*   `Makefile`: Build configuration.
+*   `cloudbuild.yaml`: Google Cloud Build configuration.
+*   `test_server.py`: Python script for integration testing the server.
+*   `test_firestore.py`: Tests for the Python Firestore client wrapper (used in tests).
 *   `cpp-mcp/`: The C++ MCP library source code (submodule).
 
 ## Implemented Tools
 
 ### `greet`
 *   **Description:** Get a greeting from a local HTTP server.
-*   **Parameters:**
-    *   `param` (string): Greeting parameter.
-*   **Implementation:** Returns the input `param` as a text content block.
+*   **Parameters:** `param` (string)
+
+### `get_products`
+*   **Description:** Get a list of all products from the inventory.
+*   **Parameters:** None
+
+### `get_product_by_id`
+*   **Description:** Get a single product by its ID.
+*   **Parameters:** `id` (string)
+
+### `search`
+*   **Description:** Search for products by name.
+*   **Parameters:** `query` (string)
+
+### `seed`
+*   **Description:** Seed the inventory database with sample products.
+*   **Parameters:** None
+
+### `reset`
+*   **Description:** Clear all products from the inventory database.
+*   **Parameters:** None
+
+### `get_root`
+*   **Description:** Get a greeting from the API.
+*   **Parameters:** None
 
 ## API Usage (cpp-mcp)
 
-The project uses the `cpp-mcp` library. Key components used in `main.cpp`:
+The project uses the `cpp-mcp` library. Key components:
 
-*   **mcp::tool**: Represents an MCP tool definition.
-*   **mcp::tool_builder**: Fluent API for creating tools.
-*   **mcp::request / mcp::response**: Helpers for JSON-RPC messages.
-*   **nlohmann::json**: (Aliased as `mcp::json`) Used for JSON manipulation.
+*   **mcp::server**: The main server class.
+*   **mcp::tool_builder**: Fluent API for creating tool definitions.
+*   **nlohmann::json**: Used for JSON manipulation.
+
+## Authentication & Configuration
+
+*   **Project ID:** Read from `GOOGLE_CLOUD_PROJECT` env var or `gcloud config`.
+*   **Access Token:** Fetched via Metadata Server (Cloud Run) or `gcloud auth print-access-token` (Local).
+*   **Port:** Configurable via `PORT` env var (default 8080).
 
 ## Build & Development
 
-The `Makefile` supports the following targets:
-
-*   `make` (or `make all`): Builds the `server` binary with optimizations.
-*   `make debug`: Builds with debug symbols (`-g -O0`).
-*   `make release`: Builds with high optimization and strips the binary.
-*   `make test`: Runs the integration tests using `python3 test_server.py`.
-*   `make check`: Runs both `lint` and `test`.
-*   `make lint`: Checks formatting with `clang-format`.
-*   `make format`: Applies formatting with `clang-format`.
-*   `make clean`: Removes build artifacts.
-
-## Running the Server
-
-```bash
-./server
-```
-
-*   **Input:** JSON-RPC 2.0 messages via `stdin`.
-*   **Output:** JSON-RPC 2.0 messages via `stdout`.
-*   **Logs:** JSON formatted logs via `stderr`.
+*   `make`: Build release binary (`server`).
+*   `make debug`: Build with debug symbols.
+*   `make test`: Run integration tests.
+*   `make check`: Run lint and test.
+*   `make clean`: Remove artifacts.
+*   `make deploy`: Submit to Cloud Build.
