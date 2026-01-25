@@ -14,14 +14,20 @@ server
 compile_commands.json
 .cache/
 build/
+_deps/
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 install_manifest.txt
 Makefile
+bin/
+lib/
+*.log
 
 # Editor and System files
 .vscode/
 .idea/
+.clangd/
+.ccls-cache/
 *~
 .DS_Store

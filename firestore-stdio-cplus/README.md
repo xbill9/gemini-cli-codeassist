@@ -98,6 +98,23 @@ The server implements several tools for interacting with a Firestore-backed inve
 ### `get_root`
 - **Description:** Get a welcome message from the API.
 
+### `delete_product`
+- **Description:** Delete a product by ID.
+- **Parameters:**
+    - `id` (string): Product ID.
+
+### `update_product`
+- **Description:** Update a product. Data must be a JSON string.
+- **Parameters:**
+    - `id` (string): Product ID.
+    - `data` (string): JSON string of fields to update.
+
+### `inventory_report`
+- **Description:** Generates a full inventory report.
+
+### `recommend_menu`
+- **Description:** Recommends a menu for Keith.
+
 
 ## Development
 

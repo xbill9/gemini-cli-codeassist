@@ -62,6 +62,20 @@ https://firebase.google.com/docs/firestore/use-rest-api?_gl=1*1itzago*_up*MQ..*_
 ### `get_root`
 *   **Description:** Returns a welcome message.
 
+### `delete_product`
+*   **Description:** Delete a product by ID.
+*   **Parameters:** `id` (string)
+
+### `update_product`
+*   **Description:** Update a product. Data must be a JSON string.
+*   **Parameters:** `id` (string), `data` (string - JSON string of fields to update)
+
+### `inventory_report`
+*   **Description:** Generates a full inventory report.
+
+### `recommend_menu`
+*   **Description:** Recommends a menu for Keith.
+
 ## API Usage (cpp-mcp)
 
 The project uses the `cpp-mcp` library. Key components used in `main.cpp`:
