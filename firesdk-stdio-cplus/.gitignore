@@ -1,0 +1,61 @@
+# Python artifacts
+__pycache__/
+*.pyc
+.venv/
+.env
+.pytest_cache/
+
+# C++ build artifacts
+*.o
+*.obj
+server
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.d
+compile_commands.json
+.cache/
+build/
+_deps/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+Makefile
+bin/
+lib/
+*.log
+*.ninja
+.ninja_deps
+.ninja_log
+
+# Coverage
+*.gcno
+*.gcda
+*.gcov
+coverage/
+
+# Editor and System files
+.vscode/
+.idea/
+.clangd/
+.ccls-cache/
+*~
+.DS_Store
+*.swp
+*.swo
+
+# Visual Studio
+*.sln
+*.vcxproj
+*.filters
+*.user
+.vs/
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+
+firebase-cpp-sdk

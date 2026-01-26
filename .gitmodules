@@ -13,3 +13,11 @@
 [submodule "firestore-https-cplus/cpp-mcp"]
 	path = firestore-https-cplus/cpp-mcp
 	url = https://github.com/xbill9/cpp-mcp
+
+[submodule "firesdk-stdio-cplus/cpp-mcp"]
+	path = firesdk-stdio-cplus/cpp-mcp
+	url = https://github.com/xbill9/cpp-mcp
+
+[submodule "firesdk-stdio-cplus/firebase-cpp-sdk"]
+	path = firesdk-stdio-cplus/firebase-cpp-sdk
+	url = https://github.com/xbill9/firebase-cpp-sdk

@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+      "firesdk-stdio-cplus": {
+        "command": "$HOME/gemini-cli-codeassist/firesdk-stdio-cplus/server"
+        }
+      }
+    }
