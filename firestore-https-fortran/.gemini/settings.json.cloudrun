@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+    "firestore-cloudrun-fortran": {
+       "httpUrl": "https://firestore-https-fortran-$PROJECT_NUMBER.us-central1.run.app"
+    }
+  }
+}
