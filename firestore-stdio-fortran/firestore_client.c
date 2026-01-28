@@ -6,9 +6,8 @@
 #include <ctype.h>
 #include <unistd.h>
 #include "mcpc/mcpc.h"
+#include "firestore_client.h"
 #include "../mcpc/src/mjson.h"
-
-void log_info_c(const char *msg);
 
 // Helper to run shell command and get output
 // Caller must free result
