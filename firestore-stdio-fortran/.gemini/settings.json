@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+      "firestore-stdio-fortran": {
+        "command": "$HOME/gemini-cli-codeassist/firestore-stdio-fortran/firestore-server"
+        }
+      }
+    }
