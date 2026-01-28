@@ -11,7 +11,7 @@
 
 // Helper to run shell command and get output
 // Caller must free result
-static char* get_cmd_output(const char* cmd) {
+static char* get_cmd_output_ext(const char* cmd, int silent) {
     FILE* fp = popen(cmd, "r");
     if (!fp) return NULL;
 
@@ -38,11 +38,25 @@ static char* get_cmd_output(const char* cmd) {
         buf[--len] = '\0';
     }
     
-    char log_buf[2048];
-    snprintf(log_buf, sizeof(log_buf), "CMD: %s -> OUT: %s", cmd, buf);
-    log_info_c(log_buf);
+    if (!silent) {
+        char log_buf[2048];
+        snprintf(log_buf, sizeof(log_buf), "CMD: %s -> OUT: %s", cmd, buf);
+        log_info_c(log_buf);
+    } else {
+        char log_buf[512];
+        snprintf(log_buf, sizeof(log_buf), "CMD: %s -> OUT: [REDACTED]", cmd);
+        log_info_c(log_buf);
+    }
 
     return buf;
+}
+
+static char* get_cmd_output(const char* cmd) {
+    return get_cmd_output_ext(cmd, 0);
+}
+
+static char* get_cmd_output_silent(const char* cmd) {
+    return get_cmd_output_ext(cmd, 1);
 }
 
 static char* g_project_id = NULL;
@@ -50,6 +64,11 @@ static char* g_access_token = NULL;
 
 static const char* get_project_id(void) {
     if (g_project_id) return g_project_id;
+    char* env_p = getenv("GOOGLE_CLOUD_PROJECT");
+    if (env_p && strlen(env_p) > 0) {
+        g_project_id = strdup(env_p);
+        return g_project_id;
+    }
     g_project_id = get_cmd_output("gcloud config get-value project 2>/dev/null");
     return g_project_id;
 }
@@ -58,8 +77,23 @@ static const char* get_access_token(void) {
     // Ideally refresh if expired, but for this demo assume it lasts or we get fresh
     if (g_access_token) { 
         free(g_access_token); 
+        g_access_token = NULL;
     }
-    g_access_token = get_cmd_output("gcloud auth print-access-token 2>/dev/null");
+    char* env_t = getenv("GOOGLE_CLOUD_ACCESS_TOKEN");
+    if (env_t && strlen(env_t) > 0) {
+        g_access_token = strdup(env_t);
+        return g_access_token;
+    }
+    
+    // Try metadata server (for Cloud Run)
+    g_access_token = get_cmd_output_silent("curl -s -H \"Metadata-Flavor: Google\" \"http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token\" | grep -o '\"access_token\":\"[^\"]*\"' | cut -d'\"' -f4");
+    if (g_access_token && strlen(g_access_token) > 0) {
+        return g_access_token;
+    }
+    if (g_access_token) { free(g_access_token); g_access_token = NULL; }
+
+    // Fallback to gcloud (local dev)
+    g_access_token = get_cmd_output_silent("gcloud auth print-access-token 2>/dev/null");
     return g_access_token;
 }
 
@@ -67,9 +101,15 @@ static const char* get_access_token(void) {
 // Returns JSON response string (caller must free) or NULL on failure
 static char* firestore_request(const char* method, const char* subpath, const char* body) {
     const char* project = get_project_id();
-    if (!project || strlen(project) == 0) return NULL;
+    if (!project || strlen(project) == 0) {
+        log_error_c("firestore_request: project_id is NULL or empty");
+        return NULL;
+    }
     const char* token = get_access_token();
-    if (!token || strlen(token) == 0) return NULL;
+    if (!token || strlen(token) == 0) {
+        log_error_c("firestore_request: access_token is NULL or empty");
+        return NULL;
+    }
 
     char url[1024];
     snprintf(url, sizeof(url), 
@@ -81,8 +121,12 @@ static char* firestore_request(const char* method, const char* subpath, const ch
     if (body) {
         char tmp_path[] = "/tmp/fs_body_XXXXXX";
         int fd = mkstemp(tmp_path);
-        if (fd == -1) return NULL;
+        if (fd == -1) {
+            log_error_c("firestore_request: mkstemp failed");
+            return NULL;
+        }
         if (write(fd, body, strlen(body)) < 0) { 
+            log_error_c("firestore_request: write to temp file failed");
             close(fd); return NULL;
         }
         close(fd);
@@ -95,6 +139,7 @@ static char* firestore_request(const char* method, const char* subpath, const ch
             
         // Run
         char* res = get_cmd_output(cmd);
+        if (!res) log_error_c("firestore_request: get_cmd_output returned NULL (POST)");
         
         // Cleanup
         free(cmd);
@@ -107,6 +152,7 @@ static char* firestore_request(const char* method, const char* subpath, const ch
             "curl -s -X %s -H \"Authorization: Bearer %s\" \"%s\" 2>/dev/null",
             method, token, url);
         char* res = get_cmd_output(cmd);
+        if (!res) log_error_c("firestore_request: get_cmd_output returned NULL (GET)");
         free(cmd);
         return res;
     }

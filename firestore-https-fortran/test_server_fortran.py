@@ -140,6 +140,33 @@ def run_test():
                  print(f"Error: Unexpected get_root response: {text}")
                  sys.exit(1)
 
+        # 7. Call get_products
+        print("Testing 'get_products' tool...")
+        get_products_req = {
+            "jsonrpc": "2.0",
+            "id": 6,
+            "method": "tools/call",
+            "params": {"name": "get_products", "arguments": {}}
+        }
+        req = urllib.request.Request(url, data=json.dumps(get_products_req).encode('utf-8'), headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req) as response:
+            res = json.loads(response.read().decode('utf-8'))
+            if "error" in res:
+                 print(f"Error: get_products returned error: {res['error']}")
+                 sys.exit(1)
+            
+            content = res.get('result', {}).get('content', [])
+            if not content:
+                 print(f"Error: get_products returned no content: {res}")
+                 sys.exit(1)
+            
+            text = content[0].get('text', '')
+            if text.startswith("[") and text.endswith("]"):
+                 print(f"✓ tools/call (get_products) successful: Found {len(json.loads(text))} products")
+            else:
+                 print(f"Error: Unexpected get_products response: {text}")
+                 sys.exit(1)
+
         print("\nAll tests passed!")
 
     except urllib.error.URLError as e:
