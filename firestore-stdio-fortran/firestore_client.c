@@ -241,10 +241,6 @@ void impl_get_products(void *ucbr) {
     out[size++] = ']';
     out[size] = '\0';
 
-    if (size > 500) {
-        out[500] = '\0';
-    }
-
     mcpc_toolcall_result_add_text_printf8((mcpc_ucbr_t*)ucbr, "%s", out);
     
     free(out);
