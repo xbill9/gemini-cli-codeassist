@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+    "mcp-cloudrun-cobol": {
+       "httpUrl": "https://firestore-https-cobol-$PROJECT_NUMBER.us-central1.run.app"
+    }
+  }
+}
