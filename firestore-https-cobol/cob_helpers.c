@@ -3,6 +3,12 @@
 #include "mcpc/mcpc.h"
 
 void greet_cb_wrapper(void *tool, void *ucbr);
+void check_db_cb_wrapper(void *tool, void *ucbr);
+void get_root_cb_wrapper(void *tool, void *ucbr);
+void get_products_cb_wrapper(void *tool, void *ucbr);
+void get_product_by_id_cb_wrapper(void *tool, void *ucbr);
+void seed_cb_wrapper(void *tool, void *ucbr);
+void reset_cb_wrapper(void *tool, void *ucbr);
 
 /* Wrapper for COBOL callback to handle argument passing safely */
 void greet_cb_wrapper(void *tool, void *ucbr) {

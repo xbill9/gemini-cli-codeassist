@@ -142,6 +142,30 @@ def run_test():
                 print("Test FAILED: get_root failed")
                 sys.exit(1)
 
+        # 7. Get Products
+        print("Sending get_products call...")
+        get_products_request = {
+            "jsonrpc": "2.0",
+            "id": 6,
+            "method": "tools/call",
+            "params": {"name": "get_products", "arguments": {}}
+        }
+        req = urllib.request.Request(url, data=json.dumps(get_products_request).encode('utf-8'), headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req) as response:
+            resp_data = json.loads(response.read().decode('utf-8'))
+            content = resp_data.get("result", {}).get("content", [])
+            if content:
+                text = content[0].get("text", "")
+                print(f"get_products response: {text[:100]}...")
+                if text.startswith("["):
+                    print("✓ get_products successful")
+                else:
+                    print("Test FAILED: get_products didn't return a JSON array")
+                    sys.exit(1)
+            else:
+                print("Test FAILED: get_products returned no content")
+                sys.exit(1)
+
         print("All tests PASSED")
 
     except urllib.error.URLError as e:

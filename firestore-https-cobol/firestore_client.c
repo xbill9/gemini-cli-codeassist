@@ -50,15 +50,47 @@ static char* g_access_token = NULL;
 
 static const char* get_project_id(void) {
     if (g_project_id) return g_project_id;
+    
+    // 1. Try environment variable
+    char* env_project = getenv("GOOGLE_CLOUD_PROJECT");
+    if (env_project && strlen(env_project) > 0) {
+        g_project_id = strdup(env_project);
+        return g_project_id;
+    }
+
+    // 2. Try gcloud (for local dev)
     g_project_id = get_cmd_output("gcloud config get-value project 2>/dev/null");
+    if (g_project_id && strlen(g_project_id) > 0) return g_project_id;
+
+    // 3. Try metadata server
+    if (g_project_id) free(g_project_id);
+    g_project_id = get_cmd_output("curl -s -H \"Metadata-Flavor: Google\" http://metadata.google.internal/computeMetadata/v1/project/project-id 2>/dev/null");
+    
     return g_project_id;
 }
 
 static const char* get_access_token(void) {
-    // Ideally refresh if expired, but for this demo assume it lasts or we get fresh
     if (g_access_token) { 
         free(g_access_token); 
     }
+    
+    // 1. Try metadata server (Cloud Run)
+    g_access_token = get_cmd_output("curl -s -H \"Metadata-Flavor: Google\" http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token 2>/dev/null");
+    if (g_access_token && strlen(g_access_token) > 0 && strstr(g_access_token, "access_token")) {
+        // Parse JSON for access_token
+        const char* val;
+        int val_len;
+        if (mjson_find(g_access_token, strlen(g_access_token), "$.access_token", &val, &val_len) == MJSON_TOK_STRING) {
+            char* token = malloc(val_len + 1);
+            mjson_get_string(g_access_token, strlen(g_access_token), "$.access_token", token, val_len + 1);
+            free(g_access_token);
+            g_access_token = token;
+            return g_access_token;
+        }
+    }
+
+    // 2. Try gcloud (local dev)
+    if (g_access_token) free(g_access_token);
     g_access_token = get_cmd_output("gcloud auth print-access-token 2>/dev/null");
     return g_access_token;
 }
