@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+      "firestore-stdio-cobol": {
+        "command": "$HOME/gemini-cli-codeassist/firestore-stdio-cobol/firestore-server"
+        }
+      }
+    }
