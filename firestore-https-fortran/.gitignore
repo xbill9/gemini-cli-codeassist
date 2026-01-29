@@ -21,3 +21,5 @@ firestore-https-server
 .idea/
 *~
 .DS_Store
+
+server.log

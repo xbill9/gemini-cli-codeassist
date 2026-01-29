@@ -116,6 +116,8 @@ _connpool_is_buggy (const mcpc_connpool_t *connpool)
   return false;
 }
 
+static mcpc_errcode_t _connpool_remove_by_sock (mcpc_connpool_t * connpool, mcpc_sock_t sock);
+
 // extract a field's unquoted string
 mcpc_errcode_t
 _tulc_jstr_get_field_u8str (struct jsonrpc_request *r, const char8_t *jstr, size_t jstr_len, const char8_t *jpathnt,
@@ -254,14 +256,16 @@ mcpc_server_new (mcpc_server_type_t typ, mcpc_toolpool_t *toolpool, u32_t vabeg,
   mcpc_assert (typ != MCPC_SV_NONE, MCPC_EC_BUG);
   mcpc_assert (toolpool != nullptr, MCPC_EC_BUG);
 
-  mcpc_server_t *sv = (mcpc_server_t *) mcpc_alloc (sizeof (mcpc_server_t));
+  mcpc_server_t *sv = (mcpc_server_t *) mcpc_calloc (sizeof (mcpc_server_t));
+  memset (sv, 0, sizeof (mcpc_server_t));
 
   sv->typ = typ;
   sv->toolpool = toolpool;
   sv->prmptpool = mcpc_prmptpool_new ();
   sv->rscpool = mcpc_rscpool_new ();
   sv->rpcres = _new_mjson_fixedbuf ();
-  sv->connpool = mcpc_alloc (sizeof (mcpc_connpool_t));
+  sv->connpool = mcpc_calloc (sizeof (mcpc_connpool_t));
+  memset ((void*)sv->connpool, 0, sizeof (mcpc_connpool_t));
   _connpool_init ((mcpc_connpool_t *) sv->connpool);
 
   if (false)
@@ -748,6 +752,18 @@ _wait_conn (void *args)
 	}
     }
 
+#if defined(is_unix) || defined(__unix__) || defined(__linux__)
+  pthread_mutex_lock (&sv->lock);
+#elif defined(is_win)
+  WaitForSingleObject (sv->lock, INFINITE);
+#endif
+  _connpool_remove_by_sock ((mcpc_connpool_t *) sv->connpool, csock);
+#if defined(is_unix) || defined(__unix__) || defined(__linux__)
+  pthread_mutex_unlock (&sv->lock);
+#elif defined(is_win)
+  ReleaseMutex (sv->lock);
+#endif
+
   free (rbuf);
 
 #ifdef is_unix
@@ -935,7 +951,8 @@ _connpool_is_addable (mcpc_connpool_t *connpool)
 mcpc_conn_t *
 mcpc_conn_new (mcpc_conn_type_t typ, void *back)
 {
-  mcpc_conn_t *conn = mcpc_alloc (sizeof (mcpc_conn_t));
+  mcpc_conn_t *conn = mcpc_calloc (sizeof (mcpc_conn_t));
+  memset (conn, 0, sizeof (mcpc_conn_t));
   conn->typ = typ;
 
   if (false)
@@ -1015,6 +1032,41 @@ mcpc_connpool_addref (mcpc_connpool_t *connpool, mcpc_conn_t *conn)
   return MCPC_EC_0;
 }
 
+static mcpc_errcode_t
+_connpool_remove_by_sock (mcpc_connpool_t *connpool, mcpc_sock_t sock)
+{
+  if (_connpool_is_buggy ((const mcpc_connpool_t *) connpool))
+    {
+      return MCPC_EC_BUG;
+    }
+
+  mcpc_conn_t *prev = nullptr;
+  mcpc_conn_t *cur = connpool->head;
+
+  while (cur != nullptr)
+    {
+      if (cur->typ == MCPC_CONN_FD && cur->fd == sock)
+	{
+	  if (prev == nullptr)
+	    {
+	      connpool->head = cur->nex;
+	    }
+	  else
+	    {
+	      prev->nex = cur->nex;
+	    }
+	  connpool->len -= 1;
+	  cur->nex = nullptr;
+	  mcpc_conn_free (cur);
+	  return MCPC_EC_0;
+	}
+      prev = cur;
+      cur = cur->nex;
+    }
+
+  return MCPC_EC_BUG;
+}
+
 mcpc_conn_t *
 mcpc_connpool_getconn (const mcpc_connpool_t *connpool, const mcpc_connpool_size_t idx)
 {
@@ -1045,10 +1097,13 @@ mcpc_connpool_find_by_sock (const mcpc_connpool_t *connpool, mcpc_sock_t sock)
   mcpc_conn_t *cur_conn = connpool->head;
   while (cur_conn != nullptr)
     {
-      mcpc_sock_t cur_sock = cur_conn->fd;
-      if (cur_sock == sock)
+      if (cur_conn->typ == MCPC_CONN_FD)
 	{
-	  return cur_conn;
+	  mcpc_sock_t cur_sock = cur_conn->fd;
+	  if (cur_sock == sock)
+	    {
+	      return cur_conn;
+	    }
 	}
       cur_conn = cur_conn->nex;
     }
@@ -1076,6 +1131,7 @@ _handle_initbeg (mcpc_server_t *sv, struct jsonrpc_request *r, mcpc_sock_t csock
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "connection not found", NULL);
       goto output_res;
     }
+  
   if (conn->client_init == MCPC_INIT_SUCC)
     {
       jsonrpc_return_error (r, JSONRPC_ERROR_NOT_FOUND, "conn already initialized", NULL);
@@ -1645,6 +1701,11 @@ is_metho_need_params (mcpc_metho_t metho)
 void
 handle_inone (mcpc_server_t *sv, const char *const rbuf, size_t nread, mcpc_sock_t csock)
 {
+#if defined(is_unix) || defined(__unix__) || defined(__linux__)
+  pthread_mutex_lock (&sv->lock);
+#elif defined(is_win)
+  WaitForSingleObject (sv->lock, INFINITE);
+#endif
   bool noreply = false;
   tuflog_d ("rbuf:%.*s", nread, rbuf);
   struct jsonrpc_request r;
@@ -1721,8 +1782,16 @@ handle_inone (mcpc_server_t *sv, const char *const rbuf, size_t nread, mcpc_sock
   // TODO proper to do this here?
   if (csock > 0)
     {				// TODO: more accurate?
-      if (mcpc_connpool_find_by_sock (sv->connpool, csock) == nullptr)
+      mcpc_conn_t *found_conn = mcpc_connpool_find_by_sock (sv->connpool, csock);
+      if (found_conn == nullptr)
         {
+          mcpc_conn_t *conn0 = mcpc_conn_new (MCPC_CONN_FD, &csock);
+          mcpc_assert (MCPC_EC_0 == mcpc_connpool_addref ((mcpc_connpool_t *) sv->connpool, conn0), MCPC_EC_BUG);
+        }
+      else if (handle_what == MCPC_METHO_INITBEG)
+        {
+          // FD reused before old connection was removed. Force remove old and add new.
+          _connpool_remove_by_sock ((mcpc_connpool_t *) sv->connpool, csock);
           mcpc_conn_t *conn0 = mcpc_conn_new (MCPC_CONN_FD, &csock);
           mcpc_assert (MCPC_EC_0 == mcpc_connpool_addref ((mcpc_connpool_t *) sv->connpool, conn0), MCPC_EC_BUG);
         }
@@ -1783,7 +1852,7 @@ output_res:
       send (csock, headers, strlen (headers), 0);
     }
 
-#if defined(is_unix)
+#if defined(is_unix) || defined(__unix__) || defined(__linux__)
   pthread_mutex_unlock (&sv->lock);
 #elif defined(is_win)
   ReleaseMutex (sv->lock);
