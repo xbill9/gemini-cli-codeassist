@@ -14,6 +14,7 @@ server
 
 # COBOL artifacts
 server-cobol
+firestore-server
 server.c
 server.i
 *.int
