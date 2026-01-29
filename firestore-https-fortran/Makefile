@@ -53,7 +53,7 @@ format:
 	clang-format -i c_helpers.c
 
 clean:
-	rm -f firestore-https-server server.o c_helpers.o firestore_client.o
+	rm -f firestore-https-server server.o c_helpers.o firestore_client.o *.log
 	[ -d mcpc ] && $(MAKE) -C mcpc clean || true
 
 deploy:
