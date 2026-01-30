@@ -38,9 +38,9 @@ static char* get_cmd_output(const char* cmd) {
         buf[--len] = '\0';
     }
     
-    char log_buf[2048];
-    snprintf(log_buf, sizeof(log_buf), "CMD: %s -> OUT: %s", cmd, buf);
-    log_info_c(log_buf);
+    // char log_buf[2048];
+    // snprintf(log_buf, sizeof(log_buf), "CMD: %s -> OUT: %s", cmd, buf);
+    // log_info_c(log_buf);
 
     return buf;
 }
@@ -51,6 +51,8 @@ static char* g_access_token = NULL;
 static const char* get_project_id(void) {
     if (g_project_id) return g_project_id;
     
+    log_info_c("Resolving project ID...");
+
     // 1. Try environment variable
     char* env_project = getenv("GOOGLE_CLOUD_PROJECT");
     if (env_project && strlen(env_project) > 0) {
@@ -74,6 +76,8 @@ static const char* get_access_token(void) {
         free(g_access_token); 
     }
     
+    log_info_c("Refreshing access token...");
+
     // 1. Try metadata server (Cloud Run)
     g_access_token = get_cmd_output("curl -s -H \"Metadata-Flavor: Google\" http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token 2>/dev/null");
     if (g_access_token && strlen(g_access_token) > 0 && strstr(g_access_token, "access_token")) {
@@ -107,6 +111,10 @@ static char* firestore_request(const char* method, const char* subpath, const ch
     snprintf(url, sizeof(url), 
         "https://firestore.googleapis.com/v1/projects/%s/databases/(default)/documents%s",
         project, subpath ? subpath : "");
+
+    char log_msg[256];
+    snprintf(log_msg, sizeof(log_msg), "Firestore %s request to %s", method, subpath ? subpath : "/");
+    log_info_c(log_msg);
 
     // Construct curl command
     char* cmd;
