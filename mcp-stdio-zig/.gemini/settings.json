@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+      "mcp-stdio-zig": {
+        "command": "$HOME/gemini-cli-codeassist/mcp-stdio-zig/server"
+        }
+      }
+    }
