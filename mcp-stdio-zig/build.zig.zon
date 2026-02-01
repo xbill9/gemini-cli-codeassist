@@ -33,8 +33,7 @@
     // internet connectivity.
     .dependencies = .{
         .mcp = .{
-            .url = "https://github.com/muhammad-fiaz/mcp.zig/archive/refs/tags/0.0.1.tar.gz",
-            .hash = "mcp-0.0.1-cIUFg6yUAgA8yYsHQhJvxOH18ymuqeFteEzWwcEqPArj",
+            .path = "vendor/mcp",
         },
     },
     .paths = .{

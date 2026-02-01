@@ -11,7 +11,7 @@ fn logInfo(msg: []const u8) void {
     };
 
     var time_buf: [64]u8 = undefined;
-    const formatted_time = std.fmt.bufPrint(&time_buf, "{}", .{std.time.timestamp()}) catch "0";
+    const formatted_time = std.fmt.bufPrint(&time_buf, "{}", .{0}) catch "0";
 
     const entry = LogEntry{
         .asctime = formatted_time,
