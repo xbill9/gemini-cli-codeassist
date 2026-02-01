@@ -21,7 +21,7 @@ fn logInfo(msg: []const u8) void {
     _ = entry;
 
     // Simplified logging to avoid JSON stringify issues in different Zig versions
-    std.debug.print("{{\"asctime\":\"{s}\",\"name\":\"root\",\"levelname\":\"INFO\",\"message\":\"{s}\"}}\n", .{formatted_time, msg});
+    std.debug.print("{{\"asctime\":\"{s}\",\"name\":\"root\",\"levelname\":\"INFO\",\"message\":\"{s}\"}}\n", .{ formatted_time, msg });
 }
 
 // Custom HTTP Transport for MCP using standard blocking net
@@ -30,7 +30,7 @@ const HttpServerTransport = struct {
     server: std.net.Server,
     current_conn: ?std.net.Server.Connection = null,
     read_buf: std.ArrayListUnmanaged(u8),
-    
+
     const Self = @This();
 
     pub fn init(allocator: std.mem.Allocator, port: u16) !Self {
@@ -42,7 +42,7 @@ const HttpServerTransport = struct {
             .read_buf = .{},
         };
     }
-    
+
     pub fn deinit(self: *Self) void {
         self.server.deinit();
         self.read_buf.deinit(self.allocator);
@@ -51,14 +51,14 @@ const HttpServerTransport = struct {
     pub fn transport(self: *Self) mcp.Transport {
         return .{
             .ptr = self,
-            .vtable = &.{ 
+            .vtable = &.{
                 .send = sendVtable,
                 .receive = receiveVtable,
                 .close = closeVtable,
             },
         };
     }
-    
+
     fn sendVtable(ptr: *anyopaque, message: []const u8) mcp.Transport.SendError!void {
         const self: *Self = @ptrCast(@alignCast(ptr));
         if (self.current_conn) |conn| {
@@ -66,12 +66,10 @@ const HttpServerTransport = struct {
                 conn.stream.close();
                 self.current_conn = null;
             }
-            
-            const header = std.fmt.allocPrint(self.allocator, 
-                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {d}\r\nConnection: close\r\n\r\n", 
-                .{message.len}) catch return error.OutOfMemory;
+
+            const header = std.fmt.allocPrint(self.allocator, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {d}\r\nConnection: close\r\n\r\n", .{message.len}) catch return error.OutOfMemory;
             defer self.allocator.free(header);
-            
+
             conn.stream.writeAll(header) catch return error.WriteError;
             conn.stream.writeAll(message) catch return error.WriteError;
         }
@@ -79,27 +77,27 @@ const HttpServerTransport = struct {
 
     fn receiveVtable(ptr: *anyopaque) mcp.Transport.ReceiveError!?[]const u8 {
         const self: *Self = @ptrCast(@alignCast(ptr));
-        
+
         if (self.current_conn) |conn| {
-             conn.stream.close();
-             self.current_conn = null;
+            conn.stream.close();
+            self.current_conn = null;
         }
 
         const conn = self.server.accept() catch return error.ReadError;
-        
+
         self.read_buf.clearRetainingCapacity();
-        
+
         var body_start_index: usize = 0;
         var content_length: usize = 0;
         var headers_parsed = false;
-        
+
         var buf: [4096]u8 = undefined;
         while (true) {
             const n = conn.stream.read(&buf) catch return error.ReadError;
             if (n == 0) break;
-            
+
             self.read_buf.appendSlice(self.allocator, buf[0..n]) catch return error.OutOfMemory;
-            
+
             const slice = self.read_buf.items;
             if (!headers_parsed) {
                 if (std.mem.indexOf(u8, slice, "\r\n\r\n")) |idx| {
@@ -110,27 +108,27 @@ const HttpServerTransport = struct {
                     headers_parsed = true;
                 }
             }
-            
+
             if (headers_parsed) {
                 if (slice.len >= body_start_index + content_length) {
                     break;
                 }
             }
         }
-        
+
         if (!headers_parsed) {
             conn.stream.close();
             return error.ReadError;
         }
-        
+
         const body = self.read_buf.items[body_start_index..][0..content_length];
 
         // Check for Notification
         var is_notification = false;
         {
             const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, body, .{}) catch {
-                 self.current_conn = conn;
-                 return body;
+                self.current_conn = conn;
+                return body;
             };
             defer parsed.deinit();
             if (parsed.value == .object and parsed.value.object.get("id") == null) {
@@ -144,7 +142,7 @@ const HttpServerTransport = struct {
             conn.stream.close();
             self.current_conn = null;
         } else {
-             self.current_conn = conn;
+            self.current_conn = conn;
         }
 
         return body;
@@ -152,19 +150,19 @@ const HttpServerTransport = struct {
 
     fn closeVtable(ptr: *anyopaque) void {
         const self: *Self = @ptrCast(@alignCast(ptr));
-        self.server.deinit(); 
+        self.server.deinit();
     }
 
     fn findContentLength(headers: []const u8) ?usize {
         var it = std.mem.splitSequence(u8, headers, "\r\n");
         while (it.next()) |line| {
-             const key = "Content-Length:";
-             if (line.len > key.len) {
-                 if (std.ascii.eqlIgnoreCase(line[0..key.len], key)) {
-                     const val_str = std.mem.trim(u8, line[key.len..], " ");
-                     return std.fmt.parseInt(usize, val_str, 10) catch null;
-                 }
-             }
+            const key = "Content-Length:";
+            if (line.len > key.len) {
+                if (std.ascii.eqlIgnoreCase(line[0..key.len], key)) {
+                    const val_str = std.mem.trim(u8, line[key.len..], " ");
+                    return std.fmt.parseInt(usize, val_str, 10) catch null;
+                }
+            }
         }
         return null;
     }
@@ -214,7 +212,7 @@ fn greetHandler(allocator: std.mem.Allocator, args: ?std.json.Value) mcp.tools.T
         "Stranger";
 
     var items = allocator.alloc(mcp.types.ContentItem, 1) catch return mcp.tools.ToolError.OutOfMemory;
-    items[0] = .{.text = .{ .text = param }};
+    items[0] = .{ .text = .{ .text = param } };
 
     return mcp.tools.ToolResult{
         .content = items,
