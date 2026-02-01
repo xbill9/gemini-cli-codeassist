@@ -11,33 +11,35 @@ fn logInfo(msg: []const u8) void {
     };
 
     var time_buf: [64]u8 = undefined;
-    const formatted_time = std.fmt.bufPrint(&time_buf, "{}", .{std.time.timestamp()}) catch "0";
+    const ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const formatted_time = std.fmt.bufPrint(&time_buf, "{d}", .{ts.sec}) catch "0";
 
     const entry = LogEntry{
         .asctime = formatted_time,
         .message = msg,
     };
+    _ = entry;
 
-    // Use {f} to print the Formatter returned by std.json.fmt
-    std.debug.print("{f}\n", .{std.json.fmt(entry, .{})});
+    // Simplified logging to avoid JSON stringify issues in different Zig versions
+    std.debug.print("{{\"asctime\":\"{s}\",\"name\":\"root\",\"levelname\":\"INFO\",\"message\":\"{s}\"}}\n", .{formatted_time, msg});
 }
 
-// Custom HTTP Transport for MCP
+// Custom HTTP Transport for MCP using standard blocking net
 const HttpServerTransport = struct {
     allocator: std.mem.Allocator,
     server: std.net.Server,
     current_conn: ?std.net.Server.Connection = null,
-    read_buf: std.ArrayList(u8),
+    read_buf: std.ArrayListUnmanaged(u8),
     
     const Self = @This();
 
     pub fn init(allocator: std.mem.Allocator, port: u16) !Self {
-        const address = try std.net.Address.parseIp4("0.0.0.0", port);
+        const address = try std.net.Address.parseIp("0.0.0.0", port);
         const server = try address.listen(.{ .reuse_address = true });
         return .{
             .allocator = allocator,
             .server = server,
-            .read_buf = .{}, // Initialize as empty struct
+            .read_buf = .{},
         };
     }
     
@@ -49,7 +51,7 @@ const HttpServerTransport = struct {
     pub fn transport(self: *Self) mcp.Transport {
         return .{
             .ptr = self,
-            .vtable = &.{
+            .vtable = &.{ 
                 .send = sendVtable,
                 .receive = receiveVtable,
                 .close = closeVtable,
@@ -60,11 +62,13 @@ const HttpServerTransport = struct {
     fn sendVtable(ptr: *anyopaque, message: []const u8) mcp.Transport.SendError!void {
         const self: *Self = @ptrCast(@alignCast(ptr));
         if (self.current_conn) |conn| {
-            defer conn.stream.close();
-            self.current_conn = null;
+            defer {
+                conn.stream.close();
+                self.current_conn = null;
+            }
             
             const header = std.fmt.allocPrint(self.allocator, 
-                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {d}\r\n\r\n", 
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {d}\r\nConnection: close\r\n\r\n", 
                 .{message.len}) catch return error.OutOfMemory;
             defer self.allocator.free(header);
             
@@ -76,16 +80,20 @@ const HttpServerTransport = struct {
     fn receiveVtable(ptr: *anyopaque) mcp.Transport.ReceiveError!?[]const u8 {
         const self: *Self = @ptrCast(@alignCast(ptr));
         
-        const conn = self.server.accept() catch return error.ReadError;
-        self.current_conn = conn;
+        if (self.current_conn) |conn| {
+             conn.stream.close();
+             self.current_conn = null;
+        }
 
+        const conn = self.server.accept() catch return error.ReadError;
+        
         self.read_buf.clearRetainingCapacity();
         
-        var buf: [1024]u8 = undefined;
         var body_start_index: usize = 0;
         var content_length: usize = 0;
         var headers_parsed = false;
         
+        var buf: [4096]u8 = undefined;
         while (true) {
             const n = conn.stream.read(&buf) catch return error.ReadError;
             if (n == 0) break;
@@ -110,9 +118,36 @@ const HttpServerTransport = struct {
             }
         }
         
-        if (!headers_parsed) return error.ReadError;
+        if (!headers_parsed) {
+            conn.stream.close();
+            return error.ReadError;
+        }
         
-        return self.read_buf.items[body_start_index..][0..content_length];
+        const body = self.read_buf.items[body_start_index..][0..content_length];
+
+        // Check for Notification
+        var is_notification = false;
+        {
+            const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, body, .{}) catch {
+                 self.current_conn = conn;
+                 return body;
+            };
+            defer parsed.deinit();
+            if (parsed.value == .object and parsed.value.object.get("id") == null) {
+                is_notification = true;
+            }
+        }
+
+        if (is_notification) {
+            const resp = "HTTP/1.1 202 Accepted\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+            conn.stream.writeAll(resp) catch {};
+            conn.stream.close();
+            self.current_conn = null;
+        } else {
+             self.current_conn = conn;
+        }
+
+        return body;
     }
 
     fn closeVtable(ptr: *anyopaque) void {
@@ -140,7 +175,6 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    // Initialize MCP server
     var server = mcp.Server.init(.{
         .name = "mcp-https-zig",
         .version = "0.1.0",
@@ -148,28 +182,22 @@ pub fn main() !void {
     });
     defer server.deinit();
 
-    // Add "greet" tool
     var builder = mcp.schema.InputSchemaBuilder.init(allocator);
     defer builder.deinit();
     _ = try builder.addString("param", "Greeting parameter.", false);
     const schema_value = try builder.build();
-
-    if (schema_value != .object) {
-        logInfo("Error: Schema builder did not produce an object.");
-        return error.UnexpectedSchemaType;
-    }
 
     try server.addTool(.{
         .name = "greet",
         .description = "Get a greeting from a local http server.",
         .inputSchema = .{
             .type = "object",
-            .properties = schema_value.object.get("properties"),
+            .properties = schema_value,
         },
         .handler = greetHandler,
     });
 
-    logInfo("Server starting on 0.0.0.0:8080 (Custom HTTP Transport)...");
+    logInfo("Server starting on 0.0.0.0:8080...");
 
     var http_transport = try HttpServerTransport.init(allocator, 8080);
     defer http_transport.deinit();

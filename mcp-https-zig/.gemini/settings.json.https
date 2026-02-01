@@ -1,7 +1,7 @@
  {
     "mcpServers": {
-    "hello-https-c": {
-      "httpUrl": "http://127.0.0.1:8080"
+    "mcp-https-zig": {
+      "httpUrl": "http://127.0.0.1:8080/mcp"
     }
   }
 }
