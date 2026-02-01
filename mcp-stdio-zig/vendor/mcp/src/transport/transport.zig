@@ -94,7 +94,7 @@ pub const StdioTransport = struct {
     pub fn send(self: *Self, message: []const u8) Transport.SendError!void {
         if (self.is_closed) return Transport.SendError.ConnectionClosed;
 
-        const stdout = std.Io.File.stdout();
+        const stdout = std.fs.File.stdout();
         posixWriteAll(stdout.handle, message) catch return Transport.SendError.WriteError;
         posixWriteAll(stdout.handle, "\n") catch return Transport.SendError.WriteError;
     }
@@ -112,7 +112,7 @@ pub const StdioTransport = struct {
 
         self.read_buffer.clearRetainingCapacity();
 
-        const stdin = std.Io.File.stdin();
+        const stdin = std.fs.File.stdin();
 
         while (true) {
             var buf: [1]u8 = undefined;
@@ -155,7 +155,7 @@ pub const StdioTransport = struct {
     /// Writes a message to stderr for logging.
     pub fn writeStderr(self: *Self, message: []const u8) void {
         _ = self;
-        const stderr = std.Io.File.stderr();
+        const stderr = std.fs.File.stderr();
         posixWriteAll(stderr.handle, message) catch {};
         posixWriteAll(stderr.handle, "\n") catch {};
     }
