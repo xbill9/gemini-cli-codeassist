@@ -4,7 +4,8 @@ This document provides context for the Gemini Code Assistant to understand the p
 
 ## Project Overview
 
-This is a **Zig-based Model Context Protocol (MCP) server** named `mcp-https-zig`. It uses the `mcp` Zig library (managed via Zig Package Manager) to implement the protocol. It exposes a single tool (`greet`) over HTTP and logs structured JSON to stderr.
+This is a **Zig-based Model Context Protocol (MCP) server** named `mcp-https-zig`. It uses the `mcp` Zig library (managed via Zig Package Manager) to implement the protocol.
+It uses a custom **HTTP Transport** listening on port 8080.
 
 ## Key Technologies
 
@@ -12,18 +13,20 @@ This is a **Zig-based Model Context Protocol (MCP) server** named `mcp-https-zig
 *   **Library:** `mcp` (Zig library, fetched via `build.zig.zon`)
 *   **Build System:** `zig build`
 *   **Automation:** `Makefile` for common tasks.
-*   **Communication:** HTTP (port 8080) for MCP; `stderr` for logging.
-*   **Testing:** Zig built-in testing framework (`zig build test`).
+*   **Communication:** HTTP (port 8080) for MCP messages; `stderr` for structured JSON logging.
+*   **Testing:** Zig built-in testing framework (`zig build test`) and Python integration script (`test_server.py`).
 
 mcp zig package: https://github.com/muhammad-fiaz/mcp.zig
 
 ## Project Structure
 
-*   `src/main.zig`: The entry point. Initializes the server, defines the `greet` tool, and handles the event loop.
-*   `build.zig`: Build configuration for compiling the Zig executable and dependencies.
+*   `src/main.zig`: The entry point. Initializes the server, defines the `greet` tool, and implements the `HttpServerTransport` struct for handling HTTP connections.
+*   `build.zig`: Build configuration for compiling the Zig executable (`mcp-https-zig`) and linking dependencies.
 *   `build.zig.zon`: Package manifest declaring the `mcp` dependency.
 *   `Makefile`: Shortcuts for build, test, clean, format, and lint commands.
-*   `test_server.py`: Python script for integration testing the compiled server.
+*   `test_server.py`: Python script for integration testing the running server.
+*   `test_net.zig`: Additional networking tests (if applicable).
+*   `check_io.zig`: IO checking utility (if applicable).
 
 ## Implemented Tools
 
@@ -39,6 +42,7 @@ The project uses the `mcp` library imported via `@import("mcp")`. Key operations
 
 *   **Server Initialization:** `mcp.Server.init(...)`
 *   **Tool Definition:** `server.addTool(...)`
+*   **Transport:** Custom `HttpServerTransport` struct that maps HTTP requests/responses to MCP `Transport` vtable (`send`, `receive`, `close`).
 
 ## Build & Development
 
@@ -57,6 +61,6 @@ or
 make build && ./server
 ```
 
-*   **Input:** JSON-RPC 2.0 messages via `stdin`.
-*   **Output:** JSON-RPC 2.0 messages via `stdout`.
+*   **Input:** HTTP POST requests containing JSON-RPC 2.0 messages.
+*   **Output:** HTTP Responses containing JSON-RPC 2.0 messages.
 *   **Logs:** JSON formatted logs via `stderr`.

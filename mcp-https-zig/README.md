@@ -1,10 +1,12 @@
-# MCP Stdio Zig Server
+# MCP HTTPS Zig Server
 
-A simple Model Context Protocol (MCP) server implemented in Zig. This server is designed to communicate over `stdio` and serves as a foundational "Hello World" example for Zig-based MCP integrations, utilizing the `mcp.zig` library.
+A simple Model Context Protocol (MCP) server implemented in Zig. This server communicates over **HTTP** (defaulting to port 8080) and serves as a foundational "Hello World" example for Zig-based MCP integrations, utilizing the `mcp.zig` library.
 
 ## Overview
 
-This project provides a basic MCP server named `mcp-stdio-zig` that exposes a single tool: `greet`. It writes structured JSON logs to stderr, ensuring that the stdout stream remains clean for the MCP protocol JSON-RPC messages.
+This project provides a basic MCP server named `mcp-https-zig` that exposes a single tool: `greet`.
+- **Transport:** HTTP (custom implementation, listening on 0.0.0.0:8080).
+- **Logging:** Structured JSON logs are written to `stderr`.
 
 ## Prerequisites
 
@@ -15,7 +17,7 @@ This project provides a basic MCP server named `mcp-stdio-zig` that exposes a si
 1.  **Clone the repository:**
     ```bash
     git clone <repository-url>
-    cd mcp-stdio-zig
+    cd mcp-https-zig
     ```
 
 2.  **Build the server:**
@@ -29,40 +31,45 @@ This project provides a basic MCP server named `mcp-stdio-zig` that exposes a si
 
 ## Usage
 
-This server is designed to be executed by an MCP client (like Claude Desktop or a Gemini-powered IDE extension) that handles the stdio communication.
-
-To run the server manually (starts listening on stdio):
+To run the server:
 ```bash
-./zig-out/bin/mcp-stdio-zig
+./zig-out/bin/mcp-https-zig
 ```
 Or via the convenience symlink created by `make`:
 ```bash
 ./server
 ```
 
-### Configuration for MCP Clients
+The server will start listening on `0.0.0.0:8080`.
 
-If you are adding this to an MCP client config (e.g., `claude_desktop_config.json` or VSCode settings), the configuration would look something like this:
+### Interacting with the Server
 
-```json
-{
-  "mcpServers": {
-    "zig-hello-world": {
-      "command": "/absolute/path/to/mcp-stdio-zig/zig-out/bin/mcp-stdio-zig",
-      "args": []
-    }
-  }
-}
+This server implements a basic HTTP transport where MCP JSON-RPC messages are sent as the body of HTTP POST requests.
+
+**Example using `curl`:**
+
+```bash
+curl -X POST http://localhost:8080 \
+     -H "Content-Type: application/json" \
+     -d '{
+       "jsonrpc": "2.0",
+       "id": 1,
+       "method": "tools/call",
+       "params": {
+         "name": "greet",
+         "arguments": {
+           "param": "Zig Developer"
+         }
+       }
+     }'
 ```
-
-*Note: Ensure the absolute path is correct.*
 
 ## Tools
 
 ### `greet`
-- **Description:** Get a greeting from a local stdio server.
+- **Description:** Get a greeting from a local http server.
 - **Parameters:**
-    - `param` (string): The text or name to echo back.
+    - `param` (string): The text or name to echo back (defaults to "Stranger").
 - **Returns:** The string passed in `param` as a greeting.
 
 ## Development
@@ -79,7 +86,7 @@ The project uses the Zig build system and a Makefile for convenience.
 
 ## Project Structure
 
-- `src/main.zig`: Entry point and Zig implementation.
+- `src/main.zig`: Entry point and HTTP transport implementation.
 - `build.zig`: Zig build configuration.
 - `build.zig.zon`: Zig package manager configuration (defines dependencies).
 - `Makefile`: Convenience commands for building and testing.
