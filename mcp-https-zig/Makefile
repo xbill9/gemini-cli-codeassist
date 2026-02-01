@@ -4,7 +4,7 @@ BIN_NAME = mcp-https-zig
 BIN = $(BUILD_DIR)/bin/$(BIN_NAME)
 SYMLINK = server
 
-.PHONY: all build debug clean test format lint
+.PHONY: all build debug clean test format lint run
 
 all: build
 
@@ -13,6 +13,9 @@ build:
 	@rm -f $(SYMLINK)
 	@ln -s $(BIN) $(SYMLINK)
 	@echo "Linked $(BIN) to $(SYMLINK)"
+
+run: build
+	./$(SYMLINK)
 
 debug:
 	$(ZIG) build -Doptimize=Debug
