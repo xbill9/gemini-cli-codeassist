@@ -41,10 +41,13 @@ pub const Firestore = struct {
     }
 
     fn getAccessToken(allocator: std.mem.Allocator) ![]const u8 {
-        const cmd_result = try std.process.Child.run(.{
+        // Try gcloud first
+        const cmd_result = std.process.Child.run(.{
             .allocator = allocator,
             .argv = &[_][]const u8{ "gcloud", "auth", "print-access-token" },
-        });
+        }) catch {
+            return getAccessTokenFromMetadata(allocator);
+        };
         defer allocator.free(cmd_result.stdout);
         defer allocator.free(cmd_result.stderr);
 
@@ -52,6 +55,38 @@ pub const Firestore = struct {
             const token = std.mem.trim(u8, cmd_result.stdout, " \t\r\n");
             if (token.len > 0) {
                 return allocator.dupe(u8, token);
+            }
+        }
+        
+        return getAccessTokenFromMetadata(allocator);
+    }
+
+    fn getAccessTokenFromMetadata(allocator: std.mem.Allocator) ![]const u8 {
+        const argv = &[_][]const u8{
+            "curl",
+            "-s",
+            "-H", "Metadata-Flavor: Google",
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
+        };
+        const cmd_result = try std.process.Child.run(.{
+            .allocator = allocator,
+            .argv = argv,
+        });
+        defer allocator.free(cmd_result.stdout);
+        defer allocator.free(cmd_result.stderr);
+
+        if (cmd_result.term.Exited == 0) {
+            const body = std.mem.trim(u8, cmd_result.stdout, " \t\r\n");
+            // The response is JSON: { "access_token": "...", "expires_in": ... }
+            var parsed = try std.json.parseFromSlice(std.json.Value, allocator, body, .{ .ignore_unknown_fields = true });
+            defer parsed.deinit();
+
+            if (parsed.value == .object) {
+                if (parsed.value.object.get("access_token")) |token_val| {
+                    if (token_val == .string) {
+                        return allocator.dupe(u8, token_val.string);
+                    }
+                }
             }
         }
         return error.NoCredentialsFound;

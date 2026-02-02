@@ -25,6 +25,12 @@ FROM debian:bookworm-slim
 
 WORKDIR /app
 
+# Install runtime dependencies (curl for requests/auth, ca-certificates for HTTPS)
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy the binary from the build stage
 COPY --from=build /app/zig-out/bin/firestore-https-zig /app/server
 
