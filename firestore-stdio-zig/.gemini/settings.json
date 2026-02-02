@@ -1,0 +1,7 @@
+ {
+    "mcpServers": {
+      "firestore-stdio-zig": {
+        "command": "$HOME/gemini-cli-codeassist/firestore-stdio-zig/server"
+        }
+      }
+    }
