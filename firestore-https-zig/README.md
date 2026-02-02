@@ -1,16 +1,19 @@
-# MCP HTTPS Zig Server
+# MCP HTTPS Zig Server (Firestore Integration)
 
-A simple Model Context Protocol (MCP) server implemented in Zig. This server communicates over **HTTP** (defaulting to port 8080) and serves as a foundational "Hello World" example for Zig-based MCP integrations, utilizing the `mcp.zig` library.
+A Model Context Protocol (MCP) server implemented in Zig that integrates with Google Cloud Firestore. This server communicates over **HTTP** (defaulting to port 8080) and provides tools to manage a product inventory.
 
 ## Overview
 
-This project provides a basic MCP server named `firestore-https-zig` that exposes a single tool: `greet`.
+This project provides an MCP server named `firestore-https-zig` that manages a "Cymbal Superstore" inventory stored in Firestore.
 - **Transport:** HTTP (custom implementation, listening on 0.0.0.0:8080).
+- **Database:** Google Cloud Firestore (requires authentication via `gcloud` or Metadata server).
 - **Logging:** Structured JSON logs are written to `stderr`.
 
 ## Prerequisites
 
 -   **Zig Compiler** (0.15.2 or later)
+-   **Google Cloud Project** with Firestore enabled.
+-   **Authentication:** The server uses `gcloud auth print-access-token` locally or the Compute Metadata server in GCP environments.
 
 ## Installation
 
@@ -29,13 +32,20 @@ This project provides a basic MCP server named `firestore-https-zig` that expose
     make release
     ```
 
+## Configuration
+
+The server requires the following environment variables:
+- `GCLOUD_PROJECT` or `GOOGLE_CLOUD_PROJECT`: Your Google Cloud Project ID.
+
+Example:
+```bash
+export GCLOUD_PROJECT=my-mcp-project
+./server
+```
+
 ## Usage
 
 To run the server:
-```bash
-./zig-out/bin/firestore-https-zig
-```
-Or via the convenience symlink created by `make`:
 ```bash
 ./server
 ```
@@ -44,9 +54,9 @@ The server will start listening on `0.0.0.0:8080`.
 
 ### Interacting with the Server
 
-This server implements a basic HTTP transport where MCP JSON-RPC messages are sent as the body of HTTP POST requests.
+MCP JSON-RPC messages are sent as the body of HTTP POST requests.
 
-**Example using `curl`:**
+**Example: Get Products**
 
 ```bash
 curl -X POST http://localhost:8080 \
@@ -56,37 +66,37 @@ curl -X POST http://localhost:8080 \
        "id": 1,
        "method": "tools/call",
        "params": {
-         "name": "greet",
-         "arguments": {
-           "param": "Zig Developer"
-         }
+         "name": "get_products",
+         "arguments": {}
        }
      }'
 ```
 
 ## Tools
 
-### `greet`
-- **Description:** Get a greeting from a local http server.
-- **Parameters:**
-    - `param` (string): The text or name to echo back (defaults to "Stranger").
-- **Returns:** The string passed in `param` as a greeting.
+### Firestore Inventory Tools
+- `get_products`: Get a list of all products from the inventory database.
+- `get_product_by_id`: Get a single product by its ID. (Parameters: `id` (string))
+- `seed`: Seed the inventory database with initial products.
+- `reset`: Clears all products from the inventory database.
+- `check_db`: Checks if the inventory database is running/connected.
+
+### General Tools
+- `get_root`: Get a greeting from the Cymbal Superstore Inventory API.
+- `greet`: Get a greeting from a local http server. (Parameters: `param` (string))
 
 ## Development
 
-The project uses the Zig build system and a Makefile for convenience.
-
 - **Build:** `zig build` or `make build`
 - **Release:** `zig build -Doptimize=ReleaseSafe` or `make release`
-- **Run:** `zig build run`
-- **Test:** `zig build test` (Unit tests) and `python3 test_server.py` (Integration) or simply `make test`
-- **Clean:** `rm -rf zig-out zig-cache` or `make clean`
+- **Test:** `zig build test` and `python3 test_server.py`
 - **Format:** `make format`
 - **Lint:** `make lint`
 
 ## Project Structure
 
-- `src/main.zig`: Entry point and HTTP transport implementation.
+- `src/main.zig`: Entry point, tool registration, and HTTP transport.
+- `src/firestore.zig`: Firestore client implementation using `curl` and JSON-RPC.
 - `build.zig`: Zig build configuration.
-- `build.zig.zon`: Zig package manager configuration (defines dependencies).
-- `Makefile`: Convenience commands for building and testing.
+- `build.zig.zon`: Zig package manager configuration.
+- `Makefile`: Convenience commands.
