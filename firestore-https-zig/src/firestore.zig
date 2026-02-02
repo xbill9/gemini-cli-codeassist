@@ -11,14 +11,14 @@ pub const Product = struct {
 
     pub fn toJson(self: Product, allocator: std.mem.Allocator) !std.json.Value {
         var map = std.json.ObjectMap.init(allocator);
-        if (self.id) |id| try map.put("id", .{.string = id});
-        try map.put("name", .{.string = self.name});
-        try map.put("price", .{.float = self.price});
-        try map.put("quantity", .{.integer = self.quantity});
-        try map.put("imgfile", .{.string = self.imgfile});
-        try map.put("timestamp", .{.string = self.timestamp});
-        try map.put("actualdateadded", .{.string = self.actualdateadded});
-        return .{.object = map};
+        if (self.id) |id| try map.put("id", .{ .string = id });
+        try map.put("name", .{ .string = self.name });
+        try map.put("price", .{ .float = self.price });
+        try map.put("quantity", .{ .integer = self.quantity });
+        try map.put("imgfile", .{ .string = self.imgfile });
+        try map.put("timestamp", .{ .string = self.timestamp });
+        try map.put("actualdateadded", .{ .string = self.actualdateadded });
+        return .{ .object = map };
     }
 };
 
@@ -57,17 +57,12 @@ pub const Firestore = struct {
                 return allocator.dupe(u8, token);
             }
         }
-        
+
         return getAccessTokenFromMetadata(allocator);
     }
 
     fn getAccessTokenFromMetadata(allocator: std.mem.Allocator) ![]const u8 {
-        const argv = &[_][]const u8{
-            "curl",
-            "-s",
-            "-H", "Metadata-Flavor: Google",
-            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
-        };
+        const argv = &[_][]const u8{ "curl", "-s", "-H", "Metadata-Flavor: Google", "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" };
         const cmd_result = try std.process.Child.run(.{
             .allocator = allocator,
             .argv = argv,
@@ -278,34 +273,34 @@ fn productToFirestoreJson(allocator: std.mem.Allocator, p: Product) ![]u8 {
     defer fields.deinit();
 
     var name_val = std.json.ObjectMap.init(allocator);
-    try name_val.put("stringValue", .{.string = p.name});
-    try fields.put("name", .{.object = name_val});
+    try name_val.put("stringValue", .{ .string = p.name });
+    try fields.put("name", .{ .object = name_val });
 
     var price_val = std.json.ObjectMap.init(allocator);
-    try price_val.put("doubleValue", .{.float = p.price});
-    try fields.put("price", .{.object = price_val});
+    try price_val.put("doubleValue", .{ .float = p.price });
+    try fields.put("price", .{ .object = price_val });
 
     var qty_val = std.json.ObjectMap.init(allocator);
     const qty_str = try std.fmt.allocPrint(allocator, "{}", .{p.quantity});
-    try qty_val.put("integerValue", .{.string = qty_str});
-    try fields.put("quantity", .{.object = qty_val});
+    try qty_val.put("integerValue", .{ .string = qty_str });
+    try fields.put("quantity", .{ .object = qty_val });
 
     var img_val = std.json.ObjectMap.init(allocator);
-    try img_val.put("stringValue", .{.string = p.imgfile});
-    try fields.put("imgfile", .{.object = img_val});
+    try img_val.put("stringValue", .{ .string = p.imgfile });
+    try fields.put("imgfile", .{ .object = img_val });
 
     var ts_val = std.json.ObjectMap.init(allocator);
-    try ts_val.put("timestampValue", .{.string = p.timestamp});
-    try fields.put("timestamp", .{.object = ts_val});
+    try ts_val.put("timestampValue", .{ .string = p.timestamp });
+    try fields.put("timestamp", .{ .object = ts_val });
 
     var ada_val = std.json.ObjectMap.init(allocator);
-    try ada_val.put("timestampValue", .{.string = p.actualdateadded});
-    try fields.put("actualdateadded", .{.object = ada_val});
+    try ada_val.put("timestampValue", .{ .string = p.actualdateadded });
+    try fields.put("actualdateadded", .{ .object = ada_val });
 
     var list = std.ArrayList(u8){};
     var writer = list.writer(allocator);
     try writer.writeAll("{\"fields\":");
-    try writeJson(.{.object = fields}, writer);
+    try writeJson(.{ .object = fields }, writer);
     try writer.writeByte('}');
     return list.toOwnedSlice(allocator);
 }
