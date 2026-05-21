@@ -1,0 +1,3 @@
+mcp
+pydantic
+python-json-logger

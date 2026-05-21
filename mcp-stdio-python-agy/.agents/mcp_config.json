@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "hello-stdio-python": {
+      "command": "python",
+      "args": [
+        "/home/xbill/gemini-cli-codeassist/mcp-stdio-python-agy/main.py"
+      ]
+    }
+  }
+}
