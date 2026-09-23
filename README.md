@@ -1,3 +1,5 @@
+
+
 # Cymbal Superstore & MCP Monorepo
 
 This monorepo is an evolution of the **Cymbal Superstore** sample application, showcasing a modern microservices architecture integrated with the **Model Context Protocol (MCP)** and **Google Cloud Platform (GCP)**. It provides a comprehensive set of examples across multiple programming languages for building intelligent, tool-using agents.
@@ -16,7 +18,7 @@ The repo contains dozens of MCP server implementations, allowing AI models to in
 ## Project Categories
 
 ### 1. MCP Servers (Inventory & Utilities)
-These servers expose tools to MCP clients via Stdio or HTTPS (SSE).
+These servers expose tools to MCP clients via Stdio or HTTPS (Streamable HTTP or SSE).
 
 *   **Firestore Inventory Servers (`firestore-*`)**: 
     *   Manage the Cymbal Superstore inventory.
